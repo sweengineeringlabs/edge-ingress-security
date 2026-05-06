@@ -33,7 +33,7 @@ use tokio::sync::oneshot;
 
 use edge_domain::{Handler, HandlerError, HandlerRegistry};
 use swe_edge_ingress_grpc::{
-    GrpcHandlerAdapter, GrpcInboundError, HandlerRegistryDispatcher, TonicGrpcServer,
+    GrpcHandlerAdapter, GrpcInboundError, GrpcHandlerRegistryDispatcher, TonicGrpcServer,
     REFLECTION_ENABLED_WARN_MSG,
 };
 use swe_edge_ingress_grpc_reflection::{
@@ -331,7 +331,7 @@ fn parse_error_response_code(body: &[u8]) -> Option<i32> {
 // ── Server boot + grpc call helpers ───────────────────────────────────────────
 
 async fn start_server_with_dispatcher(
-    dispatcher: HandlerRegistryDispatcher,
+    dispatcher: GrpcHandlerRegistryDispatcher,
     enable_reflection: bool,
 ) -> (SocketAddr, oneshot::Sender<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -386,9 +386,9 @@ async fn grpc_call(
 
 /// Build a dispatcher pre-loaded with EchoHandler under `/pkg.Demo/Echo`.
 /// Returns the registry as well so the caller can pass it into ReflectionService.
-fn dispatcher_with_echo() -> (HandlerRegistryDispatcher, Arc<HandlerRegistry<Vec<u8>, Vec<u8>>>) {
+fn dispatcher_with_echo() -> (GrpcHandlerRegistryDispatcher, Arc<HandlerRegistry<Vec<u8>, Vec<u8>>>) {
     let registry: Arc<HandlerRegistry<Vec<u8>, Vec<u8>>> = Arc::new(HandlerRegistry::new());
-    let dispatcher = HandlerRegistryDispatcher::new(registry.clone());
+    let dispatcher = GrpcHandlerRegistryDispatcher::new(registry.clone());
     dispatcher.register(GrpcHandlerAdapter::new(
         Arc::new(EchoHandler),
         decode_echo,
@@ -426,7 +426,7 @@ async fn test_list_services_returns_registered_handlers_when_reflection_enabled(
 /// Helper used by the tests above — registers the reflection wrapper under
 /// REFLECTION_INFO_METHOD on the dispatcher.
 fn registry_register_reflection(
-    dispatcher: &HandlerRegistryDispatcher,
+    dispatcher: &GrpcHandlerRegistryDispatcher,
     service: Arc<ReflectionService>,
 ) {
     let wrapper = ReflectionHandlerWrapper { service };

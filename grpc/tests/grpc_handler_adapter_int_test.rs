@@ -1,5 +1,5 @@
 //! Phase 3 acceptance integration tests for the registry-backed
-//! [`HandlerRegistryDispatcher`] + [`GrpcHandlerAdapter`] bridge.
+//! [`GrpcHandlerRegistryDispatcher`] + [`GrpcHandlerAdapter`] bridge.
 //!
 //! These hit the full wire path through `hyper::client::conn::http2`
 //! to prove that:
@@ -23,7 +23,7 @@ use tokio::sync::oneshot;
 
 use edge_domain::{Handler, HandlerError, HandlerRegistry};
 use swe_edge_ingress_grpc::{
-    GrpcHandlerAdapter, GrpcInboundError, HandlerRegistryDispatcher, TonicGrpcServer,
+    GrpcHandlerAdapter, GrpcInboundError, GrpcHandlerRegistryDispatcher, TonicGrpcServer,
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -66,7 +66,7 @@ fn grpc_frame(payload: &[u8]) -> Bytes {
 }
 
 async fn start_server_with_dispatcher(
-    dispatcher: HandlerRegistryDispatcher,
+    dispatcher: GrpcHandlerRegistryDispatcher,
 ) -> (SocketAddr, oneshot::Sender<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr     = listener.local_addr().unwrap();
@@ -115,12 +115,12 @@ async fn grpc_call(
     (grpc_status, data)
 }
 
-/// @covers: GrpcHandlerAdapter + HandlerRegistryDispatcher — typed handler
+/// @covers: GrpcHandlerAdapter + GrpcHandlerRegistryDispatcher — typed handler
 /// runs end-to-end and returns the right response over the gRPC wire.
 #[tokio::test]
 async fn test_typed_handler_dispatched_through_registry_returns_correct_response() {
     let registry: Arc<HandlerRegistry<Vec<u8>, Vec<u8>>> = Arc::new(HandlerRegistry::new());
-    let dispatcher = HandlerRegistryDispatcher::new(registry);
+    let dispatcher = GrpcHandlerRegistryDispatcher::new(registry);
     dispatcher.register(GrpcHandlerAdapter::new(
         Arc::new(TripleHandler),
         decode_triple_req,
@@ -141,11 +141,11 @@ async fn test_typed_handler_dispatched_through_registry_returns_correct_response
     assert_eq!(value, 21, "TripleHandler should triple 7 → 21, got {value}");
 }
 
-/// @covers: HandlerRegistryDispatcher — unknown method returns Unimplemented (12).
+/// @covers: GrpcHandlerRegistryDispatcher — unknown method returns Unimplemented (12).
 #[tokio::test]
 async fn test_unknown_method_returns_grpc_unimplemented_on_wire() {
     let registry: Arc<HandlerRegistry<Vec<u8>, Vec<u8>>> = Arc::new(HandlerRegistry::new());
-    let dispatcher = HandlerRegistryDispatcher::new(registry);
+    let dispatcher = GrpcHandlerRegistryDispatcher::new(registry);
     let (addr, _shutdown) = start_server_with_dispatcher(dispatcher).await;
     let (grpc_status, _) = grpc_call(addr, "/pkg.Math/NotARealMethod", b"anything").await;
     // tonic::Code::Unimplemented == 12
@@ -156,7 +156,7 @@ async fn test_unknown_method_returns_grpc_unimplemented_on_wire() {
 #[tokio::test]
 async fn test_decode_failure_surfaces_as_grpc_invalid_argument() {
     let registry: Arc<HandlerRegistry<Vec<u8>, Vec<u8>>> = Arc::new(HandlerRegistry::new());
-    let dispatcher = HandlerRegistryDispatcher::new(registry);
+    let dispatcher = GrpcHandlerRegistryDispatcher::new(registry);
     dispatcher.register(GrpcHandlerAdapter::new(
         Arc::new(TripleHandler),
         decode_triple_req,

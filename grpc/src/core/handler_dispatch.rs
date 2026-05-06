@@ -31,11 +31,11 @@ use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
 /// Use this together with [`GrpcHandlerAdapter`] to register typed
 /// handlers under their gRPC method paths and let the server dispatch
 /// the right one for each inbound request.
-pub struct HandlerRegistryDispatcher {
+pub struct GrpcHandlerRegistryDispatcher {
     registry: Arc<HandlerRegistry<Vec<u8>, Vec<u8>>>,
 }
 
-impl HandlerRegistryDispatcher {
+impl GrpcHandlerRegistryDispatcher {
     /// Construct a dispatcher backed by `registry`.
     pub fn new(registry: Arc<HandlerRegistry<Vec<u8>, Vec<u8>>>) -> Self {
         Self { registry }
@@ -58,7 +58,7 @@ impl HandlerRegistryDispatcher {
     }
 }
 
-impl GrpcInbound for HandlerRegistryDispatcher {
+impl GrpcInbound for GrpcHandlerRegistryDispatcher {
     fn handle_unary(
         &self,
         request: GrpcRequest,
@@ -157,19 +157,19 @@ mod tests {
         fn as_any(&self) -> &dyn Any { self }
     }
 
-    fn fresh_dispatcher() -> HandlerRegistryDispatcher {
+    fn fresh_dispatcher() -> GrpcHandlerRegistryDispatcher {
         let registry: Arc<HandlerRegistry<Vec<u8>, Vec<u8>>> = Arc::new(HandlerRegistry::new());
-        HandlerRegistryDispatcher::new(registry)
+        GrpcHandlerRegistryDispatcher::new(registry)
     }
 
-    /// @covers: HandlerRegistryDispatcher::new — empty registry has no handlers.
+    /// @covers: GrpcHandlerRegistryDispatcher::new — empty registry has no handlers.
     #[tokio::test]
     async fn test_new_dispatcher_starts_with_no_registered_handlers() {
         let d = fresh_dispatcher();
         assert!(d.registry().is_empty());
     }
 
-    /// @covers: HandlerRegistryDispatcher::register — adds an adapter under its id.
+    /// @covers: GrpcHandlerRegistryDispatcher::register — adds an adapter under its id.
     #[tokio::test]
     async fn test_register_inserts_adapter_under_handler_id() {
         let d = fresh_dispatcher();

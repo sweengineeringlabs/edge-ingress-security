@@ -20,11 +20,11 @@
 //! ```rust,ignore
 //! use std::sync::Arc;
 //! use edge_domain::HandlerRegistry;
-//! use swe_edge_ingress_grpc::{HandlerRegistryDispatcher, TonicGrpcServer};
+//! use swe_edge_ingress_grpc::{GrpcHandlerRegistryDispatcher, TonicGrpcServer};
 //! use swe_edge_ingress_grpc_reflection::{ReflectionService, REFLECTION_INFO_METHOD};
 //!
 //! let registry: Arc<HandlerRegistry<Vec<u8>, Vec<u8>>> = Arc::new(HandlerRegistry::new());
-//! let dispatcher = HandlerRegistryDispatcher::new(registry.clone());
+//! let dispatcher = GrpcHandlerRegistryDispatcher::new(registry.clone());
 //! // ... register your normal handlers ...
 //!
 //! if config.enable_reflection {
