@@ -40,9 +40,18 @@ impl HttpResponse {
         String::from_utf8(self.body.clone())
     }
 
-    /// Look up a response header (case-insensitive fallback to lowercase).
-    pub fn header(&self, name: &str) -> Option<&String> {
-        self.headers.get(name).or_else(|| self.headers.get(&name.to_lowercase()))
+    /// Look up a response header (RFC 7230 case-insensitive: exact → lowercase → full scan).
+    pub fn header(&self, name: &str) -> Option<&str> {
+        self.headers
+            .get(name)
+            .or_else(|| self.headers.get(&name.to_lowercase()))
+            .map(String::as_str)
+            .or_else(|| {
+                self.headers
+                    .iter()
+                    .find(|(k, _)| k.eq_ignore_ascii_case(name))
+                    .map(|(_, v)| v.as_str())
+            })
     }
 }
 
@@ -81,11 +90,27 @@ mod tests {
 
     /// @covers: header
     #[test]
-    fn test_header_returns_value_for_known_header() {
+    fn test_header_returns_value_for_exact_case_match() {
         let mut resp = HttpResponse::new(200, vec![]);
         resp.headers.insert("Content-Type".to_string(), "text/html".to_string());
-        assert_eq!(resp.header("Content-Type"), Some(&"text/html".to_string()));
+        assert_eq!(resp.header("Content-Type"), Some("text/html"));
         assert!(resp.header("X-Missing").is_none());
+    }
+
+    /// @covers: header
+    #[test]
+    fn test_header_returns_value_for_lowercase_lookup() {
+        let mut resp = HttpResponse::new(200, vec![]);
+        resp.headers.insert("Content-Type".to_string(), "text/html".to_string());
+        assert_eq!(resp.header("content-type"), Some("text/html"));
+    }
+
+    /// @covers: header
+    #[test]
+    fn test_header_returns_value_for_mixed_case_lookup() {
+        let mut resp = HttpResponse::new(200, vec![]);
+        resp.headers.insert("Content-Type".to_string(), "text/html".to_string());
+        assert_eq!(resp.header("CONTENT-TYPE"), Some("text/html"));
     }
 
     /// @covers: json
