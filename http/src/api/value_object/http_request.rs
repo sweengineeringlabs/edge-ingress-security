@@ -47,6 +47,20 @@ impl HttpRequest {
         Self { method: HttpMethod::Delete, url: url.into(), headers: HashMap::new(), query: HashMap::new(), body: None, timeout: None }
     }
 
+    /// Look up a request header (RFC 7230 case-insensitive: exact → lowercase → full scan).
+    pub fn header(&self, name: &str) -> Option<&str> {
+        self.headers
+            .get(name)
+            .or_else(|| self.headers.get(&name.to_lowercase()))
+            .map(String::as_str)
+            .or_else(|| {
+                self.headers
+                    .iter()
+                    .find(|(k, _)| k.eq_ignore_ascii_case(name))
+                    .map(|(_, v)| v.as_str())
+            })
+    }
+
     /// Add a request header.
     pub fn with_header(mut self, name: impl Into<String>, value: impl Into<String>) -> Self {
         self.headers.insert(name.into(), value.into()); self
@@ -129,5 +143,33 @@ mod tests {
     fn test_with_timeout_sets_timeout() {
         let req = HttpRequest::get("/x").with_timeout(Duration::from_secs(5));
         assert_eq!(req.timeout, Some(Duration::from_secs(5)));
+    }
+
+    /// @covers: header
+    #[test]
+    fn test_header_returns_value_for_exact_case_match() {
+        let req = HttpRequest::get("/").with_header("Authorization", "Bearer tok");
+        assert_eq!(req.header("Authorization"), Some("Bearer tok"));
+    }
+
+    /// @covers: header
+    #[test]
+    fn test_header_returns_value_for_lowercase_lookup() {
+        let req = HttpRequest::get("/").with_header("Authorization", "Bearer tok");
+        assert_eq!(req.header("authorization"), Some("Bearer tok"));
+    }
+
+    /// @covers: header
+    #[test]
+    fn test_header_returns_value_for_mixed_case_lookup() {
+        let req = HttpRequest::get("/").with_header("Authorization", "Bearer tok");
+        assert_eq!(req.header("AUTHORIZATION"), Some("Bearer tok"));
+    }
+
+    /// @covers: header
+    #[test]
+    fn test_header_returns_none_for_missing_header() {
+        let req = HttpRequest::get("/");
+        assert!(req.header("Authorization").is_none());
     }
 }
