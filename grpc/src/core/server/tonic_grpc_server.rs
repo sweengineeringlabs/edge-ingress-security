@@ -557,11 +557,25 @@ async fn dispatch(
             // Buffered by design: `after_dispatch` operates on a single
             // body bag, not a stream — true streaming interceptors are
             // a follow-up.
-            let collected_payload = match collect_response_payload(resp_stream).await {
-                Ok(p)  => p,
-                Err(e) => {
+            //
+            // The deadline protection from the outer select only covered
+            // `handle_stream()` setup, not the drain.  Re-arm it here so
+            // infinite / long-running streams can't bypass the per-call
+            // budget.
+            let collected_payload = match tokio::time::timeout(
+                deadline,
+                collect_response_payload(resp_stream),
+            ).await {
+                Ok(Ok(p))  => p,
+                Ok(Err(e)) => {
                     let (code, msg) = map_inbound_error(e);
                     return emit(code, grpc_error(code, msg));
+                }
+                Err(_elapsed) => {
+                    return emit(
+                        tonic::Code::DeadlineExceeded,
+                        grpc_error(tonic::Code::DeadlineExceeded, "streaming deadline exceeded"),
+                    );
                 }
             };
             // Synthesise an interceptor-visible response.  The body
