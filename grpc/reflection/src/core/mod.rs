@@ -1,4 +1,3 @@
-//! Core layer — reflection service implementation + wire codec.
+//! Core layer — reflection service implementation.
 
 pub(crate) mod reflection_service;
-pub(crate) mod wire;

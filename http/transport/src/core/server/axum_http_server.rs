@@ -1,6 +1,4 @@
-//! Axum-based HTTP server — binds a socket and delegates all requests to an
-//! [`HttpInbound`] handler. Wire-level concerns (CRLF, framing, keep-alive)
-//! are handled by Hyper before the request reaches this layer.
+//! Axum-based HTTP server implementation.
 
 use std::collections::HashMap;
 use std::convert::Infallible;
@@ -10,66 +8,11 @@ use axum::Router;
 use tokio::net::TcpListener;
 
 use crate::api::port::http_inbound::{HttpInbound, HttpInboundError};
+use crate::api::server::axum_http_server::{AxumHttpServer, AxumServerError, MAX_BODY_BYTES};
 use crate::api::value_object::{HttpBody, HttpMethod, HttpRequest, HttpResponse};
-use swe_edge_ingress_tls::{IngressTlsConfig, IngressTlsError};
-
-/// Hard cap on the request body size the server will read into memory.
-pub const MAX_BODY_BYTES: usize = 4 * 1_024 * 1_024; // 4 MiB
-
-/// Error returned by [`AxumHttpServer::serve`].
-#[derive(Debug, thiserror::Error)]
-pub enum AxumServerError {
-    /// The server could not bind to the requested address.
-    #[error("failed to bind to {0}: {1}")]
-    Bind(String, #[source] std::io::Error),
-    /// The underlying HTTP server returned an error.
-    #[error("server error: {0}")]
-    Serve(#[source] std::io::Error),
-    /// TLS configuration could not be loaded or built.
-    #[error("TLS: {0}")]
-    Tls(#[source] IngressTlsError),
-}
-
-/// Axum-based HTTP server that routes all inbound requests through an
-/// [`HttpInbound`] port.
-///
-/// # Usage
-///
-/// ```ignore
-/// let server = AxumHttpServer::new("0.0.0.0:8080", handler);
-/// server.serve(tokio::signal::ctrl_c().map(|_| ())).await?;
-/// ```
-///
-/// Consumers can override the handler to swap logic, or wrap it in a
-/// decorator that also implements [`HttpInbound`] to extend behaviour
-/// (auth, logging, rate-limiting, etc.) without touching the server.
-pub struct AxumHttpServer {
-    bind:       String,
-    handler:    Arc<dyn HttpInbound>,
-    body_limit: usize,
-    tls:        Option<IngressTlsConfig>,
-}
+use swe_edge_ingress_tls::IngressTlsConfig;
 
 impl AxumHttpServer {
-    /// Create a server that will bind to `bind` and delegate to `handler`.
-    pub fn new(bind: impl Into<String>, handler: Arc<dyn HttpInbound>) -> Self {
-        Self { bind: bind.into(), handler, body_limit: MAX_BODY_BYTES, tls: None }
-    }
-
-    /// Override the maximum request body size (default: [`MAX_BODY_BYTES`]).
-    pub fn with_body_limit(mut self, limit: usize) -> Self {
-        self.body_limit = limit;
-        self
-    }
-
-    /// Enable TLS (or mTLS when [`IngressTlsConfig::client_ca_pem_path`] is
-    /// set). The acceptor is built eagerly in [`serve`] / [`serve_with_listener`]
-    /// so cert/key errors surface at startup.
-    pub fn with_tls(mut self, config: IngressTlsConfig) -> Self {
-        self.tls = Some(config);
-        self
-    }
-
     /// Bind and serve until `shutdown` resolves.
     ///
     /// Axum performs a graceful drain on shutdown: in-flight requests

@@ -16,205 +16,26 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
 
-use crate::api::audit_sink::{AuditEvent, AuditSink, NoopAuditSink};
+use crate::api::audit_sink::{AuditEvent, AuditSink};
 use crate::api::interceptor::GrpcInboundInterceptorChain;
 use crate::api::port::grpc_inbound::{GrpcInbound, GrpcInboundError, GrpcMessageStream};
 use crate::api::value_object::{
     is_reserved_peer_key, CompressionMode, GrpcMetadata, GrpcRequest, GrpcResponse,
     GrpcServerConfig, GrpcStatusCode, PEER_CN,
 };
-use crate::core::grpc_timeout::{parse_grpc_timeout, DEFAULT_DEADLINE};
-use crate::core::peer_identity::extract_peer_identity;
-use crate::core::status_codes::{from_tonic_code, map_inbound_error};
-use swe_edge_ingress_tls::{IngressTlsConfig, IngressTlsError};
-
-/// Diagnostic message emitted when the server is started without an
-/// [`AuthorizationInterceptor`] but `allow_unauthenticated` is `false`.
-pub const MISSING_AUTHORIZATION_INTERCEPTOR_MSG: &str =
-    "gRPC server requires an AuthorizationInterceptor in the chain \
-     (e.g. swe-edge-egress-grpc-authz::AuthzInterceptor). To explicitly run \
-     without authz, set `allow_unauthenticated = true` in \
-     GrpcServerConfig (logged at startup as a warning).";
-
-/// Diagnostic message emitted at startup when `enable_reflection` is `true`.
-///
-/// Reflection lets any caller reaching the endpoint enumerate every
-/// registered service/method and download FileDescriptorProto bytes.
-/// Logged unconditionally as a WARN so the operational decision is
-/// observable in deployment logs.
-pub const REFLECTION_ENABLED_WARN_MSG: &str =
-    "gRPC reflection enabled — exposes service surface to anyone reaching this endpoint. \
-     Disable in production deployments.";
-
-/// Hard cap on incoming message size.
-pub const MAX_MESSAGE_BYTES: usize = 4 * 1_024 * 1_024; // 4 MiB
+use crate::api::grpc_timeout::{parse_grpc_timeout, DEFAULT_DEADLINE};
+use crate::api::peer_identity::extract_peer_identity;
+use crate::api::server::tonic_grpc_server::{
+    GrpcServerConfigError, TonicGrpcServer, TonicServerError, MAX_MESSAGE_BYTES,
+    MISSING_AUTHORIZATION_INTERCEPTOR_MSG, REFLECTION_ENABLED_WARN_MSG,
+};
+use crate::api::status_codes::{from_tonic_code, map_inbound_error};
+use swe_edge_ingress_tls::IngressTlsConfig;
 
 type BoxBody = http_body_util::combinators::BoxBody<Bytes, Infallible>;
 
-/// Error returned by [`TonicGrpcServer::serve`].
-#[derive(Debug, thiserror::Error)]
-pub enum TonicServerError {
-    /// The server could not bind to the requested address.
-    #[error("failed to bind to {0}: {1}")]
-    Bind(String, #[source] std::io::Error),
-    /// TLS configuration could not be loaded or built.
-    #[error("TLS: {0}")]
-    Tls(#[source] IngressTlsError),
-    /// `tls_required` is `true` but no TLS material is configured.
-    #[error("server config rejected: {0}")]
-    Config(#[source] GrpcServerConfigError),
-}
-
-/// Error returned by [`TonicGrpcServer::from_config`] when the supplied
-/// server configuration violates a fail-closed invariant.
-#[derive(Debug, thiserror::Error)]
-pub enum GrpcServerConfigError {
-    /// `tls_required` is set but no TLS configuration was attached.
-    /// Callers must either supply [`IngressTlsConfig`] or explicitly
-    /// call [`GrpcServerConfig::allow_plaintext`].
-    #[error(
-        "tls_required is set but no TLS configuration supplied — \
-         attach an IngressTlsConfig via with_tls(...) or call \
-         allow_plaintext() to opt out"
-    )]
-    TlsRequiredButMissing,
-}
-
-/// gRPC server that routes all unary requests through a [`GrpcInbound`] port.
-///
-/// No proto-gen is required — raw bytes flow directly to the port.
-/// Consumers can swap the handler (override) or wrap it in a decorator
-/// that also implements [`GrpcInbound`] to add auth, tracing, etc. (extend).
-pub struct TonicGrpcServer {
-    bind:                   String,
-    handler:                Arc<dyn GrpcInbound>,
-    max_bytes:              usize,
-    max_concurrent_streams: u32,
-    tls:                    Option<IngressTlsConfig>,
-    interceptors:           GrpcInboundInterceptorChain,
-    compression:            CompressionMode,
-    allow_unauthenticated:  bool,
-    audit_sink:             Arc<dyn AuditSink>,
-    enable_reflection:      bool,
-}
 
 impl TonicGrpcServer {
-    /// Create a server that will bind to `bind` and delegate to `handler`.
-    ///
-    /// **Defaults**: no audit sink (see [`NoopAuditSink`]); fail-closed
-    /// authentication (see [`GrpcServerConfig::allow_unauthenticated`]).
-    /// Use [`Self::with_audit_sink`] and
-    /// [`Self::allow_unauthenticated`] to opt out.
-    pub fn new(bind: impl Into<String>, handler: Arc<dyn GrpcInbound>) -> Self {
-        Self {
-            bind:                   bind.into(),
-            handler,
-            max_bytes:              MAX_MESSAGE_BYTES,
-            max_concurrent_streams: 100,
-            tls:                    None,
-            interceptors:           GrpcInboundInterceptorChain::new(),
-            compression:            CompressionMode::None,
-            allow_unauthenticated:  false,
-            audit_sink:             Arc::new(NoopAuditSink),
-            enable_reflection:      false,
-        }
-    }
-
-    /// Construct a server from a [`GrpcServerConfig`].
-    ///
-    /// **Fail-closed**: if `config.tls_required` is `true` and no
-    /// [`IngressTlsConfig`] is supplied (either via `config.tls` or
-    /// the optional `tls` arg), returns
-    /// [`GrpcServerConfigError::TlsRequiredButMissing`] before any
-    /// transport setup.
-    pub fn from_config(
-        config:  &GrpcServerConfig,
-        handler: Arc<dyn GrpcInbound>,
-    ) -> Result<Self, GrpcServerConfigError> {
-        if config.tls_required && config.tls.is_none() {
-            return Err(GrpcServerConfigError::TlsRequiredButMissing);
-        }
-        Ok(Self {
-            bind:                   config.bind.to_string(),
-            handler,
-            max_bytes:              config.max_message_bytes,
-            max_concurrent_streams: config.max_concurrent_streams,
-            tls:                    config.tls.clone(),
-            interceptors:           GrpcInboundInterceptorChain::new(),
-            compression:            config.compression,
-            allow_unauthenticated:  config.allow_unauthenticated,
-            audit_sink:             Arc::new(NoopAuditSink),
-            enable_reflection:      config.enable_reflection,
-        })
-    }
-
-    /// Mirror of [`GrpcServerConfig::enable_reflection`] for builders
-    /// that constructed the server via [`Self::new`].  Setting this
-    /// flag does **not** register a reflection service — wiring code
-    /// reads the flag and adds [`swe-edge-ingress-grpc-reflection`]'s
-    /// `ReflectionService` to the dispatcher when it is `true`.
-    /// The startup WARN is emitted unconditionally on the bind path.
-    pub fn enable_reflection(mut self, enable: bool) -> Self {
-        self.enable_reflection = enable;
-        self
-    }
-
-    /// Read whether reflection has been opted in for this server.
-    pub fn is_reflection_enabled(&self) -> bool {
-        self.enable_reflection
-    }
-
-    /// Replace the audit sink — defaults to [`NoopAuditSink`].  The
-    /// sink fires after every dispatched call.
-    pub fn with_audit_sink(mut self, sink: Arc<dyn AuditSink>) -> Self {
-        self.audit_sink = sink;
-        self
-    }
-
-    /// Opt out of the default-deny authorisation invariant.  Mirror of
-    /// [`GrpcServerConfig::allow_unauthenticated`] for builders that
-    /// constructed the server via [`Self::new`].
-    pub fn allow_unauthenticated(mut self, allow: bool) -> Self {
-        self.allow_unauthenticated = allow;
-        self
-    }
-
-    /// Override the maximum incoming message size (default: [`MAX_MESSAGE_BYTES`]).
-    pub fn with_max_message_size(mut self, size: usize) -> Self {
-        self.max_bytes = size;
-        self
-    }
-
-    /// Override the HTTP/2 SETTINGS_MAX_CONCURRENT_STREAMS advertised
-    /// to peers (default: 100).
-    pub fn with_max_concurrent_streams(mut self, streams: u32) -> Self {
-        self.max_concurrent_streams = streams;
-        self
-    }
-
-    /// Attach an interceptor chain.  Replaces any previously-set chain.
-    /// Interceptors run in registration order — first failure
-    /// short-circuits and the handler is never invoked.
-    pub fn with_interceptors(mut self, chain: GrpcInboundInterceptorChain) -> Self {
-        self.interceptors = chain;
-        self
-    }
-
-    /// Set the negotiated compression mode.  When `Gzip` or `Zstd`,
-    /// the server advertises `grpc-accept-encoding` on responses.
-    pub fn with_compression(mut self, mode: CompressionMode) -> Self {
-        self.compression = mode;
-        self
-    }
-
-    /// Enable TLS (or mTLS when [`IngressTlsConfig::client_ca_pem_path`] is
-    /// set). The acceptor is built eagerly in [`serve`] / [`serve_with_listener`]
-    /// so cert/key errors surface at startup.
-    pub fn with_tls(mut self, config: IngressTlsConfig) -> Self {
-        self.tls = Some(config);
-        self
-    }
-
     /// Bind and serve until `shutdown` resolves.
     ///
     /// **Fail-closed authorisation invariant**: if no

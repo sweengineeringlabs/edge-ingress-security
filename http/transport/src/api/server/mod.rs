@@ -1,4 +1,6 @@
-//! HTTP server port — contract for a runnable HTTP inbound server.
+//! HTTP server port and concrete server declarations.
+
+pub mod axum_http_server;
 
 use futures::future::BoxFuture;
 

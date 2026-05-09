@@ -1,4 +1,6 @@
-//! gRPC server port — contract for a runnable gRPC inbound server.
+//! gRPC server port and concrete server declarations.
+
+pub mod tonic_grpc_server;
 
 use futures::future::BoxFuture;
 

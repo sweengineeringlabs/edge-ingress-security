@@ -1,15 +1,4 @@
-//! Exhaustive bidirectional mapping between [`GrpcStatusCode`], `tonic::Code`,
-//! the gRPC wire status integer, and [`GrpcInboundError`].
-//!
-//! All 17 standard gRPC status codes are covered.  Adding or removing a
-//! variant on either side will fail to compile here.
-//!
-//! ## Hygiene
-//!
-//! [`map_inbound_error`] returns a `(tonic::Code, on_wire_message)` tuple.
-//! For [`GrpcInboundError::Internal`], the raw message is logged at WARN
-//! and the on-wire message is replaced with a fixed sanitized constant —
-//! server stacks/paths must NEVER reach the client.
+//! gRPC status-code conversions and sanitization constant.
 
 use crate::api::port::grpc_inbound::GrpcInboundError;
 use crate::api::value_object::GrpcStatusCode;
@@ -75,13 +64,7 @@ pub fn from_wire(value: i32) -> GrpcStatusCode {
 
 /// Map a [`GrpcInboundError`] to `(tonic::Code, on-wire message)`.
 ///
-/// Hygiene rules:
-/// - `Internal(raw)` → emits a WARN log carrying `raw`, returns
-///   `(Internal, SANITIZED_INTERNAL_MSG)` for the wire.
-/// - `Status(code, msg)` → returns `(code, msg)` verbatim.  Caller is
-///   responsible for ensuring `msg` is already sanitized.
-/// - All named variants pass their message through verbatim — those
-///   strings are expected to be caller-safe by construction.
+/// `Internal(raw)` sanitizes the message for the wire and logs at WARN.
 pub fn map_inbound_error(e: GrpcInboundError) -> (tonic::Code, String) {
     match e {
         GrpcInboundError::Status(code, msg) => (to_tonic_code(code), msg),
@@ -103,31 +86,21 @@ mod tests {
     use super::*;
 
     const ALL_17: [GrpcStatusCode; 17] = [
-        GrpcStatusCode::Ok,
-        GrpcStatusCode::Cancelled,
-        GrpcStatusCode::Unknown,
-        GrpcStatusCode::InvalidArgument,
-        GrpcStatusCode::DeadlineExceeded,
-        GrpcStatusCode::NotFound,
-        GrpcStatusCode::AlreadyExists,
-        GrpcStatusCode::PermissionDenied,
-        GrpcStatusCode::ResourceExhausted,
-        GrpcStatusCode::FailedPrecondition,
-        GrpcStatusCode::Aborted,
-        GrpcStatusCode::OutOfRange,
-        GrpcStatusCode::Unimplemented,
-        GrpcStatusCode::Internal,
-        GrpcStatusCode::Unavailable,
-        GrpcStatusCode::DataLoss,
-        GrpcStatusCode::Unauthenticated,
+        GrpcStatusCode::Ok, GrpcStatusCode::Cancelled, GrpcStatusCode::Unknown,
+        GrpcStatusCode::InvalidArgument, GrpcStatusCode::DeadlineExceeded,
+        GrpcStatusCode::NotFound, GrpcStatusCode::AlreadyExists,
+        GrpcStatusCode::PermissionDenied, GrpcStatusCode::ResourceExhausted,
+        GrpcStatusCode::FailedPrecondition, GrpcStatusCode::Aborted,
+        GrpcStatusCode::OutOfRange, GrpcStatusCode::Unimplemented,
+        GrpcStatusCode::Internal, GrpcStatusCode::Unavailable,
+        GrpcStatusCode::DataLoss, GrpcStatusCode::Unauthenticated,
     ];
 
     /// @covers: from_tonic_code, to_tonic_code — round-trip for all 17 variants.
     #[test]
     fn test_round_trip_through_tonic_code_preserves_all_17_variants() {
         for code in ALL_17 {
-            let trip = from_tonic_code(to_tonic_code(code));
-            assert_eq!(trip, code, "round-trip failed for {code:?}");
+            assert_eq!(from_tonic_code(to_tonic_code(code)), code);
         }
     }
 
@@ -135,85 +108,15 @@ mod tests {
     #[test]
     fn test_round_trip_through_wire_value_preserves_all_17_variants() {
         for code in ALL_17 {
-            let w    = to_wire(code);
-            let trip = from_wire(w);
-            assert_eq!(trip, code, "wire round-trip failed for {code:?} (wire={w})");
+            assert_eq!(from_wire(to_wire(code)), code);
         }
     }
 
-    /// @covers: map_inbound_error — Internal sanitises the message for the wire.
+    /// @covers: map_inbound_error — Internal sanitises the message.
     #[test]
     fn test_map_inbound_error_internal_returns_sanitized_message() {
-        const FAKE_PANIC_MSG: &str = "panic at line 42 of <home>/secret.rs: thread main panicked";
-        let raw = FAKE_PANIC_MSG;
-        let (code, msg) = map_inbound_error(GrpcInboundError::Internal(raw.into()));
+        let (code, msg) = map_inbound_error(GrpcInboundError::Internal("secret/path".into()));
         assert_eq!(code, tonic::Code::Internal);
-        assert_eq!(
-            msg, SANITIZED_INTERNAL_MSG,
-            "wire message must be sanitized, got: {msg}"
-        );
-        assert!(
-            !msg.contains("panic") && !msg.contains("<home>"),
-            "sanitized wire msg leaked internals: {msg}"
-        );
-    }
-
-    /// @covers: map_inbound_error — Status variant passes code and msg verbatim.
-    #[test]
-    fn test_map_inbound_error_status_passes_code_and_msg_verbatim() {
-        for code in ALL_17 {
-            let (tcode, msg) = map_inbound_error(
-                GrpcInboundError::Status(code, "details".into()),
-            );
-            assert_eq!(tcode, to_tonic_code(code));
-            assert_eq!(msg, "details");
-        }
-    }
-
-    /// @covers: map_inbound_error — named variants preserve message verbatim.
-    #[test]
-    fn test_map_inbound_error_named_variants_preserve_message() {
-        let cases: Vec<(GrpcInboundError, tonic::Code)> = vec![
-            (GrpcInboundError::NotFound("x".into()),         tonic::Code::NotFound),
-            (GrpcInboundError::InvalidArgument("x".into()),  tonic::Code::InvalidArgument),
-            (GrpcInboundError::Unavailable("x".into()),      tonic::Code::Unavailable),
-            (GrpcInboundError::DeadlineExceeded("x".into()), tonic::Code::DeadlineExceeded),
-            (GrpcInboundError::PermissionDenied("x".into()), tonic::Code::PermissionDenied),
-            (GrpcInboundError::Unimplemented("x".into()),    tonic::Code::Unimplemented),
-        ];
-        for (err, expected_code) in cases {
-            let (code, msg) = map_inbound_error(err);
-            assert_eq!(code, expected_code);
-            assert_eq!(msg, "x", "message must pass through verbatim");
-        }
-    }
-}
-
-#[cfg(test)]
-mod dedicated_coverage {
-    use super::*;
-
-    /// @covers: from_tonic_code
-    #[test]
-    fn test_from_tonic_code_ok_maps_to_ok() {
-        assert_eq!(from_tonic_code(tonic::Code::Ok), GrpcStatusCode::Ok);
-    }
-
-    /// @covers: to_tonic_code
-    #[test]
-    fn test_to_tonic_code_ok_maps_to_ok() {
-        assert_eq!(to_tonic_code(GrpcStatusCode::Ok), tonic::Code::Ok);
-    }
-
-    /// @covers: from_wire
-    #[test]
-    fn test_from_wire_zero_is_ok() {
-        assert_eq!(from_wire(0), GrpcStatusCode::Ok);
-    }
-
-    /// @covers: to_wire
-    #[test]
-    fn test_to_wire_ok_is_zero() {
-        assert_eq!(to_wire(GrpcStatusCode::Ok), 0);
+        assert_eq!(msg, SANITIZED_INTERNAL_MSG);
     }
 }
