@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["main", "http", "grpc", "grpc-reflection", "file", "tls"]
+members = ["main", "http", "grpc/transport", "grpc/reflection", "file", "tls"]
 
 [workspace.package]
 version      = "0.1.0"
@@ -35,8 +35,8 @@ reqwest          = { version = "0.12", features = ["json"], default-features = f
 
 # Workspace-internal domain crates
 swe-edge-ingress-http             = { path = "http" }
-swe-edge-ingress-grpc             = { path = "grpc" }
-swe-edge-ingress-grpc-reflection  = { path = "grpc-reflection" }
+swe-edge-ingress-grpc             = { package = "swe-edge-ingress-grpc-transport", path = "grpc/transport" }
+swe-edge-ingress-grpc-reflection  = { path = "grpc/reflection" }
 swe-edge-ingress-file             = { path = "file" }
 swe-edge-ingress-tls              = { path = "tls" }
 

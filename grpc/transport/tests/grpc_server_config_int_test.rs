@@ -19,7 +19,7 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
-use swe_edge_ingress_grpc::{
+use swe_edge_ingress_grpc_transport::{
     GrpcHealthCheck, GrpcInbound, GrpcInboundResult, GrpcMetadata, GrpcRequest, GrpcResponse,
     GrpcServerConfig, GrpcServerConfigError, IngressTlsConfig, TonicGrpcServer,
 };
@@ -202,7 +202,7 @@ async fn plaintext_to_tls_required_server_fails_before_handler_runs_int_test() {
 /// `grpc-accept-encoding` to response trailers when set.
 #[tokio::test]
 async fn tonic_grpc_server_struct_advertises_grpc_accept_encoding_when_gzip_set_int_test() {
-    use swe_edge_ingress_grpc::CompressionMode;
+    use swe_edge_ingress_grpc_transport::CompressionMode;
 
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr     = listener.local_addr().unwrap();

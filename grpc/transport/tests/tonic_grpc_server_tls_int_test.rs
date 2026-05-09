@@ -15,7 +15,7 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
-use swe_edge_ingress_grpc::{
+use swe_edge_ingress_grpc_transport::{
     GrpcHealthCheck, GrpcInbound, GrpcInboundResult, GrpcMetadata, GrpcRequest, GrpcResponse,
     IngressTlsConfig, TonicGrpcServer,
 };

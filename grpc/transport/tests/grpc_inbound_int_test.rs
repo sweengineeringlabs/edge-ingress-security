@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use swe_edge_ingress_grpc::{
+use swe_edge_ingress_grpc_transport::{
     GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode,
     GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcHealthCheck,
 };

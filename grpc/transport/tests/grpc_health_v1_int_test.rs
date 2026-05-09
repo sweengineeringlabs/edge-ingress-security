@@ -11,7 +11,7 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
-use swe_edge_ingress_grpc::{
+use swe_edge_ingress_grpc_transport::{
     HealthService, ServingStatus, TonicGrpcServer, HEALTH_CHECK_METHOD, HEALTH_WATCH_METHOD,
 };
 
@@ -192,7 +192,7 @@ async fn test_health_check_returns_not_found_for_unregistered_service_over_grpc_
 #[tokio::test]
 async fn test_health_watch_streams_initial_snapshot_then_status_change() {
     use futures::StreamExt;
-    use swe_edge_ingress_grpc::{GrpcInbound, GrpcMessageStream, GrpcMetadata};
+    use swe_edge_ingress_grpc_transport::{GrpcInbound, GrpcMessageStream, GrpcMetadata};
 
     let health = Arc::new(HealthService::new());
     health.set_status("pkg.A", ServingStatus::Serving);

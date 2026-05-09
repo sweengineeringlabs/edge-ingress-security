@@ -14,7 +14,7 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
-use swe_edge_ingress_grpc::{
+use swe_edge_ingress_grpc_transport::{
     AuditEvent, AuditSink, AuthorizationInterceptor, GrpcHealthCheck, GrpcInbound,
     GrpcInboundError, GrpcInboundInterceptor, GrpcInboundInterceptorChain,
     GrpcInboundResult, GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode,
@@ -159,7 +159,7 @@ async fn test_server_starts_when_allow_unauthenticated_is_true_and_no_authz() {
     let (_, _shutdown) = start_server(
         Arc::new(EchoHandler),
         GrpcInboundInterceptorChain::new(),
-        Arc::new(swe_edge_ingress_grpc::NoopAuditSink),
+        Arc::new(swe_edge_ingress_grpc_transport::NoopAuditSink),
         true, // allow_unauthenticated
     ).await;
     // Reaching this point means the server bound successfully — the
@@ -180,7 +180,7 @@ async fn test_authz_permission_denied_sanitizes_policy_rationale_on_the_wire() {
     let (addr, _shutdown) = start_server(
         Arc::new(EchoHandler),
         chain,
-        Arc::new(swe_edge_ingress_grpc::NoopAuditSink),
+        Arc::new(swe_edge_ingress_grpc_transport::NoopAuditSink),
         false, // authz IS present
     ).await;
 

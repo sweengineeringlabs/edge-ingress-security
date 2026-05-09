@@ -1,5 +1,5 @@
 [package]
-name         = "swe-edge-ingress-grpc"
+name         = "swe-edge-ingress-grpc-transport"
 version.workspace     = true
 edition.workspace     = true
 license.workspace     = true
@@ -34,7 +34,7 @@ hyper                    = { version = "1", features = ["http2", "server"] }
 hyper-util               = { version = "0.1", features = ["tokio"] }
 
 swe-edge-ingress-tls.workspace = true
-edge-domain              = { path = "../../domain" }
+edge-domain              = { path = "../../../domain" }
 sha2                     = "0.10"
 
 [dev-dependencies]

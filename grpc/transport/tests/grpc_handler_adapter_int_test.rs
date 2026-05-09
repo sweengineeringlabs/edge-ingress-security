@@ -22,7 +22,7 @@ use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
 use edge_domain::{Handler, HandlerError, HandlerRegistry};
-use swe_edge_ingress_grpc::{
+use swe_edge_ingress_grpc_transport::{
     GrpcHandlerAdapter, GrpcInboundError, GrpcHandlerRegistryDispatcher, TonicGrpcServer,
 };
 
