@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["main", "http/transport", "grpc/transport", "grpc/reflection", "tls"]
+members = ["gateway", "http/transport", "grpc/transport", "grpc/reflection", "tls"]
 
 [workspace.package]
 version      = "0.1.0"
@@ -34,7 +34,7 @@ swe-observ-processes    = { package = "swe_justobserv_processes", git = "ssh://g
 reqwest          = { version = "0.12", features = ["json"], default-features = false }
 
 # Workspace-internal domain crates
-swe-edge-ingress      = { package = "swe-edge-ingress-main",          path = "main" }
+swe-edge-ingress      = { package = "swe-edge-ingress-gateway",       path = "gateway" }
 swe-edge-ingress-http = { package = "swe-edge-ingress-http-transport", path = "http/transport" }
 swe-edge-ingress-grpc = { package = "swe-edge-ingress-grpc-transport", path = "grpc/transport" }
 swe-edge-ingress-grpc-reflection = { path = "grpc/reflection" }
