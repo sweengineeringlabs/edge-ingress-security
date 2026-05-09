@@ -29,8 +29,9 @@ axum.workspace        = true
 bytes.workspace       = true
 tracing.workspace     = true
 
-swe-edge-ingress-tls.workspace = true
-edge-domain  = { path = "../../../domain" }
+swe-edge-ingress-tls.workspace      = true
+swe-edge-ingress-verifier           = { path = "../../verifier" }
+edge-domain                         = { path = "../../../domain" }
 matchit      = "0.8"
 parking_lot.workspace = true
 hyper      = { version = "1", features = ["http1", "http2"] }

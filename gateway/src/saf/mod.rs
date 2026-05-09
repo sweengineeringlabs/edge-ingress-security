@@ -26,6 +26,7 @@ pub use swe_edge_ingress_grpc::{
     TonicGrpcServer, TonicServerError, MAX_MESSAGE_BYTES,
     DecodeFn as GrpcDecodeFn, EncodeFn as GrpcEncodeFn,
     GrpcHandlerAdapter, GrpcHandlerRegistryDispatcher,
+    GrpcInboundInterceptor, AuthorizationInterceptor, GrpcInboundInterceptorChain,
 };
 pub use swe_edge_ingress_tls::{IngressTlsConfig, IngressTlsError};
 pub use edge_domain::{Handler, HandlerError, HandlerRegistry};

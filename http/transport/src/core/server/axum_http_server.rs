@@ -5,10 +5,12 @@ use std::convert::Infallible;
 use std::sync::Arc;
 
 use axum::Router;
+use axum::http::StatusCode;
 use tokio::net::TcpListener;
 
 use crate::api::port::http_inbound::{HttpInbound, HttpInboundError};
 use edge_domain::RequestContext;
+use swe_edge_ingress_verifier::TokenVerifier;
 
 use crate::api::server::axum_http_server::{AxumHttpServer, AxumServerError, MAX_BODY_BYTES};
 use crate::api::value_object::{HttpBody, HttpMethod, HttpRequest, HttpResponse};
@@ -49,16 +51,22 @@ impl AxumHttpServer {
 
         if let Some(ref tls_cfg) = self.tls {
             tracing::info!(bind = %bind_addr, mtls = tls_cfg.is_mtls(), "HTTPS server listening");
-            serve_tls(listener, self.handler.clone(), self.body_limit, tls_cfg, shutdown).await
+            serve_tls(listener, self.handler.clone(), self.body_limit, self.bearer_verifier.clone(), tls_cfg, shutdown).await
         } else {
             tracing::info!(bind = %bind_addr, "HTTP server listening");
 
             let handler    = self.handler.clone();
             let body_limit = self.body_limit;
+            let verifier   = self.bearer_verifier.clone();
 
             let app = Router::new().fallback(move |req: axum::extract::Request| {
-                let handler = handler.clone();
+                let handler  = handler.clone();
+                let verifier = verifier.clone();
                 async move {
+                    let req = match verify_auth(req, verifier.as_deref()) {
+                        Ok(r)    => r,
+                        Err(rsp) => return rsp,
+                    };
                     match extract_request(req, body_limit).await {
                         Ok((http_req, ctx)) => match handler.handle(http_req, ctx).await {
                             Ok(resp) => build_response(resp),
@@ -83,6 +91,7 @@ async fn serve_tls<F>(
     listener:   TcpListener,
     handler:    Arc<dyn HttpInbound>,
     body_limit: usize,
+    verifier:   Option<Arc<dyn TokenVerifier>>,
     tls_cfg:    &IngressTlsConfig,
     shutdown:   F,
 ) -> Result<(), AxumServerError>
@@ -105,6 +114,7 @@ where
                 };
                 let acceptor = acceptor.clone();
                 let handler  = handler.clone();
+                let verifier = verifier.clone();
                 tokio::spawn(async move {
                     let tls = match acceptor.accept(stream).await {
                         Ok(s)  => s,
@@ -112,9 +122,14 @@ where
                     };
                     let io  = TokioIo::new(tls);
                     let svc = hyper::service::service_fn(move |req: http::Request<hyper::body::Incoming>| {
-                        let handler = handler.clone();
+                        let handler  = handler.clone();
+                        let verifier = verifier.clone();
                         async move {
                             let req  = req.map(axum::body::Body::new);
+                            let req  = match verify_auth(req, verifier.as_deref()) {
+                                Ok(r)    => r,
+                                Err(rsp) => return Ok::<_, Infallible>(rsp),
+                            };
                             let resp = match extract_request(req, body_limit).await {
                                 Ok((http_req, ctx)) => match handler.handle(http_req, ctx).await {
                                     Ok(resp) => build_response(resp),
@@ -138,6 +153,45 @@ where
     }
 
     Ok(())
+}
+
+// ── Bearer auth ───────────────────────────────────────────────────────────────
+
+fn verify_auth(
+    mut req:  axum::extract::Request,
+    verifier: Option<&dyn TokenVerifier>,
+) -> Result<axum::extract::Request, axum::response::Response> {
+    let Some(verifier) = verifier else { return Ok(req) };
+
+    let token = req
+        .headers()
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.strip_prefix("Bearer "))
+        .ok_or_else(|| {
+            axum::response::Response::builder()
+                .status(StatusCode::UNAUTHORIZED)
+                .body(axum::body::Body::from("missing or malformed Authorization header"))
+                .unwrap()
+        })?;
+
+    let claims = verifier.verify(token).map_err(|e| {
+        tracing::debug!(error = %e, "bearer token rejected");
+        axum::response::Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body(axum::body::Body::from("invalid token"))
+            .unwrap()
+    })?;
+
+    let ctx = RequestContext::authenticated(
+        claims.sub.clone().unwrap_or_default(),
+        claims.iss.clone(),
+        claims.custom.get("tenant_id")
+            .map(|v| v.to_string().trim_matches('"').to_string()),
+        claims.custom.iter().map(|(k, v)| (k.clone(), v.to_string())).collect(),
+    );
+    req.extensions_mut().insert(ctx);
+    Ok(req)
 }
 
 // ── Request extraction ────────────────────────────────────────────────────────
