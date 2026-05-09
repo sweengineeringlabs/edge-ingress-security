@@ -24,8 +24,8 @@ bytes.workspace       = true
 http         = "1"
 tower        = { version = "0.5", features = ["util"] }
 
-swe-edge-ingress-verifier = { path = "../../verifier" }
-edge-domain               = { path = "../../../domain" }
+swe-edge-ingress-verifier.workspace = true
+edge-domain.workspace               = true
 
 [dev-dependencies]
 tokio      = { workspace = true, features = ["rt-multi-thread", "macros"] }

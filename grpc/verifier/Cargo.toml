@@ -20,8 +20,8 @@ path = "src/lib.rs"
 thiserror.workspace   = true
 tracing.workspace     = true
 
-swe-edge-ingress-verifier          = { path = "../../verifier" }
-swe-edge-ingress-grpc-transport    = { path = "../transport" }
+swe-edge-ingress-verifier.workspace       = true
+swe-edge-ingress-grpc-transport.workspace = true
 
 [dev-dependencies]
 tokio      = { workspace = true, features = ["rt", "macros"] }

@@ -27,8 +27,8 @@ parking_lot.workspace    = true
 tracing.workspace        = true
 
 # Cross-workspace path dep on the inbound port + dispatcher.
-swe-edge-ingress-grpc    = { package = "swe-edge-ingress-grpc-transport", path = "../transport" }
-edge-domain              = { path = "../../../domain" }
+swe-edge-ingress-grpc.workspace = true
+edge-domain.workspace           = true
 
 [dev-dependencies]
 tokio          = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
@@ -39,8 +39,8 @@ http                     = "1"
 http-body-util.workspace = true
 hyper                    = { version = "1", features = ["http2", "client", "server"] }
 hyper-util               = { version = "0.1", features = ["tokio"] }
-swe-edge-ingress-grpc    = { package = "swe-edge-ingress-grpc-transport", path = "../transport" }
-edge-domain              = { path = "../../../domain" }
+swe-edge-ingress-grpc.workspace = true
+edge-domain.workspace           = true
 
 [lints]
 workspace = true

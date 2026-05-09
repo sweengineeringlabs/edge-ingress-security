@@ -42,10 +42,14 @@ swe_justobserv_context  = { git = "ssh://git@github.com/sweengineeringlabs/justo
 swe-observ-processes    = { package = "swe_justobserv_processes", git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 reqwest          = { version = "0.12", features = ["json"], default-features = false }
 
+# Cross-workspace git dep — domain lives in its own workspace root
+edge-domain = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+
 # Workspace-internal domain crates
 swe-edge-ingress      = { package = "swe-edge-ingress-gateway",       path = "gateway" }
 swe-edge-ingress-http = { package = "swe-edge-ingress-http-transport", path = "http/transport" }
 swe-edge-ingress-grpc = { package = "swe-edge-ingress-grpc-transport", path = "grpc/transport" }
+swe-edge-ingress-grpc-transport  = { path = "grpc/transport" }
 swe-edge-ingress-grpc-reflection = { path = "grpc/reflection" }
 swe-edge-ingress-tls             = { path = "tls" }
 swe-edge-ingress-verifier        = { path = "verifier" }
