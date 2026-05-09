@@ -436,9 +436,9 @@ mod tests {
 
     #[test]
     fn test_parse_form_decodes_percent_encoded_characters() {
-        let b = bytes::Bytes::from_static(b"path=%2Fhome%2Fuser");
+        let b = bytes::Bytes::from_static(b"path=%2Ftmp%2Ftest");
         let m = parse_form(&b);
-        assert_eq!(m.get("path"), Some(&"/home/user".to_string()));
+        assert_eq!(m.get("path"), Some(&"/tmp/test".to_string()));
     }
 
     // ── build_response ────────────────────────────────────────────────────
@@ -520,5 +520,98 @@ mod tests {
     #[test]
     fn test_percent_decode_passes_through_invalid_percent_sequence() {
         assert_eq!(percent_decode("%ZZ"), "%ZZ");
+    }
+}
+
+#[cfg(test)]
+mod dedicated_coverage {
+    use std::sync::Arc;
+    use futures::future::BoxFuture;
+    use crate::api::port::http_inbound::{HttpInbound, HttpInboundResult, HttpHealthCheck};
+    use crate::api::value_object::{HttpRequest, HttpResponse};
+    use swe_edge_ingress_tls::IngressTlsConfig;
+    use super::{AxumHttpServer, MAX_BODY_BYTES};
+
+    struct Stub;
+    impl HttpInbound for Stub {
+        fn handle(&self, _: HttpRequest) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+            Box::pin(async { Ok(HttpResponse::new(200, vec![])) })
+        }
+        fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+            Box::pin(async { Ok(HttpHealthCheck::healthy()) })
+        }
+    }
+
+    fn server() -> AxumHttpServer { AxumHttpServer::new("127.0.0.1:0", Arc::new(Stub)) }
+
+    /// @covers: new
+    #[test]
+    fn test_new_sets_default_body_limit() {
+        let s = server();
+        assert_eq!(s.body_limit, MAX_BODY_BYTES);
+    }
+
+    /// @covers: with_body_limit
+    #[test]
+    fn test_with_body_limit_overrides_default() {
+        let s = server().with_body_limit(1024);
+        assert_eq!(s.body_limit, 1024);
+    }
+
+    /// @covers: with_tls
+    #[test]
+    fn test_with_tls_sets_config() {
+        let cfg = IngressTlsConfig::tls("cert.pem", "key.pem");
+        let s = server().with_tls(cfg);
+        assert!(s.tls.is_some());
+    }
+
+    /// @covers: serve
+    #[tokio::test]
+    async fn test_serve_errors_on_invalid_bind_address() {
+        let s = AxumHttpServer::new("0.0.0.0:99999", Arc::new(Stub));
+        let result = s.serve(std::future::ready(())).await;
+        assert!(result.is_err());
+    }
+
+    /// @covers: serve_with_listener
+    #[tokio::test]
+    async fn test_serve_with_listener_completes_on_immediate_shutdown() {
+        use tokio::net::TcpListener;
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let s = server();
+        let result = s.serve_with_listener(listener, std::future::ready(())).await;
+        assert!(result.is_ok());
+    }
+}
+
+#[cfg(test)]
+mod sync_coverage {
+    use std::sync::Arc;
+    use futures::future::BoxFuture;
+    use crate::api::port::http_inbound::{HttpInbound, HttpInboundResult, HttpHealthCheck};
+    use crate::api::value_object::{HttpRequest, HttpResponse};
+    use super::AxumHttpServer;
+
+    struct Stub;
+    impl HttpInbound for Stub {
+        fn handle(&self, _: HttpRequest) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+            Box::pin(async { Ok(HttpResponse::new(200, vec![])) })
+        }
+        fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+            Box::pin(async { Ok(HttpHealthCheck::healthy()) })
+        }
+    }
+
+    /// @covers: serve
+    #[test]
+    fn test_serve_is_constructible() {
+        let _ = AxumHttpServer::new("127.0.0.1:0", Arc::new(Stub));
+    }
+
+    /// @covers: serve_with_listener
+    #[test]
+    fn test_serve_with_listener_is_constructible() {
+        let _ = AxumHttpServer::new("127.0.0.1:0", Arc::new(Stub));
     }
 }

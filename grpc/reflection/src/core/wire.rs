@@ -465,3 +465,25 @@ mod tests {
         assert_eq!(bytes.first().copied(), Some(0x22), "tag 4 wire 2 = 0x22");
     }
 }
+
+#[cfg(test)]
+mod dedicated_coverage {
+    use super::*;
+
+    /// @covers: encode_varint
+    #[test]
+    fn test_encode_varint_single_byte_values() {
+        let mut buf = Vec::new();
+        encode_varint(0, &mut buf);
+        assert_eq!(buf, [0x00]);
+        buf.clear();
+        encode_varint(127, &mut buf);
+        assert_eq!(buf, [0x7f]);
+    }
+
+    /// @covers: decode_varint
+    #[test]
+    fn test_decode_varint_returns_none_on_empty_slice() {
+        assert!(decode_varint(&[]).is_none());
+    }
+}

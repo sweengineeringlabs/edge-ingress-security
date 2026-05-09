@@ -71,3 +71,15 @@ mod tests {
         assert_eq!(parse_grpc_timeout("0S"), Some(Duration::ZERO));
     }
 }
+
+#[cfg(test)]
+mod sync_coverage {
+    use super::parse_grpc_timeout;
+    use std::time::Duration;
+
+    /// @covers: parse_grpc_timeout
+    #[test]
+    fn test_parse_grpc_timeout_seconds() {
+        assert_eq!(parse_grpc_timeout("1S"), Some(Duration::from_secs(1)));
+    }
+}

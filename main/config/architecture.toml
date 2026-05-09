@@ -1,0 +1,4 @@
+# SEA project configuration (L0)
+[project]
+name       = "swe-edge-ingress"
+workspaces = ["main", "http", "http/transport", "grpc", "grpc/transport", "grpc/reflection", "tls"]

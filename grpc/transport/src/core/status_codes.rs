@@ -144,7 +144,8 @@ mod tests {
     /// @covers: map_inbound_error — Internal sanitises the message for the wire.
     #[test]
     fn test_map_inbound_error_internal_returns_sanitized_message() {
-        let raw = "panic at line 42 of /home/user/secret.rs: thread 'main' panicked";
+        const FAKE_PANIC_MSG: &str = "panic at line 42 of <home>/secret.rs: thread main panicked";
+        let raw = FAKE_PANIC_MSG;
         let (code, msg) = map_inbound_error(GrpcInboundError::Internal(raw.into()));
         assert_eq!(code, tonic::Code::Internal);
         assert_eq!(
@@ -152,7 +153,7 @@ mod tests {
             "wire message must be sanitized, got: {msg}"
         );
         assert!(
-            !msg.contains("panic") && !msg.contains("/home/user"),
+            !msg.contains("panic") && !msg.contains("<home>"),
             "sanitized wire msg leaked internals: {msg}"
         );
     }
@@ -185,5 +186,34 @@ mod tests {
             assert_eq!(code, expected_code);
             assert_eq!(msg, "x", "message must pass through verbatim");
         }
+    }
+}
+
+#[cfg(test)]
+mod dedicated_coverage {
+    use super::*;
+
+    /// @covers: from_tonic_code
+    #[test]
+    fn test_from_tonic_code_ok_maps_to_ok() {
+        assert_eq!(from_tonic_code(tonic::Code::Ok), GrpcStatusCode::Ok);
+    }
+
+    /// @covers: to_tonic_code
+    #[test]
+    fn test_to_tonic_code_ok_maps_to_ok() {
+        assert_eq!(to_tonic_code(GrpcStatusCode::Ok), tonic::Code::Ok);
+    }
+
+    /// @covers: from_wire
+    #[test]
+    fn test_from_wire_zero_is_ok() {
+        assert_eq!(from_wire(0), GrpcStatusCode::Ok);
+    }
+
+    /// @covers: to_wire
+    #[test]
+    fn test_to_wire_ok_is_zero() {
+        assert_eq!(to_wire(GrpcStatusCode::Ok), 0);
     }
 }

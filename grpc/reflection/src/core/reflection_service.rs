@@ -674,3 +674,30 @@ mod tests {
     }
 
 }
+
+#[cfg(test)]
+mod dedicated_coverage {
+    use std::sync::Arc;
+    use edge_domain::HandlerRegistry;
+    use crate::api::types::Descriptor;
+    use super::ReflectionService;
+
+    fn empty_registry() -> Arc<HandlerRegistry<Vec<u8>, Vec<u8>>> {
+        Arc::new(HandlerRegistry::new())
+    }
+
+    /// @covers: ReflectionService::new
+    #[test]
+    fn test_new_creates_service_with_empty_descriptors() {
+        let svc = ReflectionService::new(empty_registry());
+        assert!(svc.descriptors.read().is_empty());
+    }
+
+    /// @covers: ReflectionService::add_descriptor
+    #[test]
+    fn test_add_descriptor_registers_one_entry() {
+        let svc = ReflectionService::new(empty_registry())
+            .add_descriptor(Descriptor { filename: "test.proto".into(), symbols: vec![], bytes: vec![] });
+        assert_eq!(svc.descriptors.read().len(), 1);
+    }
+}

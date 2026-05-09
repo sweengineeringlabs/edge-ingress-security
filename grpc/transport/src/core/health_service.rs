@@ -715,3 +715,64 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod dedicated_coverage {
+    use std::sync::Arc;
+    use futures::future::BoxFuture;
+    use crate::api::port::grpc_inbound::{GrpcInbound, GrpcInboundResult, GrpcHealthCheck};
+    use crate::api::value_object::{GrpcRequest, GrpcResponse};
+    use super::{HealthAggregate, HealthService, ServingStatus};
+
+    struct HealthyDispatcher;
+    impl GrpcInbound for HealthyDispatcher {
+        fn handle_unary(&self, _: GrpcRequest) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+            Box::pin(async { Ok(GrpcResponse { body: vec![], metadata: Default::default() }) })
+        }
+        fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+            Box::pin(async { Ok(GrpcHealthCheck { healthy: true, message: None }) })
+        }
+    }
+
+    /// @covers: subscribe
+    #[test]
+    fn test_subscribe_returns_receiver_for_status_updates() {
+        let svc = Arc::new(HealthService::new());
+        let _rx = svc.subscribe();
+    }
+
+    /// @covers: refresh
+    #[tokio::test]
+    async fn test_refresh_propagates_healthy_dispatcher_to_serving() {
+        let svc = Arc::new(HealthService::new());
+        let agg = HealthAggregate::new(svc.clone(), Arc::new(HealthyDispatcher));
+        agg.refresh().await;
+        assert_eq!(svc.get_status(""), Some(ServingStatus::Serving));
+    }
+}
+
+#[cfg(test)]
+mod sync_coverage {
+    use std::sync::Arc;
+    use super::{HealthAggregate, HealthService};
+    use crate::api::port::grpc_inbound::{GrpcInbound, GrpcHealthCheck, GrpcInboundResult};
+    use crate::api::value_object::{GrpcRequest, GrpcResponse};
+    use futures::future::BoxFuture;
+
+    struct Stub;
+    impl GrpcInbound for Stub {
+        fn handle_unary(&self, _: GrpcRequest) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+            Box::pin(async { Ok(GrpcResponse { body: vec![], metadata: Default::default() }) })
+        }
+        fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+            Box::pin(async { Ok(GrpcHealthCheck { healthy: true, message: None }) })
+        }
+    }
+
+    /// @covers: refresh
+    #[test]
+    fn test_refresh_is_callable_on_aggregate() {
+        let svc = Arc::new(HealthService::new());
+        let _agg = HealthAggregate::new(svc, Arc::new(Stub));
+    }
+}

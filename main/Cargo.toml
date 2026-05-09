@@ -1,5 +1,5 @@
 [package]
-name         = "swe-edge-ingress"
+name         = "swe-edge-ingress-main"
 version.workspace     = true
 edition.workspace     = true
 license.workspace     = true
@@ -15,6 +15,7 @@ application_type = "lib"
 service_type     = "gateway"
 
 [lib]
+name = "swe_edge_ingress"
 path = "src/lib.rs"
 
 [features]

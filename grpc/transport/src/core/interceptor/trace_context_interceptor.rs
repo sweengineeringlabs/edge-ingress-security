@@ -150,3 +150,14 @@ mod tests {
         ));
     }
 }
+
+#[cfg(test)]
+mod dedicated_coverage {
+    use super::TraceContextInterceptor;
+
+    /// @covers: new
+    #[test]
+    fn test_new_creates_interceptor() {
+        let _ = TraceContextInterceptor::new();
+    }
+}

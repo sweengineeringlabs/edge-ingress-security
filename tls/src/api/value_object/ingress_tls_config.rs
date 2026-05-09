@@ -65,3 +65,31 @@ impl IngressTlsConfig {
         self.client_ca_pem_path.is_some()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// @covers: IngressTlsConfig::tls
+    #[test]
+    fn test_tls_sets_cert_and_key_no_client_ca() {
+        let cfg = IngressTlsConfig::tls("cert.pem", "key.pem");
+        assert_eq!(cfg.cert_pem_path, "cert.pem");
+        assert_eq!(cfg.key_pem_path, "key.pem");
+        assert!(cfg.client_ca_pem_path.is_none());
+    }
+
+    /// @covers: IngressTlsConfig::mtls
+    #[test]
+    fn test_mtls_sets_client_ca() {
+        let cfg = IngressTlsConfig::mtls("cert.pem", "key.pem", "ca.pem");
+        assert_eq!(cfg.client_ca_pem_path.as_deref(), Some("ca.pem"));
+    }
+
+    /// @covers: IngressTlsConfig::is_mtls
+    #[test]
+    fn test_is_mtls_true_when_client_ca_set() {
+        assert!(IngressTlsConfig::mtls("c", "k", "ca").is_mtls());
+        assert!(!IngressTlsConfig::tls("c", "k").is_mtls());
+    }
+}

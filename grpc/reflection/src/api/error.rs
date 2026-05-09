@@ -20,3 +20,22 @@ pub enum ReflectionError {
     #[error("unknown reflection request field: {0}")]
     UnknownRequest(u32),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// @covers: ReflectionError::Malformed
+    #[test]
+    fn test_malformed_displays_message() {
+        let e = ReflectionError::Malformed("truncated body".into());
+        assert!(e.to_string().contains("truncated body"));
+    }
+
+    /// @covers: ReflectionError::UnknownRequest
+    #[test]
+    fn test_unknown_request_displays_field_number() {
+        let e = ReflectionError::UnknownRequest(99);
+        assert!(e.to_string().contains("99"));
+    }
+}
