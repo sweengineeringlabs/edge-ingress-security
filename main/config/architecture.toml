@@ -1,7 +1,13 @@
 # SEA project configuration (L0)
 [project]
 name       = "swe-edge-ingress"
-workspaces = ["gateway", "http", "http/transport", "grpc", "grpc/transport", "grpc/reflection", "tls"]
+workspaces = [
+    "gateway",
+    "http", "http/transport", "http/verifier",
+    "grpc", "grpc/transport", "grpc/reflection", "grpc/verifier",
+    "tls",
+    "verifier",
+]
 
 [whitelist]
 allow = ["main"]

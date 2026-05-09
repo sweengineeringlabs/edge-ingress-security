@@ -15,23 +15,14 @@ use tower::{Layer, Service};
 
 use crate::api::auth_error::HttpAuthError;
 use crate::api::bearer_layer::BearerLayer;
+use crate::api::bearer_service::BearerService;
 use crate::api::verified_claims::VerifiedClaims;
-use swe_edge_ingress_verifier::TokenVerifier;
 
 impl<S> Layer<S> for BearerLayer {
     type Service = BearerService<S>;
     fn layer(&self, inner: S) -> Self::Service {
         BearerService { inner, verifier: Arc::clone(&self.verifier) }
     }
-}
-
-/// Tower service wrapping an inner service `S` with bearer-token authentication.
-///
-/// Produced by [`BearerLayer`]; do not construct directly.
-#[derive(Clone)]
-pub struct BearerService<S> {
-    pub(crate) inner:    S,
-    pub(crate) verifier: Arc<dyn TokenVerifier>,
 }
 
 type BoxFuture<T> = Pin<Box<dyn Future<Output = T> + Send>>;
