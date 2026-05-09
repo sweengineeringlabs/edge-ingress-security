@@ -8,7 +8,7 @@ use tokio::sync::oneshot;
 
 use swe_edge_ingress_http::{
     AxumHttpServer, HttpHealthCheck, HttpInbound, HttpInboundError,
-    HttpInboundResult, HttpRequest, HttpResponse,
+    HttpInboundResult, HttpRequest, HttpResponse, RequestContext,
 };
 
 // ── Stub handlers ─────────────────────────────────────────────────────────────
@@ -16,7 +16,7 @@ use swe_edge_ingress_http::{
 struct EchoHandler;
 
 impl HttpInbound for EchoHandler {
-    fn handle(&self, req: HttpRequest) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    fn handle(&self, req: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
         Box::pin(async move {
             let body = format!("{} {}", req.method, req.url).into_bytes();
             Ok(HttpResponse::new(200, body))
@@ -30,7 +30,7 @@ impl HttpInbound for EchoHandler {
 struct NotFoundHandler;
 
 impl HttpInbound for NotFoundHandler {
-    fn handle(&self, _: HttpRequest) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    fn handle(&self, _: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
         Box::pin(async { Err(HttpInboundError::NotFound("gone".into())) })
     }
     fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
@@ -41,7 +41,7 @@ impl HttpInbound for NotFoundHandler {
 struct JsonEchoHandler;
 
 impl HttpInbound for JsonEchoHandler {
-    fn handle(&self, req: HttpRequest) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    fn handle(&self, req: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
         Box::pin(async move {
             let body = serde_json::to_vec(&serde_json::json!({
                 "received": req.body.is_some()

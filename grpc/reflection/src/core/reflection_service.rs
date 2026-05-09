@@ -7,7 +7,7 @@ use std::time::Duration;
 use futures::future::BoxFuture;
 use futures::StreamExt;
 
-use edge_domain::HandlerRegistry;
+use edge_domain::{HandlerRegistry, RequestContext};
 use swe_edge_ingress_grpc::{
     GrpcHealthCheck, GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcMessageStream,
     GrpcMetadata, GrpcRequest, GrpcResponse,
@@ -84,7 +84,7 @@ impl ReflectionService {
 }
 
 impl GrpcInbound for ReflectionService {
-    fn handle_unary(&self, request: GrpcRequest) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(&self, request: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move {
             if request.method.as_str() != REFLECTION_INFO_METHOD {
                 return Err(GrpcInboundError::Unimplemented(format!(
@@ -108,6 +108,7 @@ impl GrpcInbound for ReflectionService {
         method:    String,
         _metadata: GrpcMetadata,
         messages:  GrpcMessageStream,
+        _ctx:      RequestContext,
     ) -> BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
         Box::pin(async move {
             if method.as_str() != REFLECTION_INFO_METHOD {

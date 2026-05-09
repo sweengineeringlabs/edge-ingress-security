@@ -21,7 +21,7 @@ use tokio::sync::oneshot;
 
 use swe_edge_ingress_grpc_transport::{
     GrpcHealthCheck, GrpcInbound, GrpcInboundResult, GrpcMetadata, GrpcRequest, GrpcResponse,
-    GrpcServerConfig, GrpcServerConfigError, IngressTlsConfig, TonicGrpcServer,
+    GrpcServerConfig, GrpcServerConfigError, IngressTlsConfig, RequestContext, TonicGrpcServer,
 };
 
 // ── Stub handler with hit-recording ─────────────────────────────────────────
@@ -34,6 +34,7 @@ impl GrpcInbound for RecordingHandler {
     fn handle_unary(
         &self,
         req: GrpcRequest,
+        _ctx: RequestContext,
     ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         let hit = self.hit.clone();
         Box::pin(async move {

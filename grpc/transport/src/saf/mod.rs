@@ -27,4 +27,5 @@ pub use crate::api::value_object::{
     DEFAULT_MAX_MESSAGE_BYTES, PEER_CERT_FINGERPRINT_SHA256, PEER_CN, PEER_IDENTITY,
     PEER_SAN_DNS, PEER_SAN_URI, RESERVED_PEER_PREFIXES,
 };
+pub use edge_domain::RequestContext;
 pub use swe_edge_ingress_tls::{IngressTlsConfig, IngressTlsError};

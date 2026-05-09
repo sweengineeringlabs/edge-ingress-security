@@ -4,6 +4,8 @@ use std::pin::Pin;
 
 use futures::future::BoxFuture;
 
+use edge_domain::RequestContext;
+
 use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode};
 
 /// Result type for gRPC inbound operations.
@@ -79,7 +81,7 @@ impl GrpcHealthCheck {
 /// Handles inbound gRPC requests (server-side).
 pub trait GrpcInbound: Send + Sync {
     /// Handle a single unary request.
-    fn handle_unary(&self, request: GrpcRequest) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>>;
+    fn handle_unary(&self, request: GrpcRequest, ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>>;
 
     /// Handle a streaming request (client-streaming, server-streaming, or bidi).
     ///
@@ -98,6 +100,7 @@ pub trait GrpcInbound: Send + Sync {
         method: String,
         metadata: GrpcMetadata,
         messages: GrpcMessageStream,
+        ctx: RequestContext,
     ) -> BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
         Box::pin(async move {
             use futures::StreamExt;
@@ -107,13 +110,9 @@ pub trait GrpcInbound: Send + Sync {
                 Some(Err(e)) => return Err(e),
                 None         => vec![],
             };
-            // Synthesised request: deadline carried by the caller of handle_stream
-            // is preserved in metadata via grpc-timeout already; default here is
-            // the server-default that handle_stream had access to.  Long term the
-            // signature should accept a deadline; for now use a generous default.
             let req  = GrpcRequest::new(method, body, std::time::Duration::from_secs(30))
                 .with_metadata(metadata);
-            let resp = self.handle_unary(req).await?;
+            let resp = self.handle_unary(req, ctx).await?;
             let out: GrpcMessageStream = Box::pin(futures::stream::once(
                 futures::future::ready(Ok(resp.body)),
             ));

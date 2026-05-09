@@ -9,13 +9,15 @@ use crate::api::health_service::{
     HealthService, ServingStatus,
     HEALTH_CHECK_METHOD, HEALTH_WATCH_METHOD,
 };
+use edge_domain::RequestContext;
+
 use crate::api::port::grpc_inbound::{
     GrpcHealthCheck, GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcMessageStream,
 };
 use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode};
 
 impl GrpcInbound for HealthService {
-    fn handle_unary(&self, request: GrpcRequest) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(&self, request: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move {
             match request.method.as_str() {
                 HEALTH_CHECK_METHOD => self.handle_check(&request.body),
@@ -33,6 +35,7 @@ impl GrpcInbound for HealthService {
         method:    String,
         _metadata: GrpcMetadata,
         messages:  GrpcMessageStream,
+        _ctx:      RequestContext,
     ) -> BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
         Box::pin(async move {
             if method.as_str() != HEALTH_WATCH_METHOD {
@@ -43,7 +46,7 @@ impl GrpcInbound for HealthService {
                     None         => vec![],
                 };
                 let req  = GrpcRequest::new(method, body, Duration::from_secs(30));
-                let resp = self.handle_unary(req).await?;
+                let resp = self.handle_unary(req, RequestContext::unauthenticated()).await?;
                 let out: GrpcMessageStream = Box::pin(futures::stream::once(
                     futures::future::ready(Ok(resp.body)),
                 ));
@@ -161,6 +164,8 @@ mod tests {
     use std::time::Duration;
     use futures::future::BoxFuture;
 
+    use edge_domain::RequestContext;
+
     use crate::api::health_service::{HealthAggregate, HealthService, ServingStatus, HEALTH_CHECK_METHOD, HEALTH_WATCH_METHOD};
     use crate::api::port::grpc_inbound::{GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcHealthCheck, GrpcMessageStream};
     use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
@@ -206,7 +211,7 @@ mod tests {
             out
         };
         let req  = GrpcRequest::new(HEALTH_CHECK_METHOD, body, Duration::from_secs(1));
-        let resp = svc.handle_unary(req).await.expect("Check must succeed");
+        let resp = svc.handle_unary(req, RequestContext::unauthenticated()).await.expect("Check must succeed");
         assert_eq!(resp.body, encode_health_check_response(ServingStatus::Serving));
     }
 
@@ -215,7 +220,7 @@ mod tests {
     async fn test_health_aggregate_refresh_pushes_dispatcher_health_to_overall() {
         struct AlwaysHealthy;
         impl GrpcInbound for AlwaysHealthy {
-            fn handle_unary(&self, _: GrpcRequest) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+            fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
                 Box::pin(async { Ok(GrpcResponse { body: vec![], metadata: GrpcMetadata::default() }) })
             }
             fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {

@@ -17,7 +17,7 @@ use tokio::sync::oneshot;
 
 use swe_edge_ingress_grpc_transport::{
     GrpcHealthCheck, GrpcInbound, GrpcInboundResult, GrpcMetadata, GrpcRequest, GrpcResponse,
-    IngressTlsConfig, TonicGrpcServer,
+    IngressTlsConfig, RequestContext, TonicGrpcServer,
 };
 
 // ── Stub handler ─────────────────────────────────────────────────────────────
@@ -28,6 +28,7 @@ impl GrpcInbound for EchoHandler {
     fn handle_unary(
         &self,
         req: GrpcRequest,
+        _ctx: RequestContext,
     ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move {
             Ok(GrpcResponse { body: req.body, metadata: GrpcMetadata::default() })

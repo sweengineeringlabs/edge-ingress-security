@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use edge_domain::{HandlerError, HandlerRegistry};
+use edge_domain::{HandlerError, HandlerRegistry, RequestContext};
 use futures::future::BoxFuture;
 
 use crate::api::handler_dispatch::GrpcHandlerRegistryDispatcher;
@@ -15,6 +15,7 @@ impl GrpcInbound for GrpcHandlerRegistryDispatcher {
     fn handle_unary(
         &self,
         request: GrpcRequest,
+        ctx: RequestContext,
     ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         let registry = self.registry.clone();
         Box::pin(async move {
@@ -27,7 +28,7 @@ impl GrpcInbound for GrpcHandlerRegistryDispatcher {
                     )));
                 }
             };
-            match handler.execute(request.body).await {
+            match handler.execute(request.body, ctx).await {
                 Ok(bytes) => Ok(GrpcResponse {
                     body:     bytes,
                     metadata: GrpcMetadata::default(),
@@ -73,7 +74,7 @@ mod tests {
     use std::sync::Arc;
 
     use async_trait::async_trait;
-    use edge_domain::{Handler, HandlerError, HandlerRegistry};
+    use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
 
     use crate::api::handler_adapter::GrpcHandlerAdapter;
     use crate::api::handler_dispatch::GrpcHandlerRegistryDispatcher;
@@ -98,7 +99,7 @@ mod tests {
     impl Handler<TestReq, TestResp> for DoublingHandler {
         fn id(&self) -> &str { "/pkg.Service/Double" }
         fn pattern(&self) -> &str { "test" }
-        async fn execute(&self, req: TestReq) -> Result<TestResp, HandlerError> {
+        async fn execute(&self, req: TestReq, _ctx: RequestContext) -> Result<TestResp, HandlerError> {
             Ok(TestResp { value: req.value.wrapping_mul(2) })
         }
         async fn health_check(&self) -> bool { true }
@@ -115,7 +116,7 @@ mod tests {
         let d = fresh_dispatcher();
         d.register(GrpcHandlerAdapter::new(Arc::new(DoublingHandler), decode_test_req, encode_test_resp));
         let req = GrpcRequest::new("/pkg.Service/Double", 21u32.to_be_bytes().to_vec(), Duration::from_secs(1));
-        let resp = d.handle_unary(req).await.expect("dispatch ok");
+        let resp = d.handle_unary(req, RequestContext::unauthenticated()).await.expect("dispatch ok");
         let out = u32::from_be_bytes([resp.body[0], resp.body[1], resp.body[2], resp.body[3]]);
         assert_eq!(out, 42);
     }
@@ -125,7 +126,7 @@ mod tests {
     async fn test_handle_unary_returns_unimplemented_when_method_not_registered() {
         let d = fresh_dispatcher();
         let req = GrpcRequest::new("/pkg.Service/NotThere", vec![], Duration::from_secs(1));
-        let err = d.handle_unary(req).await.expect_err("must error");
+        let err = d.handle_unary(req, RequestContext::unauthenticated()).await.expect_err("must error");
         assert!(matches!(err, GrpcInboundError::Unimplemented(_)));
     }
 

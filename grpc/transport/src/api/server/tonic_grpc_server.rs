@@ -143,13 +143,14 @@ impl TonicGrpcServer {
 mod tests {
     use std::sync::Arc;
     use super::*;
+    use edge_domain::RequestContext;
     use crate::api::port::grpc_inbound::{GrpcInbound, GrpcHealthCheck, GrpcInboundResult};
     use crate::api::value_object::{GrpcRequest, GrpcResponse, GrpcMetadata};
     use futures::future::BoxFuture;
 
     struct DummyHandler;
     impl GrpcInbound for DummyHandler {
-        fn handle_unary(&self, _: GrpcRequest) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
             Box::pin(async { Ok(GrpcResponse { body: vec![], metadata: GrpcMetadata::default() }) })
         }
         fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {

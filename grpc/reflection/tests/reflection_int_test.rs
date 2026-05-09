@@ -31,7 +31,7 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
-use edge_domain::{Handler, HandlerError, HandlerRegistry};
+use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
 use swe_edge_ingress_grpc::{
     GrpcHandlerAdapter, GrpcInboundError, GrpcHandlerRegistryDispatcher, TonicGrpcServer,
     REFLECTION_ENABLED_WARN_MSG,
@@ -60,7 +60,7 @@ struct EchoHandler;
 impl Handler<EchoReq, EchoResp> for EchoHandler {
     fn id(&self) -> &str { "/pkg.Demo/Echo" }
     fn pattern(&self) -> &str { "demo" }
-    async fn execute(&self, req: EchoReq) -> Result<EchoResp, HandlerError> {
+    async fn execute(&self, req: EchoReq, _ctx: RequestContext) -> Result<EchoResp, HandlerError> {
         Ok(EchoResp(req.0))
     }
     async fn health_check(&self) -> bool { true }
@@ -82,12 +82,12 @@ struct ReflectionHandlerWrapper {
 impl Handler<Vec<u8>, Vec<u8>> for ReflectionHandlerWrapper {
     fn id(&self) -> &str { REFLECTION_INFO_METHOD }
     fn pattern(&self) -> &str { "reflection" }
-    async fn execute(&self, req: Vec<u8>) -> Result<Vec<u8>, HandlerError> {
+    async fn execute(&self, req: Vec<u8>, _ctx: RequestContext) -> Result<Vec<u8>, HandlerError> {
         use swe_edge_ingress_grpc::GrpcInbound;
         use swe_edge_ingress_grpc::GrpcRequest;
         use std::time::Duration;
         let r = GrpcRequest::new(REFLECTION_INFO_METHOD, req, Duration::from_secs(5));
-        match self.service.handle_unary(r).await {
+        match self.service.handle_unary(r, RequestContext::unauthenticated()).await {
             Ok(resp) => Ok(resp.body),
             Err(e) => Err(HandlerError::ExecutionFailed(e.to_string())),
         }

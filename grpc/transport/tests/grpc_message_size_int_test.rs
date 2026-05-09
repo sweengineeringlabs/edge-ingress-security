@@ -15,7 +15,7 @@ use tokio::sync::oneshot;
 
 use swe_edge_ingress_grpc_transport::{
     GrpcHealthCheck, GrpcInbound, GrpcInboundResult, GrpcMetadata, GrpcRequest, GrpcResponse,
-    TonicGrpcServer,
+    RequestContext, TonicGrpcServer,
 };
 
 struct GuardedHandler {
@@ -26,6 +26,7 @@ impl GrpcInbound for GuardedHandler {
     fn handle_unary(
         &self,
         req: GrpcRequest,
+        _ctx: RequestContext,
     ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         let hit = self.hit.clone();
         Box::pin(async move {

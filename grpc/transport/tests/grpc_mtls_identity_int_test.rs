@@ -21,7 +21,7 @@ use tokio::sync::oneshot;
 
 use swe_edge_ingress_grpc_transport::{
     GrpcHealthCheck, GrpcInbound, GrpcInboundResult, GrpcMetadata, GrpcRequest, GrpcResponse,
-    IngressTlsConfig, TonicGrpcServer, PEER_CERT_FINGERPRINT_SHA256, PEER_CN, PEER_SAN_DNS,
+    IngressTlsConfig, RequestContext, TonicGrpcServer, PEER_CERT_FINGERPRINT_SHA256, PEER_CN, PEER_SAN_DNS,
 };
 
 // ── Capturing handler ───────────────────────────────────────────────────────
@@ -34,6 +34,7 @@ impl GrpcInbound for CapturingHandler {
     fn handle_unary(
         &self,
         req: GrpcRequest,
+        _ctx: RequestContext,
     ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         let captured = self.captured.clone();
         Box::pin(async move {

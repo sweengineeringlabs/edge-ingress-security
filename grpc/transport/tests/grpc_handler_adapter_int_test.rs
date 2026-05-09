@@ -21,7 +21,7 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
-use edge_domain::{Handler, HandlerError, HandlerRegistry};
+use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
 use swe_edge_ingress_grpc_transport::{
     GrpcHandlerAdapter, GrpcInboundError, GrpcHandlerRegistryDispatcher, TonicGrpcServer,
 };
@@ -50,7 +50,7 @@ struct TripleHandler;
 impl Handler<TripleReq, TripleResp> for TripleHandler {
     fn id(&self) -> &str { "/pkg.Math/Triple" }
     fn pattern(&self) -> &str { "Math" }
-    async fn execute(&self, req: TripleReq) -> Result<TripleResp, HandlerError> {
+    async fn execute(&self, req: TripleReq, _ctx: RequestContext) -> Result<TripleResp, HandlerError> {
         Ok(TripleResp { value: req.value.wrapping_mul(3) })
     }
     async fn health_check(&self) -> bool { true }

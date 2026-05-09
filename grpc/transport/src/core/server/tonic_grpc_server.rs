@@ -16,6 +16,8 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
 
+use edge_domain::RequestContext;
+
 use crate::api::audit_sink::{AuditEvent, AuditSink};
 use crate::api::interceptor::GrpcInboundInterceptorChain;
 use crate::api::port::grpc_inbound::{GrpcInbound, GrpcInboundError, GrpcMessageStream};
@@ -341,6 +343,24 @@ async fn dispatch(
     // Interceptors may have mutated headers; pull them back.
     let merged_headers = intercept_req.metadata.headers.clone();
 
+    // Build per-request auth context from what the interceptors resolved.
+    // For mTLS the peer CN lands in merged_headers[PEER_CN]; JWT-based
+    // interceptors may inject x-edge-subject / x-edge-issuer / x-edge-tenant-id.
+    let ctx = if interceptors.contains_authorization() {
+        let subject = merged_headers.get(PEER_CN)
+            .or_else(|| merged_headers.get("x-edge-subject"))
+            .cloned()
+            .unwrap_or_default();
+        RequestContext::authenticated(
+            subject,
+            merged_headers.get("x-edge-issuer").cloned(),
+            merged_headers.get("x-edge-tenant-id").cloned(),
+            merged_headers.iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
+        )
+    } else {
+        RequestContext::unauthenticated()
+    };
+
     // Race the handler future against the deadline — past-deadline
     // mid-handler is a server-side `DeadlineExceeded` and must NOT
     // propagate handler partial output.
@@ -348,6 +368,7 @@ async fn dispatch(
         method.clone(),
         GrpcMetadata { headers: merged_headers },
         message_stream,
+        ctx,
     );
     let cancel_fut  = cancel.cancelled();
 
@@ -753,7 +774,7 @@ mod tests {
 
     struct DummyHandler;
     impl GrpcInbound for DummyHandler {
-        fn handle_unary(&self, _: GrpcRequest) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
             Box::pin(async { Ok(GrpcResponse { body: vec![], metadata: GrpcMetadata::default() }) })
         }
         fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
@@ -856,13 +877,14 @@ mod dedicated_coverage {
     use std::sync::Arc;
     use futures::future::BoxFuture;
     use async_trait::async_trait;
+    use edge_domain::RequestContext;
     use crate::api::port::grpc_inbound::{GrpcInbound, GrpcHealthCheck, GrpcInboundResult};
     use crate::api::value_object::{GrpcRequest, GrpcResponse, CompressionMode};
     use super::TonicGrpcServer;
 
     struct Stub;
     impl GrpcInbound for Stub {
-        fn handle_unary(&self, _: GrpcRequest) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
             Box::pin(async { Ok(GrpcResponse { body: vec![], metadata: Default::default() }) })
         }
         fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
@@ -940,13 +962,14 @@ mod dedicated_coverage {
 mod sync_coverage {
     use std::sync::Arc;
     use futures::future::BoxFuture;
+    use edge_domain::RequestContext;
     use crate::api::port::grpc_inbound::{GrpcInbound, GrpcHealthCheck, GrpcInboundResult};
     use crate::api::value_object::{GrpcRequest, GrpcResponse};
     use super::TonicGrpcServer;
 
     struct Stub;
     impl GrpcInbound for Stub {
-        fn handle_unary(&self, _: GrpcRequest) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
             Box::pin(async { Ok(GrpcResponse { body: vec![], metadata: Default::default() }) })
         }
         fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {

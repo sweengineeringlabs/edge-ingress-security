@@ -8,6 +8,8 @@ use axum::Router;
 use tokio::net::TcpListener;
 
 use crate::api::port::http_inbound::{HttpInbound, HttpInboundError};
+use edge_domain::RequestContext;
+
 use crate::api::server::axum_http_server::{AxumHttpServer, AxumServerError, MAX_BODY_BYTES};
 use crate::api::value_object::{HttpBody, HttpMethod, HttpRequest, HttpResponse};
 use swe_edge_ingress_tls::IngressTlsConfig;
@@ -58,7 +60,7 @@ impl AxumHttpServer {
                 let handler = handler.clone();
                 async move {
                     match extract_request(req, body_limit).await {
-                        Ok(http_req) => match handler.handle(http_req).await {
+                        Ok((http_req, ctx)) => match handler.handle(http_req, ctx).await {
                             Ok(resp) => build_response(resp),
                             Err(e)   => error_response(e),
                         },
@@ -114,7 +116,7 @@ where
                         async move {
                             let req  = req.map(axum::body::Body::new);
                             let resp = match extract_request(req, body_limit).await {
-                                Ok(http_req) => match handler.handle(http_req).await {
+                                Ok((http_req, ctx)) => match handler.handle(http_req, ctx).await {
                                     Ok(resp) => build_response(resp),
                                     Err(e)   => error_response(e),
                                 },
@@ -143,19 +145,27 @@ where
 async fn extract_request(
     req: axum::extract::Request,
     body_limit: usize,
-) -> Result<HttpRequest, axum::response::Response> {
-    let method  = map_method(req.method());
-    let url     = req.uri().to_string();
-    let query   = parse_query(req.uri().query());
-    let headers = collect_headers(req.headers());
+) -> Result<(HttpRequest, RequestContext), axum::response::Response> {
+    let (parts, body) = req.into_parts();
+
+    // Read RequestContext inserted by upstream auth/trace middleware.
+    let ctx = parts.extensions
+        .get::<RequestContext>()
+        .cloned()
+        .unwrap_or_default();
+
+    let method  = map_method(&parts.method);
+    let url     = parts.uri.to_string();
+    let query   = parse_query(parts.uri.query());
+    let headers = collect_headers(&parts.headers);
     let ct      = headers.get("content-type").map(|s| s.as_str()).unwrap_or("").to_owned();
 
-    let bytes = axum::body::to_bytes(req.into_body(), body_limit)
+    let bytes = axum::body::to_bytes(axum::body::Body::new(body), body_limit)
         .await
         .map_err(|_| payload_too_large())?;
 
     let body = build_body(&bytes, &ct);
-    Ok(HttpRequest { method, url, headers, query, body, timeout: None })
+    Ok((HttpRequest { method, url, headers, query, body, timeout: None }, ctx))
 }
 
 fn map_method(m: &axum::http::Method) -> HttpMethod {
@@ -469,6 +479,7 @@ mod tests {
 #[cfg(test)]
 mod dedicated_coverage {
     use std::sync::Arc;
+    use edge_domain::RequestContext;
     use futures::future::BoxFuture;
     use crate::api::port::http_inbound::{HttpInbound, HttpInboundResult, HttpHealthCheck};
     use crate::api::value_object::{HttpRequest, HttpResponse};
@@ -477,7 +488,7 @@ mod dedicated_coverage {
 
     struct Stub;
     impl HttpInbound for Stub {
-        fn handle(&self, _: HttpRequest) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+        fn handle(&self, _: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
             Box::pin(async { Ok(HttpResponse::new(200, vec![])) })
         }
         fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
@@ -531,6 +542,7 @@ mod dedicated_coverage {
 #[cfg(test)]
 mod sync_coverage {
     use std::sync::Arc;
+    use edge_domain::RequestContext;
     use futures::future::BoxFuture;
     use crate::api::port::http_inbound::{HttpInbound, HttpInboundResult, HttpHealthCheck};
     use crate::api::value_object::{HttpRequest, HttpResponse};
@@ -538,7 +550,7 @@ mod sync_coverage {
 
     struct Stub;
     impl HttpInbound for Stub {
-        fn handle(&self, _: HttpRequest) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+        fn handle(&self, _: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
             Box::pin(async { Ok(HttpResponse::new(200, vec![])) })
         }
         fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {

@@ -14,6 +14,6 @@ pub use crate::api::rate_limiter::{RateLimiter, RateLimiterBuilder, RateLimiterS
 pub use builder::{file_input, passthrough_validator};
 
 // Domain crate re-exports
-pub use swe_edge_ingress_http::{HttpAuth, HttpBody, FormPart, HttpConfig, HttpHealthCheck, HttpMethod, HttpRequest, HttpResponse, HttpInbound, HttpInboundError, HttpInboundResult, AxumHttpServer, AxumServerError, MAX_BODY_BYTES};
+pub use swe_edge_ingress_http::{HttpAuth, HttpBody, FormPart, HttpConfig, HttpHealthCheck, HttpMethod, HttpRequest, HttpResponse, HttpInbound, HttpInboundError, HttpInboundResult, AxumHttpServer, AxumServerError, MAX_BODY_BYTES, RequestContext};
 pub use swe_edge_ingress_grpc::{GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode, GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcHealthCheck, GrpcMessageStream, TonicGrpcServer, TonicServerError, MAX_MESSAGE_BYTES};
 pub use swe_edge_ingress_tls::{IngressTlsConfig, IngressTlsError};

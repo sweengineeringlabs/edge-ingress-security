@@ -2,41 +2,35 @@
 
 use std::sync::Arc;
 
-use edge_domain::{Handler, HandlerError, HandlerRegistry};
+use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
 use futures::future::BoxFuture;
 
-use crate::api::handler_adapter::HttpHandlerAdapter;
-use crate::api::handler_dispatch::{HttpDispatcherError, HttpHandlerRegistryDispatcher};
+use crate::api::handler_dispatch::HttpHandlerRegistryDispatcher;
 use crate::api::port::http_inbound::{
     HttpHealthCheck, HttpInbound, HttpInboundError, HttpInboundResult,
 };
 use crate::api::value_object::{HttpRequest, HttpResponse};
 
-
 impl HttpInbound for HttpHandlerRegistryDispatcher {
-    fn handle(&self, request: HttpRequest) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    fn handle(&self, request: HttpRequest, ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
         Box::pin(async move {
             let path = path_from_url(&request.url);
             let id = {
                 let router = self.router.read();
                 match router.at(&path) {
                     Ok(m)  => m.value.clone(),
-                    Err(_) => {
-                        return Err(HttpInboundError::NotFound(format!(
-                            "no handler registered for {path}"
-                        )));
-                    }
+                    Err(_) => return Err(HttpInboundError::NotFound(
+                        format!("no handler registered for {path}")
+                    )),
                 }
             };
             let handler = match self.registry.get(&id) {
                 Some(h) => h,
-                None    => {
-                    return Err(HttpInboundError::Internal(format!(
-                        "route matched `{id}` but handler was not found in registry"
-                    )));
-                }
+                None    => return Err(HttpInboundError::Internal(
+                    format!("route matched `{id}` but handler was not found in registry")
+                )),
             };
-            match handler.execute(request).await {
+            match handler.execute(request, ctx).await {
                 Ok(resp) => Ok(resp),
                 Err(e)   => Err(map_handler_error(e)),
             }
@@ -89,7 +83,7 @@ mod tests {
     use std::sync::Arc;
 
     use async_trait::async_trait;
-    use edge_domain::{Handler, HandlerError, HandlerRegistry};
+    use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
 
     use super::*;
     use crate::api::handler_adapter::HttpHandlerAdapter;
@@ -101,32 +95,53 @@ mod tests {
     impl Handler<HttpRequest, HttpResponse> for PingHandler {
         fn id(&self) -> &str { "ping" }
         fn pattern(&self) -> &str { "/ping" }
-        async fn execute(&self, _: HttpRequest) -> Result<HttpResponse, HandlerError> {
+        async fn execute(&self, _: HttpRequest, _ctx: RequestContext) -> Result<HttpResponse, HandlerError> {
             Ok(HttpResponse { status: 200, headers: Default::default(), body: Default::default() })
         }
         async fn health_check(&self) -> bool { true }
         fn as_any(&self) -> &dyn Any { self }
     }
 
-    fn fresh_dispatcher() -> HttpHandlerRegistryDispatcher {
+    fn fresh() -> HttpHandlerRegistryDispatcher {
         HttpHandlerRegistryDispatcher::new(Arc::new(HandlerRegistry::new()))
     }
+
+    fn ctx() -> RequestContext { RequestContext::unauthenticated() }
 
     /// @covers: new — starts empty.
     #[test]
     fn test_new_dispatcher_starts_empty() {
-        assert!(fresh_dispatcher().registry().is_empty());
+        assert!(fresh().registry().is_empty());
     }
 
     /// @covers: register — adds adapter.
     #[test]
     fn test_register_adds_handler() {
-        fn decode_req(req: &HttpRequest) -> Result<HttpRequest, HttpInboundError> { Ok(req.clone()) }
-        fn encode_resp(r: HttpResponse) -> HttpResponse { r }
-        let d = fresh_dispatcher();
-        d.register(HttpHandlerAdapter::new(Arc::new(PingHandler), decode_req, encode_resp))
-            .expect("register ok");
+        fn dec(req: &HttpRequest) -> Result<HttpRequest, HttpInboundError> { Ok(req.clone()) }
+        fn enc(r: HttpResponse) -> HttpResponse { r }
+        let d = fresh();
+        d.register(HttpHandlerAdapter::new(Arc::new(PingHandler), dec, enc)).expect("ok");
         assert_eq!(d.registry().len(), 1);
+    }
+
+    /// @covers: handle — dispatches to registered handler.
+    #[tokio::test]
+    async fn test_handle_dispatches_to_registered_handler() {
+        fn dec(req: &HttpRequest) -> Result<HttpRequest, HttpInboundError> { Ok(req.clone()) }
+        fn enc(r: HttpResponse) -> HttpResponse { r }
+        let d = fresh();
+        d.register(HttpHandlerAdapter::new(Arc::new(PingHandler), dec, enc)).expect("ok");
+        let req = HttpRequest::get("/ping");
+        let resp = d.handle(req, ctx()).await.expect("handle ok");
+        assert_eq!(resp.status, 200);
+    }
+
+    /// @covers: handle — returns NotFound for unknown route.
+    #[tokio::test]
+    async fn test_handle_returns_not_found_for_unknown_route() {
+        let d = fresh();
+        let err = d.handle(HttpRequest::get("/nope"), ctx()).await.unwrap_err();
+        assert!(matches!(err, HttpInboundError::NotFound(_)));
     }
 
     /// @covers: map_handler_error — Unsupported maps to NotFound.

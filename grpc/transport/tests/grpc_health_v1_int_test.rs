@@ -192,7 +192,7 @@ async fn test_health_check_returns_not_found_for_unregistered_service_over_grpc_
 #[tokio::test]
 async fn test_health_watch_streams_initial_snapshot_then_status_change() {
     use futures::StreamExt;
-    use swe_edge_ingress_grpc_transport::{GrpcInbound, GrpcMessageStream, GrpcMetadata};
+    use swe_edge_ingress_grpc_transport::{GrpcInbound, GrpcMessageStream, GrpcMetadata, RequestContext};
 
     let health = Arc::new(HealthService::new());
     health.set_status("pkg.A", ServingStatus::Serving);
@@ -203,7 +203,7 @@ async fn test_health_watch_streams_initial_snapshot_then_status_change() {
         Box::pin(futures::stream::once(futures::future::ready(Ok(request_body))));
 
     let (mut stream, _meta) = health
-        .handle_stream(HEALTH_WATCH_METHOD.to_string(), GrpcMetadata::default(), messages)
+        .handle_stream(HEALTH_WATCH_METHOD.to_string(), GrpcMetadata::default(), messages, RequestContext::unauthenticated())
         .await
         .expect("handle_stream must not fail");
 

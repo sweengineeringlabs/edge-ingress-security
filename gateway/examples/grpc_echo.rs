@@ -12,7 +12,7 @@ use std::sync::Arc;
 
 use swe_edge_ingress::{
     DaemonRunner, GrpcHealthCheck, GrpcInbound, GrpcInboundResult, GrpcMetadata, GrpcRequest,
-    GrpcResponse, TonicGrpcServer,
+    GrpcResponse, RequestContext, TonicGrpcServer,
 };
 
 struct EchoHandler;
@@ -21,6 +21,7 @@ impl GrpcInbound for EchoHandler {
     fn handle_unary(
         &self,
         req: GrpcRequest,
+        _ctx: RequestContext,
     ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move {
             Ok(GrpcResponse {

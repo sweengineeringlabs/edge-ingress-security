@@ -13,6 +13,8 @@ use axum::body::Body;
 use axum::http::{Request, Response, StatusCode};
 use tower::{Layer, Service};
 
+use edge_domain::RequestContext;
+
 use crate::api::auth_error::HttpAuthError;
 use crate::api::bearer_layer::BearerLayer;
 use crate::api::bearer_service::BearerService;
@@ -53,6 +55,17 @@ where
                 Ok(token) => match verifier.verify(token) {
                     Err(e) => Ok(auth_error_response(HttpAuthError::InvalidToken(e))),
                     Ok(claims) => {
+                        // Build RequestContext from verified claims and insert for downstream.
+                        let ctx = RequestContext::authenticated(
+                            claims.sub.clone().unwrap_or_default(),
+                            claims.iss.clone(),
+                            claims.custom.get("tenant_id")
+                                .map(|v| v.to_string().trim_matches('"').to_string()),
+                            claims.custom.iter()
+                                .map(|(k, v)| (k.clone(), v.to_string()))
+                                .collect(),
+                        );
+                        req.extensions_mut().insert(ctx);
                         req.extensions_mut().insert(VerifiedClaims(claims));
                         inner.call(req).await
                     }
@@ -88,7 +101,7 @@ mod tests {
     use super::*;
     use axum::http::StatusCode;
     use axum::{routing::get, Router};
-    use swe_edge_ingress_verifier::{Claims, VerifierError};
+    use swe_edge_ingress_verifier::{Claims, TokenVerifier, VerifierError};
     use tower::ServiceExt;
 
     struct AlwaysOk;

@@ -14,7 +14,7 @@ use tokio::sync::oneshot;
 
 use swe_edge_ingress_http::{
     AxumHttpServer, HttpHealthCheck, HttpInbound, HttpInboundResult, HttpRequest, HttpResponse,
-    IngressTlsConfig,
+    IngressTlsConfig, RequestContext,
 };
 
 // ── Stub handler ─────────────────────────────────────────────────────────────
@@ -22,7 +22,7 @@ use swe_edge_ingress_http::{
 struct EchoHandler;
 
 impl HttpInbound for EchoHandler {
-    fn handle(&self, req: HttpRequest) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    fn handle(&self, req: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
         Box::pin(async move {
             let body = format!("{} {}", req.method, req.url).into_bytes();
             Ok(HttpResponse::new(200, body))

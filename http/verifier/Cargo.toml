@@ -25,6 +25,7 @@ http         = "1"
 tower        = { version = "0.5", features = ["util"] }
 
 swe-edge-ingress-verifier = { path = "../../verifier" }
+edge-domain               = { path = "../../../domain" }
 
 [dev-dependencies]
 tokio      = { workspace = true, features = ["rt-multi-thread", "macros"] }

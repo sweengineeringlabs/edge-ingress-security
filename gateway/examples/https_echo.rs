@@ -21,7 +21,7 @@ use std::sync::Arc;
 
 use swe_edge_ingress::{
     AxumHttpServer, HttpHealthCheck, HttpInbound, HttpInboundError, HttpInboundResult,
-    HttpRequest, HttpResponse, IngressTlsConfig,
+    HttpRequest, HttpResponse, IngressTlsConfig, RequestContext,
 };
 
 struct EchoHandler;
@@ -30,6 +30,7 @@ impl HttpInbound for EchoHandler {
     fn handle(
         &self,
         req: HttpRequest,
+        _ctx: RequestContext,
     ) -> futures::future::BoxFuture<'_, HttpInboundResult<HttpResponse>> {
         Box::pin(async move {
             let body = serde_json::json!({

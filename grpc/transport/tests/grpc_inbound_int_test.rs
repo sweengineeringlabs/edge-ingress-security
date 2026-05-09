@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use swe_edge_ingress_grpc_transport::{
     GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode,
-    GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcHealthCheck,
+    GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcHealthCheck, RequestContext,
 };
 use futures::future::BoxFuture;
 
@@ -12,7 +12,7 @@ use futures::future::BoxFuture;
 struct EchoGrpcHandler;
 
 impl GrpcInbound for EchoGrpcHandler {
-    fn handle_unary(&self, _request: GrpcRequest) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(&self, _request: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async {
             Ok(GrpcResponse { body: vec![0x00], metadata: GrpcMetadata::default() })
         })
@@ -27,7 +27,7 @@ impl GrpcInbound for EchoGrpcHandler {
 struct FailingGrpcHandler;
 
 impl GrpcInbound for FailingGrpcHandler {
-    fn handle_unary(&self, _request: GrpcRequest) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(&self, _request: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async { Err(GrpcInboundError::Unavailable("service offline".into())) })
     }
 
@@ -40,7 +40,7 @@ impl GrpcInbound for FailingGrpcHandler {
 async fn test_grpc_inbound_handle_unary_returns_response() {
     let handler = EchoGrpcHandler;
     let req = GrpcRequest::new("pkg.Service/Method", vec![0x08, 0x01], Duration::from_secs(5));
-    let resp = handler.handle_unary(req).await.unwrap();
+    let resp = handler.handle_unary(req, RequestContext::unauthenticated()).await.unwrap();
     assert!(!resp.body.is_empty());
 }
 
@@ -56,7 +56,7 @@ async fn test_grpc_inbound_health_check_returns_healthy() {
 async fn test_grpc_inbound_unavailable_returns_error() {
     let handler = FailingGrpcHandler;
     let req = GrpcRequest::new("pkg.Service/Method", vec![], Duration::from_secs(5));
-    let result = handler.handle_unary(req).await;
+    let result = handler.handle_unary(req, RequestContext::unauthenticated()).await;
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), GrpcInboundError::Unavailable(_)));
 }

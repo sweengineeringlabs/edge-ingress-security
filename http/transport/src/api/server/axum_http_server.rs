@@ -51,13 +51,14 @@ impl AxumHttpServer {
 mod tests {
     use std::sync::Arc;
     use super::*;
+    use edge_domain::RequestContext;
     use crate::api::port::http_inbound::{HttpInbound, HttpInboundResult, HttpHealthCheck};
     use crate::api::value_object::{HttpRequest, HttpResponse};
     use futures::future::BoxFuture;
 
     struct DummyHandler;
     impl HttpInbound for DummyHandler {
-        fn handle(&self, _: HttpRequest) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+        fn handle(&self, _: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
             Box::pin(async { Ok(HttpResponse::new(200, vec![])) })
         }
         fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {

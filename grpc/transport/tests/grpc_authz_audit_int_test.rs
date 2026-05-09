@@ -18,14 +18,14 @@ use swe_edge_ingress_grpc_transport::{
     AuditEvent, AuditSink, AuthorizationInterceptor, GrpcHealthCheck, GrpcInbound,
     GrpcInboundError, GrpcInboundInterceptor, GrpcInboundInterceptorChain,
     GrpcInboundResult, GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode,
-    TonicGrpcServer,
+    RequestContext, TonicGrpcServer,
 };
 
 // ── Test fixtures ─────────────────────────────────────────────────────────────
 
 struct EchoHandler;
 impl GrpcInbound for EchoHandler {
-    fn handle_unary(&self, req: GrpcRequest) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(&self, req: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move {
             Ok(GrpcResponse { body: req.body, metadata: GrpcMetadata::default() })
         })
