@@ -79,8 +79,7 @@ fn map_handler_error(err: HandlerError) -> HttpInboundError {
 
 #[cfg(test)]
 mod tests {
-    use std::any::Any;
-    use std::sync::Arc;
+        use std::sync::Arc;
 
     use async_trait::async_trait;
     use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
@@ -98,8 +97,6 @@ mod tests {
         async fn execute(&self, _: HttpRequest) -> Result<HttpResponse, HandlerError> {
             Ok(HttpResponse { status: 200, headers: Default::default(), body: Default::default() })
         }
-        async fn health_check(&self) -> bool { true }
-        fn as_any(&self) -> &dyn Any { self }
     }
 
     fn fresh() -> HttpHandlerRegistryDispatcher {

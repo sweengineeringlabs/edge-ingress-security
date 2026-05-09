@@ -18,8 +18,7 @@
 //! 4. With a `FileDescriptorSet` registered, `FileByFilename` and
 //!    `FileContainingSymbol` return the registered bytes; without
 //!    one they return a structured `ErrorResponse(NOT_FOUND)`.
-
-use std::any::Any;
+
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 
@@ -63,8 +62,6 @@ impl Handler<EchoReq, EchoResp> for EchoHandler {
     async fn execute(&self, req: EchoReq) -> Result<EchoResp, HandlerError> {
         Ok(EchoResp(req.0))
     }
-    async fn health_check(&self) -> bool { true }
-    fn as_any(&self) -> &dyn Any { self }
 }
 
 // ── reflection adapter — turns ReflectionService into a registered handler ────
@@ -92,8 +89,6 @@ impl Handler<Vec<u8>, Vec<u8>> for ReflectionHandlerWrapper {
             Err(e) => Err(HandlerError::ExecutionFailed(e.to_string())),
         }
     }
-    async fn health_check(&self) -> bool { true }
-    fn as_any(&self) -> &dyn Any { self }
 }
 
 // ── wire helpers ──────────────────────────────────────────────────────────────

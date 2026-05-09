@@ -13,8 +13,7 @@
 //! adapter in the registry by `Handler::id`, decodes the request bytes,
 //! invokes the typed handler, and encodes the response bytes back onto
 //! the wire.
-
-use std::any::Any;
+
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -99,8 +98,6 @@ where
     }
 
     async fn health_check(&self) -> bool { self.inner.health_check().await }
-
-    fn as_any(&self) -> &dyn Any { self }
 }
 
 #[cfg(test)]
@@ -139,8 +136,6 @@ mod tests {
         async fn execute(&self, req: TestReq) -> Result<TestResp, HandlerError> {
             Ok(TestResp { value: req.value.wrapping_mul(2) })
         }
-        async fn health_check(&self) -> bool { true }
-        fn as_any(&self) -> &dyn Any { self }
     }
 
     struct UnhealthyHandler;
@@ -153,7 +148,6 @@ mod tests {
             Err(HandlerError::Unhealthy)
         }
         async fn health_check(&self) -> bool { false }
-        fn as_any(&self) -> &dyn Any { self }
     }
 
     /// @covers: GrpcHandlerAdapter::new — id and pattern are forwarded verbatim.

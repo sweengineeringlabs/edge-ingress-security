@@ -69,8 +69,7 @@ fn map_handler_error(err: HandlerError) -> GrpcInboundError {
 
 #[cfg(test)]
 mod tests {
-    use std::any::Any;
-    use std::time::Duration;
+        use std::time::Duration;
     use std::sync::Arc;
 
     use async_trait::async_trait;
@@ -102,8 +101,6 @@ mod tests {
         async fn execute(&self, req: TestReq) -> Result<TestResp, HandlerError> {
             Ok(TestResp { value: req.value.wrapping_mul(2) })
         }
-        async fn health_check(&self) -> bool { true }
-        fn as_any(&self) -> &dyn Any { self }
     }
 
     fn fresh_dispatcher() -> GrpcHandlerRegistryDispatcher {

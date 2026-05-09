@@ -9,7 +9,6 @@
 //! 2. Method-not-found returns `Unimplemented` (12) on the wire.
 //! 3. The handler decode failure surfaces as `InvalidArgument` (3).
 
-use std::any::Any;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
@@ -53,8 +52,6 @@ impl Handler<TripleReq, TripleResp> for TripleHandler {
     async fn execute(&self, req: TripleReq) -> Result<TripleResp, HandlerError> {
         Ok(TripleResp { value: req.value.wrapping_mul(3) })
     }
-    async fn health_check(&self) -> bool { true }
-    fn as_any(&self) -> &dyn Any { self }
 }
 
 fn grpc_frame(payload: &[u8]) -> Bytes {

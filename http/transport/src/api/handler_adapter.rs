@@ -1,6 +1,5 @@
 //! Bridge between [`edge_domain::Handler`] and the HTTP inbound port.
 
-use std::any::Any;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -68,8 +67,6 @@ where
     }
 
     async fn health_check(&self) -> bool { self.inner.health_check().await }
-
-    fn as_any(&self) -> &dyn Any { self }
 }
 
 #[cfg(test)]
@@ -97,8 +94,6 @@ mod tests {
         async fn execute(&self, req: GetUserReq) -> Result<GetUserResp, HandlerError> {
             Ok(GetUserResp { name: format!("user-{}", req.id) })
         }
-        async fn health_check(&self) -> bool { true }
-        fn as_any(&self) -> &dyn Any { self }
     }
 
     struct FailingHandler;
@@ -110,7 +105,6 @@ mod tests {
             Err(HandlerError::ExecutionFailed("boom".into()))
         }
         async fn health_check(&self) -> bool { false }
-        fn as_any(&self) -> &dyn Any { self }
     }
 
     fn ctx() -> RequestContext { RequestContext::unauthenticated() }
