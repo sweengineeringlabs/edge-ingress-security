@@ -1,6 +1,15 @@
 [workspace]
 resolver = "2"
-members = ["gateway", "http/transport", "grpc/transport", "grpc/reflection", "tls"]
+members = [
+    "gateway",
+    "http/transport",
+    "http/verifier",
+    "grpc/transport",
+    "grpc/reflection",
+    "grpc/verifier",
+    "tls",
+    "verifier",
+]
 
 [workspace.package]
 version      = "0.1.0"
@@ -39,6 +48,9 @@ swe-edge-ingress-http = { package = "swe-edge-ingress-http-transport", path = "h
 swe-edge-ingress-grpc = { package = "swe-edge-ingress-grpc-transport", path = "grpc/transport" }
 swe-edge-ingress-grpc-reflection = { path = "grpc/reflection" }
 swe-edge-ingress-tls             = { path = "tls" }
+swe-edge-ingress-verifier        = { path = "verifier" }
+swe-edge-ingress-http-verifier   = { path = "http/verifier" }
+swe-edge-ingress-grpc-verifier   = { path = "grpc/verifier" }
 
 [workspace.lints.rust]
 unsafe_code  = "deny"

@@ -1,0 +1,35 @@
+[package]
+name         = "swe-edge-ingress-http-verifier"
+version.workspace     = true
+edition.workspace     = true
+license.workspace     = true
+rust-version.workspace = true
+authors.workspace     = true
+repository.workspace  = true
+description  = "HTTP tower/axum layer that enforces JWT and API-key auth on inbound requests."
+keywords     = ["auth", "jwt", "tower", "axum", "edge"]
+categories   = ["authentication", "web-programming"]
+
+[package.metadata.struct-engine]
+application_type = "lib"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+thiserror.workspace   = true
+tracing.workspace     = true
+axum.workspace        = true
+bytes.workspace       = true
+http         = "1"
+tower        = { version = "0.5", features = ["util"] }
+
+swe-edge-ingress-verifier = { path = "../../verifier" }
+
+[dev-dependencies]
+tokio      = { workspace = true, features = ["rt-multi-thread", "macros"] }
+axum       = { workspace = true }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true
