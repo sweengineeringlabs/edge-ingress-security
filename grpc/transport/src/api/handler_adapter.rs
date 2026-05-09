@@ -84,13 +84,23 @@ where
 
     fn pattern(&self) -> &str { self.inner.pattern() }
 
-    async fn execute(&self, req: Vec<u8>, ctx: RequestContext) -> Result<Vec<u8>, HandlerError> {
+    async fn execute(&self, req: Vec<u8>) -> Result<Vec<u8>, HandlerError> {
         let typed = (self.decode)(&req).map_err(|e| match e {
             GrpcInboundError::InvalidArgument(msg) => HandlerError::InvalidRequest(msg),
             GrpcInboundError::Status(_, msg)       => HandlerError::InvalidRequest(msg),
             other                                  => HandlerError::InvalidRequest(other.to_string()),
         })?;
-        let resp = self.inner.execute(typed, ctx).await?;
+        let resp = self.inner.execute(typed).await?;
+        Ok((self.encode)(&resp))
+    }
+
+    async fn execute_with_context(&self, req: Vec<u8>, ctx: RequestContext) -> Result<Vec<u8>, HandlerError> {
+        let typed = (self.decode)(&req).map_err(|e| match e {
+            GrpcInboundError::InvalidArgument(msg) => HandlerError::InvalidRequest(msg),
+            GrpcInboundError::Status(_, msg)       => HandlerError::InvalidRequest(msg),
+            other                                  => HandlerError::InvalidRequest(other.to_string()),
+        })?;
+        let resp = self.inner.execute_with_context(typed, ctx).await?;
         Ok((self.encode)(&resp))
     }
 
@@ -132,7 +142,7 @@ mod tests {
     impl Handler<TestReq, TestResp> for DoublingHandler {
         fn id(&self) -> &str { "/pkg.Service/Double" }
         fn pattern(&self) -> &str { "test" }
-        async fn execute(&self, req: TestReq, _ctx: RequestContext) -> Result<TestResp, HandlerError> {
+        async fn execute(&self, req: TestReq) -> Result<TestResp, HandlerError> {
             Ok(TestResp { value: req.value.wrapping_mul(2) })
         }
         async fn health_check(&self) -> bool { true }
@@ -145,7 +155,7 @@ mod tests {
     impl Handler<TestReq, TestResp> for UnhealthyHandler {
         fn id(&self) -> &str { "/pkg.Service/Sick" }
         fn pattern(&self) -> &str { "test" }
-        async fn execute(&self, _: TestReq, _ctx: RequestContext) -> Result<TestResp, HandlerError> {
+        async fn execute(&self, _: TestReq) -> Result<TestResp, HandlerError> {
             Err(HandlerError::Unhealthy)
         }
         async fn health_check(&self) -> bool { false }
@@ -174,7 +184,7 @@ mod tests {
         );
         let req_bytes = 21u32.to_be_bytes().to_vec();
         let resp = (&adapter as &dyn Handler<Vec<u8>, Vec<u8>>)
-            .execute(req_bytes, RequestContext::unauthenticated()).await.expect("execute");
+            .execute_with_context(req_bytes, RequestContext::unauthenticated()).await.expect("execute");
         let value = u32::from_be_bytes([resp[0], resp[1], resp[2], resp[3]]);
         assert_eq!(value, 42, "DoublingHandler should multiply input by 2");
     }
@@ -189,7 +199,7 @@ mod tests {
         );
         let bad_bytes = vec![1u8, 2, 3]; // wrong length
         let err = (&adapter as &dyn Handler<Vec<u8>, Vec<u8>>)
-            .execute(bad_bytes, RequestContext::unauthenticated()).await.expect_err("decode failure must error");
+            .execute_with_context(bad_bytes, RequestContext::unauthenticated()).await.expect_err("decode failure must error");
         match err {
             HandlerError::InvalidRequest(msg) => {
                 assert!(msg.contains("4 bytes"), "msg should describe decode failure: {msg}");
@@ -208,7 +218,7 @@ mod tests {
         );
         let req_bytes = 1u32.to_be_bytes().to_vec();
         let err = (&adapter as &dyn Handler<Vec<u8>, Vec<u8>>)
-            .execute(req_bytes, RequestContext::unauthenticated()).await.expect_err("unhealthy must error");
+            .execute_with_context(req_bytes, RequestContext::unauthenticated()).await.expect_err("unhealthy must error");
         assert!(matches!(err, HandlerError::Unhealthy), "got: {err:?}");
     }
 

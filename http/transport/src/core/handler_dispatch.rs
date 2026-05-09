@@ -30,7 +30,7 @@ impl HttpInbound for HttpHandlerRegistryDispatcher {
                     format!("route matched `{id}` but handler was not found in registry")
                 )),
             };
-            match handler.execute(request, ctx).await {
+            match handler.execute_with_context(request, ctx).await {
                 Ok(resp) => Ok(resp),
                 Err(e)   => Err(map_handler_error(e)),
             }
@@ -95,7 +95,7 @@ mod tests {
     impl Handler<HttpRequest, HttpResponse> for PingHandler {
         fn id(&self) -> &str { "ping" }
         fn pattern(&self) -> &str { "/ping" }
-        async fn execute(&self, _: HttpRequest, _ctx: RequestContext) -> Result<HttpResponse, HandlerError> {
+        async fn execute(&self, _: HttpRequest) -> Result<HttpResponse, HandlerError> {
             Ok(HttpResponse { status: 200, headers: Default::default(), body: Default::default() })
         }
         async fn health_check(&self) -> bool { true }

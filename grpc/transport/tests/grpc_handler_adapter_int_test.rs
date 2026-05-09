@@ -50,7 +50,7 @@ struct TripleHandler;
 impl Handler<TripleReq, TripleResp> for TripleHandler {
     fn id(&self) -> &str { "/pkg.Math/Triple" }
     fn pattern(&self) -> &str { "Math" }
-    async fn execute(&self, req: TripleReq, _ctx: RequestContext) -> Result<TripleResp, HandlerError> {
+    async fn execute(&self, req: TripleReq) -> Result<TripleResp, HandlerError> {
         Ok(TripleResp { value: req.value.wrapping_mul(3) })
     }
     async fn health_check(&self) -> bool { true }

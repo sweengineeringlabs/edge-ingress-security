@@ -56,10 +56,17 @@ where
 
     fn pattern(&self) -> &str { self.inner.pattern() }
 
-    async fn execute(&self, req: HttpRequest, ctx: RequestContext) -> Result<HttpResponse, HandlerError> {
+    async fn execute(&self, req: HttpRequest) -> Result<HttpResponse, HandlerError> {
         let typed = (self.decode)(&req)
             .map_err(|e| HandlerError::InvalidRequest(e.to_string()))?;
-        let resp = self.inner.execute(typed, ctx).await?;
+        let resp = self.inner.execute(typed).await?;
+        Ok((self.encode)(resp))
+    }
+
+    async fn execute_with_context(&self, req: HttpRequest, ctx: RequestContext) -> Result<HttpResponse, HandlerError> {
+        let typed = (self.decode)(&req)
+            .map_err(|e| HandlerError::InvalidRequest(e.to_string()))?;
+        let resp = self.inner.execute_with_context(typed, ctx).await?;
         Ok((self.encode)(resp))
     }
 
@@ -90,7 +97,7 @@ mod tests {
     impl Handler<GetUserReq, GetUserResp> for EchoUserHandler {
         fn id(&self) -> &str { "get-user" }
         fn pattern(&self) -> &str { "/users" }
-        async fn execute(&self, req: GetUserReq, _ctx: RequestContext) -> Result<GetUserResp, HandlerError> {
+        async fn execute(&self, req: GetUserReq) -> Result<GetUserResp, HandlerError> {
             Ok(GetUserResp { name: format!("user-{}", req.id) })
         }
         async fn health_check(&self) -> bool { true }
@@ -102,7 +109,7 @@ mod tests {
     impl Handler<GetUserReq, GetUserResp> for FailingHandler {
         fn id(&self) -> &str { "fail" }
         fn pattern(&self) -> &str { "/fail" }
-        async fn execute(&self, _: GetUserReq, _ctx: RequestContext) -> Result<GetUserResp, HandlerError> {
+        async fn execute(&self, _: GetUserReq) -> Result<GetUserResp, HandlerError> {
             Err(HandlerError::ExecutionFailed("boom".into()))
         }
         async fn health_check(&self) -> bool { false }
@@ -125,7 +132,7 @@ mod tests {
         let a = HttpHandlerAdapter::new(Arc::new(EchoUserHandler), decode, encode);
         let mut req = HttpRequest::get("/users");
         req.query.insert("id".into(), "42".into());
-        let resp = (&a as &dyn Handler<HttpRequest, HttpResponse>).execute(req, ctx()).await.unwrap();
+        let resp = (&a as &dyn Handler<HttpRequest, HttpResponse>).execute_with_context(req, ctx()).await.unwrap();
         assert_eq!(resp.status, 200);
         assert_eq!(resp.body, b"user-42");
     }
@@ -135,7 +142,7 @@ mod tests {
     async fn test_execute_returns_invalid_request_when_decode_fails() {
         let a = HttpHandlerAdapter::new(Arc::new(EchoUserHandler), decode, encode);
         let req = HttpRequest::get("/users");
-        let err = (&a as &dyn Handler<HttpRequest, HttpResponse>).execute(req, ctx()).await.unwrap_err();
+        let err = (&a as &dyn Handler<HttpRequest, HttpResponse>).execute_with_context(req, ctx()).await.unwrap_err();
         assert!(matches!(err, HandlerError::InvalidRequest(_)));
     }
 
@@ -145,7 +152,7 @@ mod tests {
         let a = HttpHandlerAdapter::new(Arc::new(FailingHandler), decode, encode);
         let mut req = HttpRequest::get("/fail");
         req.query.insert("id".into(), "1".into());
-        let err = (&a as &dyn Handler<HttpRequest, HttpResponse>).execute(req, ctx()).await.unwrap_err();
+        let err = (&a as &dyn Handler<HttpRequest, HttpResponse>).execute_with_context(req, ctx()).await.unwrap_err();
         assert!(matches!(err, HandlerError::ExecutionFailed(_)));
     }
 

@@ -28,7 +28,7 @@ impl GrpcInbound for GrpcHandlerRegistryDispatcher {
                     )));
                 }
             };
-            match handler.execute(request.body, ctx).await {
+            match handler.execute_with_context(request.body, ctx).await {
                 Ok(bytes) => Ok(GrpcResponse {
                     body:     bytes,
                     metadata: GrpcMetadata::default(),
@@ -99,7 +99,7 @@ mod tests {
     impl Handler<TestReq, TestResp> for DoublingHandler {
         fn id(&self) -> &str { "/pkg.Service/Double" }
         fn pattern(&self) -> &str { "test" }
-        async fn execute(&self, req: TestReq, _ctx: RequestContext) -> Result<TestResp, HandlerError> {
+        async fn execute(&self, req: TestReq) -> Result<TestResp, HandlerError> {
             Ok(TestResp { value: req.value.wrapping_mul(2) })
         }
         async fn health_check(&self) -> bool { true }

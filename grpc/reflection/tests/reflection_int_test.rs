@@ -60,7 +60,7 @@ struct EchoHandler;
 impl Handler<EchoReq, EchoResp> for EchoHandler {
     fn id(&self) -> &str { "/pkg.Demo/Echo" }
     fn pattern(&self) -> &str { "demo" }
-    async fn execute(&self, req: EchoReq, _ctx: RequestContext) -> Result<EchoResp, HandlerError> {
+    async fn execute(&self, req: EchoReq) -> Result<EchoResp, HandlerError> {
         Ok(EchoResp(req.0))
     }
     async fn health_check(&self) -> bool { true }
@@ -82,7 +82,7 @@ struct ReflectionHandlerWrapper {
 impl Handler<Vec<u8>, Vec<u8>> for ReflectionHandlerWrapper {
     fn id(&self) -> &str { REFLECTION_INFO_METHOD }
     fn pattern(&self) -> &str { "reflection" }
-    async fn execute(&self, req: Vec<u8>, _ctx: RequestContext) -> Result<Vec<u8>, HandlerError> {
+    async fn execute(&self, req: Vec<u8>) -> Result<Vec<u8>, HandlerError> {
         use swe_edge_ingress_grpc::GrpcInbound;
         use swe_edge_ingress_grpc::GrpcRequest;
         use std::time::Duration;
