@@ -85,13 +85,7 @@ where
     fn pattern(&self) -> &str { self.inner.pattern() }
 
     async fn execute(&self, req: Vec<u8>) -> Result<Vec<u8>, HandlerError> {
-        let typed = (self.decode)(&req).map_err(|e| match e {
-            GrpcInboundError::InvalidArgument(msg) => HandlerError::InvalidRequest(msg),
-            GrpcInboundError::Status(_, msg)       => HandlerError::InvalidRequest(msg),
-            other                                  => HandlerError::InvalidRequest(other.to_string()),
-        })?;
-        let resp = self.inner.execute(typed).await?;
-        Ok((self.encode)(&resp))
+        self.execute_with_context(req, RequestContext::unauthenticated()).await
     }
 
     async fn execute_with_context(&self, req: Vec<u8>, ctx: RequestContext) -> Result<Vec<u8>, HandlerError> {

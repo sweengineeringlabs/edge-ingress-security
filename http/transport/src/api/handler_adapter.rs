@@ -57,10 +57,7 @@ where
     fn pattern(&self) -> &str { self.inner.pattern() }
 
     async fn execute(&self, req: HttpRequest) -> Result<HttpResponse, HandlerError> {
-        let typed = (self.decode)(&req)
-            .map_err(|e| HandlerError::InvalidRequest(e.to_string()))?;
-        let resp = self.inner.execute(typed).await?;
-        Ok((self.encode)(resp))
+        self.execute_with_context(req, RequestContext::unauthenticated()).await
     }
 
     async fn execute_with_context(&self, req: HttpRequest, ctx: RequestContext) -> Result<HttpResponse, HandlerError> {
