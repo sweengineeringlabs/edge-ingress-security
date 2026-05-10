@@ -1,0 +1,52 @@
+[package]
+name         = "swe-edge-ingress-grpc-transport"
+version.workspace     = true
+edition.workspace     = true
+license.workspace     = true
+rust-version.workspace = true
+authors.workspace     = true
+repository.workspace  = true
+description  = "swe-edge ingress — gRPC inbound domain (value objects + GrpcInbound port)"
+keywords     = ["grpc", "inbound", "edge", "swe"]
+categories   = ["network-programming"]
+
+[package.metadata.struct-engine]
+application_type = "lib"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+serde.workspace          = true
+thiserror.workspace      = true
+async-trait.workspace    = true
+futures.workspace        = true
+tokio.workspace          = true
+tokio-util               = { version = "0.7", default-features = false }
+parking_lot.workspace    = true
+bytes.workspace          = true
+tracing.workspace        = true
+tonic.workspace          = true
+http-body-util.workspace = true
+http                     = "1"
+http-body               = "1"
+hyper                    = { version = "1", features = ["http2", "server"] }
+hyper-util               = { version = "0.1", features = ["tokio"] }
+
+swe-edge-ingress-tls.workspace = true
+edge-domain.workspace    = true
+sha2                     = "0.10"
+
+[dev-dependencies]
+tokio        = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+hyper        = { version = "1", features = ["http2", "client"] }
+bytes        = { workspace = true }
+serde_json   = { workspace = true }
+rcgen           = "0.13"
+rustls          = { version = "0.23", features = ["ring"] }
+rustls-pemfile  = "2"
+tokio-rustls    = "0.26"
+tempfile        = "3"
+
+[lints]
+workspace = true

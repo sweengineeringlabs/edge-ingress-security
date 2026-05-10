@@ -1,0 +1,8 @@
+[workspace]
+name = "swe-edge-ingress-verifier"
+layer = 2
+
+[rules]
+sea_layout     = true
+no_pub_in_core = true
+test_coverage  = true

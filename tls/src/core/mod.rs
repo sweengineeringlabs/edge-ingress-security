@@ -1,3 +1,1 @@
-//! TLS core — server config builder.
-
-pub(crate) mod server_config;
+//! TLS core — all public items moved to api/.

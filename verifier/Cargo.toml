@@ -1,0 +1,31 @@
+[package]
+name         = "swe-edge-ingress-verifier"
+version.workspace     = true
+edition.workspace     = true
+license.workspace     = true
+rust-version.workspace = true
+authors.workspace     = true
+repository.workspace  = true
+description  = "Protocol-agnostic inbound credential verification — JWT, API key, client cert."
+keywords     = ["auth", "jwt", "verification", "inbound", "edge"]
+categories   = ["authentication", "network-programming"]
+
+[package.metadata.struct-engine]
+application_type = "lib"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+serde.workspace      = true
+serde_json.workspace = true
+thiserror.workspace  = true
+tracing.workspace    = true
+jsonwebtoken         = "9"
+subtle               = "2"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }
+
+[lints]
+workspace = true

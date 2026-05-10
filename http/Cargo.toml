@@ -1,48 +1,37 @@
-[package]
-name         = "swe-edge-ingress-http"
-version.workspace     = true
-edition.workspace     = true
-license.workspace     = true
-rust-version.workspace = true
-authors.workspace     = true
-repository.workspace  = true
-description  = "swe-edge ingress — HTTP inbound domain (value objects + HttpInbound port)"
-keywords     = ["http", "inbound", "edge", "swe"]
-categories   = ["web-programming", "network-programming"]
+[workspace]
+resolver = "2"
+members = [
+    "main/features/transport",
+    "main/features/verifier",
+]
 
-[package.metadata.struct-engine]
-application_type = "lib"
+[workspace.package]
+version      = "0.1.0"
+edition      = "2021"
+license      = "MIT"
+rust-version = "1.75"
+authors      = ["SWE Engineering Labs"]
+repository   = "https://github.com/sweengineeringlabs/edge"
 
-[lib]
-path = "src/lib.rs"
+[workspace.dependencies]
+serde       = { version = "1.0", features = ["derive"] }
+serde_json  = "1.0"
+thiserror   = "2"
+async-trait = "0.1"
+futures     = "0.3"
+tokio       = { version = "1.0", features = ["rt-multi-thread", "macros"] }
+parking_lot = "0.12"
+axum        = "0.8"
+bytes       = "1"
+chrono      = { version = "0.4", features = ["serde"] }
+tracing     = { version = "0.1", default-features = false }
+reqwest     = { version = "0.12", features = ["json"], default-features = false }
 
-[dependencies]
-serde.workspace       = true
-serde_json.workspace  = true
-thiserror.workspace   = true
-async-trait.workspace = true
-futures.workspace     = true
-chrono.workspace      = true
-tokio.workspace       = true
-axum.workspace        = true
-bytes.workspace       = true
-tracing.workspace     = true
+# Cross-workspace git deps
+swe-edge-ingress-tls      = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+swe-edge-ingress-verifier = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+edge-domain               = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
 
-swe-edge-ingress-tls.workspace = true
-edge-domain  = { path = "../../domain" }
-matchit      = "0.8"
-parking_lot.workspace = true
-hyper      = { version = "1", features = ["http1", "http2"] }
-hyper-util = { version = "0.1", features = ["tokio", "server", "http1", "http2"] }
-http       = "1"
-
-[dev-dependencies]
-tokio    = { workspace = true, features = ["rt-multi-thread", "macros"] }
-reqwest  = { workspace = true, features = ["json"] }
-rcgen    = "0.13"
-rustls   = { version = "0.23", features = ["ring"] }
-tokio-rustls = "0.26"
-tempfile = "3"
-
-[lints]
-workspace = true
+[workspace.lints.rust]
+unsafe_code  = "deny"
+missing_docs = "warn"
