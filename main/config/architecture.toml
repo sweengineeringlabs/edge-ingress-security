@@ -1,0 +1,52 @@
+# SEA project configuration (L0)
+[project]
+name = "swe-edge-ingress"
+workspaces = [
+    "gateway",
+    "tls",
+    "verifier",
+    "grpc",
+    "http",
+]
+
+[workspace.gateway]
+path = "gateway"
+crate = "swe-edge-ingress-gateway"
+
+[workspace.tls]
+path = "tls"
+crate = "swe-edge-ingress-tls"
+
+[workspace.verifier]
+path = "verifier"
+crate = "swe-edge-ingress-verifier"
+
+[workspace.grpc]
+path = "grpc"
+kind = "nested_workspace"
+packages = ["transport", "reflection", "verifier"]
+
+[workspace.grpc.package.transport]
+path = "grpc/main/features/transport"
+crate = "swe-edge-ingress-grpc-transport"
+
+[workspace.grpc.package.reflection]
+path = "grpc/main/features/reflection"
+crate = "swe-edge-ingress-grpc-reflection"
+
+[workspace.grpc.package.verifier]
+path = "grpc/main/features/verifier"
+crate = "swe-edge-ingress-grpc-verifier"
+
+[workspace.http]
+path = "http"
+kind = "nested_workspace"
+packages = ["transport", "verifier"]
+
+[workspace.http.package.transport]
+path = "http/main/features/transport"
+crate = "swe-edge-ingress-http-transport"
+
+[workspace.http.package.verifier]
+path = "http/main/features/verifier"
+crate = "swe-edge-ingress-http-verifier"

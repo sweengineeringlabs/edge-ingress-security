@@ -1,0 +1,20 @@
+# SEA project configuration (L0)
+[project]
+name = "swe-edge-ingress-grpc"
+workspaces = [
+    "transport",
+    "reflection",
+    "verifier",
+]
+
+[workspace.transport]
+path = "main/features/transport"
+crate = "swe-edge-ingress-grpc-transport"
+
+[workspace.reflection]
+path = "main/features/reflection"
+crate = "swe-edge-ingress-grpc-reflection"
+
+[workspace.verifier]
+path = "main/features/verifier"
+crate = "swe-edge-ingress-grpc-verifier"

@@ -2,3 +2,5 @@
 
 pub(crate) mod ingress_tls_error;
 pub(crate) mod value_object;
+
+pub(crate) mod server_config;
