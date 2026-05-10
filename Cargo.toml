@@ -1,6 +1,12 @@
 [workspace]
 resolver = "2"
-members = ["main", "http", "grpc", "grpc-reflection", "file", "tls"]
+members = [
+    "gateway",
+    "tls",
+    "verifier",
+    "grpc/main/features/*",
+    "http/main/features/*",
+]
 
 [workspace.package]
 version      = "0.1.0"
@@ -33,12 +39,19 @@ swe_justobserv_context  = { git = "ssh://git@github.com/sweengineeringlabs/justo
 swe-observ-processes    = { package = "swe_justobserv_processes", git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 reqwest          = { version = "0.12", features = ["json"], default-features = false }
 
+# Cross-workspace git dep — domain lives in its own workspace root
+edge-domain = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+
 # Workspace-internal domain crates
-swe-edge-ingress-http             = { path = "http" }
-swe-edge-ingress-grpc             = { path = "grpc" }
-swe-edge-ingress-grpc-reflection  = { path = "grpc-reflection" }
-swe-edge-ingress-file             = { path = "file" }
-swe-edge-ingress-tls              = { path = "tls" }
+swe-edge-ingress      = { package = "swe-edge-ingress-gateway",       path = "gateway" }
+swe-edge-ingress-http = { package = "swe-edge-ingress-http-transport", path = "http/main/features/transport" }
+swe-edge-ingress-grpc = { package = "swe-edge-ingress-grpc-transport", path = "grpc/main/features/transport" }
+swe-edge-ingress-grpc-transport  = { path = "grpc/main/features/transport" }
+swe-edge-ingress-grpc-reflection = { path = "grpc/main/features/reflection" }
+swe-edge-ingress-tls             = { path = "tls" }
+swe-edge-ingress-verifier        = { path = "verifier" }
+swe-edge-ingress-http-verifier   = { path = "http/main/features/verifier" }
+swe-edge-ingress-grpc-verifier   = { path = "grpc/main/features/verifier" }
 
 [workspace.lints.rust]
 unsafe_code  = "deny"
