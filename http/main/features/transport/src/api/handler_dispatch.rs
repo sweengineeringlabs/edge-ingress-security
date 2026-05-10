@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use edge_domain::{Handler as _, HandlerRegistry};
 use parking_lot::RwLock;
+use swe_observ_metrics::MetricsProvider;
 
 use crate::api::handler_adapter::HttpHandlerAdapter;
 use crate::api::value_object::{HttpRequest, HttpResponse};
@@ -21,12 +22,20 @@ pub enum HttpDispatcherError {
 pub struct HttpHandlerRegistryDispatcher {
     pub(crate) registry: Arc<HandlerRegistry<HttpRequest, HttpResponse>>,
     pub(crate) router:   RwLock<matchit::Router<String>>,
+    pub(crate) metrics:  Option<Arc<dyn MetricsProvider>>,
 }
 
 impl HttpHandlerRegistryDispatcher {
     /// Construct a dispatcher backed by `registry`.
     pub fn new(registry: Arc<HandlerRegistry<HttpRequest, HttpResponse>>) -> Self {
-        Self { registry, router: RwLock::new(matchit::Router::new()) }
+        Self { registry, router: RwLock::new(matchit::Router::new()), metrics: None }
+    }
+
+    /// Attach a metrics provider; per-handler counters and latency histograms
+    /// are recorded automatically on every dispatch.
+    pub fn with_metrics(mut self, provider: Arc<dyn MetricsProvider>) -> Self {
+        self.metrics = Some(provider);
+        self
     }
 
     /// Register a typed adapter.

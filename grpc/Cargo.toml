@@ -31,6 +31,8 @@ http-body-util = "0.1"
 swe-edge-ingress-tls              = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
 swe-edge-ingress-verifier         = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
 edge-domain                       = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+swe-observ-metrics                = { package = "swe_justobserv_metrics",  git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
+swe_justobserv_context            = { git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 
 # Workspace-internal
 swe-edge-ingress-grpc             = { package = "swe-edge-ingress-grpc-transport", path = "main/features/transport" }
