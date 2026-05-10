@@ -75,7 +75,7 @@ where
     }
 }
 
-fn extract_bearer<'a>(req: &'a Request<Body>) -> Result<&'a str, HttpAuthError> {
+fn extract_bearer(req: &Request<Body>) -> Result<&str, HttpAuthError> {
     let header = req
         .headers()
         .get(axum::http::header::AUTHORIZATION)

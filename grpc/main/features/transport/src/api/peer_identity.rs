@@ -35,7 +35,7 @@ pub fn extract_peer_identity(leaf_der: &[u8]) -> HashMap<String, String> {
     out.insert(PEER_CERT_FINGERPRINT_SHA256.to_string(), fp);
 
     let Some((_, cert_body)) = read_tlv(leaf_der) else { return out };
-    if cert_body.first().is_none() { return out };
+    if cert_body.is_empty() { return out };
     let Some((tag, tbs_body)) = read_tlv(cert_body) else { return out };
     if tag != TAG_SEQUENCE { return out };
 
@@ -122,7 +122,7 @@ fn render_name(name_seq: &[u8]) -> String {
     out.join(",")
 }
 
-fn parse_atv<'a>(body: &'a [u8]) -> Option<(&'static str, &'a [u8], String)> {
+fn parse_atv(body: &[u8]) -> Option<(&'static str, &[u8], String)> {
     let (oid_tag, oid_body, after) = read_tlv_with_remainder(body)?;
     if oid_tag != TAG_OID { return None; }
     let (val_tag, val_body, _) = read_tlv_with_remainder(after)?;
