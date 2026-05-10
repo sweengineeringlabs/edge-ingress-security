@@ -12,14 +12,21 @@ use crate::api::port::grpc_inbound::GrpcInbound;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(i32)]
 pub enum ServingStatus {
+    /// Service status is unknown.
     Unknown        = 0,
+    /// Service is serving requests.
     Serving        = 1,
+    /// Service is not serving requests.
     NotServing     = 2,
+    /// Named service is unknown to the health reporter.
     ServiceUnknown = 3,
 }
 
+/// gRPC method path for health-check unary calls.
 pub const HEALTH_CHECK_METHOD:    &str  = "/grpc.health.v1.Health/Check";
+/// gRPC method path for health-watch streaming calls.
 pub const HEALTH_WATCH_METHOD:    &str  = "/grpc.health.v1.Health/Watch";
+/// Broadcast channel capacity for status-change notifications.
 pub const WATCH_CHANNEL_CAPACITY: usize = 16;
 
 /// Implementation of the standard `grpc.health.v1.Health` service.
@@ -72,9 +79,7 @@ impl HealthService {
         let new_overall = {
             let guard = self.statuses.read();
             let named: Vec<_> = guard.iter().filter(|(n, _)| !n.is_empty()).collect();
-            if named.is_empty() {
-                ServingStatus::Serving
-            } else if named.iter().all(|(_, s)| **s == ServingStatus::Serving) {
+            if named.is_empty() || named.iter().all(|(_, s)| **s == ServingStatus::Serving) {
                 ServingStatus::Serving
             } else {
                 ServingStatus::NotServing
@@ -96,7 +101,6 @@ impl HealthAggregate {
 
     /// Re-poll the dispatcher and update the overall service status.
     pub async fn refresh(&self) {
-        use crate::api::port::grpc_inbound::GrpcHealthCheck;
         let h = self.dispatcher.health_check().await;
         let status = match h {
             Ok(c) if c.healthy => ServingStatus::Serving,

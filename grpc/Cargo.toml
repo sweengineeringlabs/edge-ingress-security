@@ -27,9 +27,9 @@ tracing      = { version = "0.1", default-features = false }
 tonic        = { version = "0.12", default-features = false, features = ["transport"] }
 http-body-util = "0.1"
 
-# Cross-workspace git deps
-swe-edge-ingress-tls              = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
-swe-edge-ingress-verifier         = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+# Workspace-internal path deps
+swe-edge-ingress-tls      = { path = "../tls" }
+swe-edge-ingress-verifier = { path = "../verifier" }
 edge-domain                       = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
 swe-observ-metrics                = { package = "swe_justobserv_metrics",  git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 swe_justobserv_context            = { git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }

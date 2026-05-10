@@ -23,16 +23,15 @@ use crate::api::interceptor::GrpcInboundInterceptorChain;
 use crate::api::port::grpc_inbound::{GrpcInbound, GrpcInboundError, GrpcMessageStream};
 use crate::api::value_object::{
     is_reserved_peer_key, CompressionMode, GrpcMetadata, GrpcRequest, GrpcResponse,
-    GrpcServerConfig, GrpcStatusCode, PEER_CN,
+    GrpcStatusCode, PEER_CN,
 };
 use crate::api::grpc_timeout::{parse_grpc_timeout, DEFAULT_DEADLINE};
 use crate::api::peer_identity::extract_peer_identity;
 use crate::api::server::tonic_grpc_server::{
-    GrpcServerConfigError, TonicGrpcServer, TonicServerError, MAX_MESSAGE_BYTES,
+    TonicGrpcServer, TonicServerError,
     MISSING_AUTHORIZATION_INTERCEPTOR_MSG, REFLECTION_ENABLED_WARN_MSG,
 };
 use crate::api::status_codes::{from_tonic_code, map_inbound_error};
-use swe_edge_ingress_tls::IngressTlsConfig;
 
 type BoxBody = http_body_util::combinators::BoxBody<Bytes, Infallible>;
 

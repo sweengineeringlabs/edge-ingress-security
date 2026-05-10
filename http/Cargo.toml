@@ -27,9 +27,9 @@ chrono      = { version = "0.4", features = ["serde"] }
 tracing     = { version = "0.1", default-features = false }
 reqwest     = { version = "0.12", features = ["json"], default-features = false }
 
-# Cross-workspace git deps
-swe-edge-ingress-tls      = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
-swe-edge-ingress-verifier = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+# Path deps (tls + verifier are members of ingress/grpc workspace)
+swe-edge-ingress-tls      = { path = "../tls" }
+swe-edge-ingress-verifier = { path = "../verifier" }
 edge-domain               = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
 swe-observ-metrics        = { package = "swe_justobserv_metrics",  git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 swe_justobserv_context    = { git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
