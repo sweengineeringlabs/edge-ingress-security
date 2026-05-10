@@ -1,0 +1,15 @@
+# SEA project configuration (L0)
+[project]
+name = "swe-edge-ingress-http"
+workspaces = [
+    "transport",
+    "verifier",
+]
+
+[workspace.transport]
+path = "main/features/transport"
+crate = "swe-edge-ingress-http-transport"
+
+[workspace.verifier]
+path = "main/features/verifier"
+crate = "swe-edge-ingress-http-verifier"

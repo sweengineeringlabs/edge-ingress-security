@@ -75,7 +75,7 @@ fn grpc_frame(payload: &[u8]) -> Bytes {
 /// @covers: GrpcServerConfig::default — `tls_required` defaults to true.
 /// Issue #5 acceptance gate (1/4).
 #[test]
-fn grpc_server_config_struct_default_requires_tls_int_test() {
+fn transport_struct_default_requires_tls_int_test() {
     let cfg = GrpcServerConfig::default();
     assert!(cfg.tls_required, "TLS-by-default invariant must hold");
 }
@@ -83,7 +83,7 @@ fn grpc_server_config_struct_default_requires_tls_int_test() {
 /// @covers: TonicGrpcServer::from_config — rejects when tls_required is set
 /// but no IngressTlsConfig is supplied.
 #[test]
-fn tonic_grpc_grpc_server_struct_from_config_rejects_tls_required_without_tls_int_test() {
+fn transport_struct_from_config_rejects_tls_required_without_tls_int_test() {
     let cfg = GrpcServerConfig::default(); // tls_required=true, tls=None
     let handler = Arc::new(RecordingHandler { hit: Arc::new(AtomicBool::new(false)) });
     match TonicGrpcServer::from_config(&cfg, handler) {
@@ -94,7 +94,7 @@ fn tonic_grpc_grpc_server_struct_from_config_rejects_tls_required_without_tls_in
 
 /// @covers: TonicGrpcServer::from_config — accepts when allow_plaintext is set.
 #[test]
-fn tonic_grpc_server_struct_from_config_accepts_plaintext_with_opt_in_int_test() {
+fn transport_struct_from_config_accepts_plaintext_with_opt_in_int_test() {
     let bind: SocketAddr = "127.0.0.1:0".parse().unwrap();
     let cfg = GrpcServerConfig::new(bind).allow_plaintext();
     let handler = Arc::new(RecordingHandler { hit: Arc::new(AtomicBool::new(false)) });
@@ -103,7 +103,7 @@ fn tonic_grpc_server_struct_from_config_accepts_plaintext_with_opt_in_int_test()
 
 /// @covers: TonicGrpcServer::from_config — accepts when TLS is supplied.
 #[test]
-fn tonic_grpc_server_struct_from_config_accepts_tls_int_test() {
+fn transport_struct_from_config_accepts_tls_int_test() {
     let (cert_pem, key_pem) = self_signed();
     let cert_f = write_temp(&cert_pem);
     let key_f  = write_temp(&key_pem);
@@ -202,7 +202,7 @@ async fn plaintext_to_tls_required_server_fails_before_handler_runs_int_test() {
 /// @covers: TonicGrpcServer::with_compression — server attaches
 /// `grpc-accept-encoding` to response trailers when set.
 #[tokio::test]
-async fn tonic_grpc_server_struct_advertises_grpc_accept_encoding_when_gzip_set_int_test() {
+async fn transport_struct_advertises_grpc_accept_encoding_when_gzip_set_int_test() {
     use swe_edge_ingress_grpc_transport::CompressionMode;
 
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();

@@ -1,0 +1,37 @@
+[workspace]
+resolver = "2"
+members = [
+    "main/features/transport",
+    "main/features/verifier",
+]
+
+[workspace.package]
+version      = "0.1.0"
+edition      = "2021"
+license      = "MIT"
+rust-version = "1.75"
+authors      = ["SWE Engineering Labs"]
+repository   = "https://github.com/sweengineeringlabs/edge"
+
+[workspace.dependencies]
+serde       = { version = "1.0", features = ["derive"] }
+serde_json  = "1.0"
+thiserror   = "2"
+async-trait = "0.1"
+futures     = "0.3"
+tokio       = { version = "1.0", features = ["rt-multi-thread", "macros"] }
+parking_lot = "0.12"
+axum        = "0.8"
+bytes       = "1"
+chrono      = { version = "0.4", features = ["serde"] }
+tracing     = { version = "0.1", default-features = false }
+reqwest     = { version = "0.12", features = ["json"], default-features = false }
+
+# Cross-workspace git deps
+swe-edge-ingress-tls      = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+swe-edge-ingress-verifier = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+edge-domain               = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+
+[workspace.lints.rust]
+unsafe_code  = "deny"
+missing_docs = "warn"

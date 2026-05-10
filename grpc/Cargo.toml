@@ -1,0 +1,41 @@
+[workspace]
+resolver = "2"
+members = [
+    "main/features/transport",
+    "main/features/reflection",
+    "main/features/verifier",
+]
+
+[workspace.package]
+version      = "0.1.0"
+edition      = "2021"
+license      = "MIT"
+rust-version = "1.75"
+authors      = ["SWE Engineering Labs"]
+repository   = "https://github.com/sweengineeringlabs/edge"
+
+[workspace.dependencies]
+serde        = { version = "1.0", features = ["derive"] }
+serde_json   = "1.0"
+thiserror    = "2"
+async-trait  = "0.1"
+futures      = "0.3"
+tokio        = { version = "1.0", features = ["rt-multi-thread", "macros", "time"] }
+parking_lot  = "0.12"
+bytes        = "1"
+tracing      = { version = "0.1", default-features = false }
+tonic        = { version = "0.12", default-features = false, features = ["transport"] }
+http-body-util = "0.1"
+
+# Cross-workspace git deps
+swe-edge-ingress-tls              = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+swe-edge-ingress-verifier         = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+edge-domain                       = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+
+# Workspace-internal
+swe-edge-ingress-grpc             = { package = "swe-edge-ingress-grpc-transport", path = "main/features/transport" }
+swe-edge-ingress-grpc-transport   = { path = "main/features/transport" }
+
+[workspace.lints.rust]
+unsafe_code  = "deny"
+missing_docs = "warn"
