@@ -1,8 +1,8 @@
 //! Registry-backed [`GrpcInbound`] dispatcher implementation.
 
-use std::sync::Arc;
+use std::time::Instant;
 
-use edge_domain::{HandlerError, HandlerRegistry, RequestContext};
+use edge_domain::{HandlerError, RequestContext};
 use futures::future::BoxFuture;
 
 use crate::api::handler_dispatch::GrpcHandlerRegistryDispatcher;
@@ -18,6 +18,7 @@ impl GrpcInbound for GrpcHandlerRegistryDispatcher {
         ctx: RequestContext,
     ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         let registry = self.registry.clone();
+        let metrics  = self.metrics.clone();
         Box::pin(async move {
             let method = request.method.clone();
             let handler = match registry.get(&method) {
@@ -28,7 +29,28 @@ impl GrpcInbound for GrpcHandlerRegistryDispatcher {
                     )));
                 }
             };
-            match handler.execute_with_context(request.body, ctx).await {
+            let start  = Instant::now();
+            let result = if ctx.trace_id.is_empty() {
+                handler.execute_with_context(request.body, ctx).await
+            } else {
+                let span_ctx = swe_justobserv_context::LogContext::builder()
+                    .trace_id(&ctx.trace_id)
+                    .build();
+                swe_justobserv_context::with_log_context(
+                    span_ctx,
+                    handler.execute_with_context(request.body, ctx),
+                ).await
+            };
+            if let Some(ref m) = metrics {
+                let latency = start.elapsed().as_micros() as f64;
+                let labels  = &[("handler_id", method.as_str())];
+                m.record_counter("edge_handler_requests_total", 1.0, labels);
+                m.record_histogram("edge_handler_latency_us", latency, labels);
+                if result.is_err() {
+                    m.record_counter("edge_handler_errors_total", 1.0, labels);
+                }
+            }
+            match result {
                 Ok(bytes) => Ok(GrpcResponse {
                     body:     bytes,
                     metadata: GrpcMetadata::default(),
@@ -131,5 +153,62 @@ mod tests {
     #[test]
     fn test_map_handler_error_execution_failed_maps_to_internal() {
         assert!(matches!(super::map_handler_error(HandlerError::ExecutionFailed("x".into())), GrpcInboundError::Internal(_)));
+    }
+
+    /// @covers: with_metrics — records edge_handler_requests_total on success.
+    #[tokio::test]
+    async fn test_handle_unary_with_metrics_records_handler_requests_total_on_success() {
+        use std::sync::Arc;
+        use swe_observ_metrics::{MetricsProvider, create_local_metrics_backend};
+        let provider: Arc<dyn MetricsProvider> = Arc::new(create_local_metrics_backend());
+        let d = GrpcHandlerRegistryDispatcher::new(Arc::new(HandlerRegistry::new()))
+            .with_metrics(Arc::clone(&provider));
+        d.register(GrpcHandlerAdapter::new(Arc::new(DoublingHandler), decode_test_req, encode_test_resp));
+        let req = GrpcRequest::new("/pkg.Service/Double", 2u32.to_be_bytes().to_vec(), Duration::from_secs(1));
+        d.handle_unary(req, RequestContext::unauthenticated()).await.expect("ok");
+        let snaps = provider.export();
+        assert!(snaps.iter().any(|s| s.name == "edge_handler_requests_total" && s.value == 1.0),
+            "expected edge_handler_requests_total=1, got {snaps:?}");
+    }
+
+    /// @covers: with_metrics — records edge_handler_errors_total on handler failure.
+    #[tokio::test]
+    async fn test_handle_unary_with_metrics_records_handler_errors_total_on_failure() {
+        use std::sync::Arc;
+        use swe_observ_metrics::{MetricsProvider, create_local_metrics_backend};
+        struct BoomHandler;
+        #[async_trait]
+        impl Handler<TestReq, TestResp> for BoomHandler {
+            fn id(&self) -> &str { "/pkg.Service/Boom" }
+            fn pattern(&self) -> &str { "boom" }
+            async fn execute(&self, _: TestReq) -> Result<TestResp, HandlerError> {
+                Err(HandlerError::ExecutionFailed("boom".into()))
+            }
+        }
+        let provider: Arc<dyn MetricsProvider> = Arc::new(create_local_metrics_backend());
+        let d = GrpcHandlerRegistryDispatcher::new(Arc::new(HandlerRegistry::new()))
+            .with_metrics(Arc::clone(&provider));
+        d.register(GrpcHandlerAdapter::new(Arc::new(BoomHandler), decode_test_req, encode_test_resp));
+        let req = GrpcRequest::new("/pkg.Service/Boom", 0u32.to_be_bytes().to_vec(), Duration::from_secs(1));
+        let _ = d.handle_unary(req, RequestContext::unauthenticated()).await;
+        let snaps = provider.export();
+        assert!(snaps.iter().any(|s| s.name == "edge_handler_errors_total" && s.value == 1.0),
+            "expected edge_handler_errors_total=1, got {snaps:?}");
+    }
+
+    /// @covers: with_metrics — records edge_handler_latency_us histogram.
+    #[tokio::test]
+    async fn test_handle_unary_with_metrics_records_latency_histogram() {
+        use std::sync::Arc;
+        use swe_observ_metrics::{MetricsProvider, create_local_metrics_backend};
+        let provider: Arc<dyn MetricsProvider> = Arc::new(create_local_metrics_backend());
+        let d = GrpcHandlerRegistryDispatcher::new(Arc::new(HandlerRegistry::new()))
+            .with_metrics(Arc::clone(&provider));
+        d.register(GrpcHandlerAdapter::new(Arc::new(DoublingHandler), decode_test_req, encode_test_resp));
+        let req = GrpcRequest::new("/pkg.Service/Double", 1u32.to_be_bytes().to_vec(), Duration::from_secs(1));
+        d.handle_unary(req, RequestContext::unauthenticated()).await.expect("ok");
+        let snaps = provider.export();
+        assert!(snaps.iter().any(|s| s.name == "edge_handler_latency_us"),
+            "expected edge_handler_latency_us, got {snaps:?}");
     }
 }

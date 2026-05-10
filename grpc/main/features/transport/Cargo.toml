@@ -33,8 +33,10 @@ http-body               = "1"
 hyper                    = { version = "1", features = ["http2", "server"] }
 hyper-util               = { version = "0.1", features = ["tokio"] }
 
-swe-edge-ingress-tls.workspace = true
-edge-domain.workspace    = true
+swe-edge-ingress-tls.workspace  = true
+edge-domain.workspace           = true
+swe-observ-metrics.workspace    = true
+swe_justobserv_context.workspace = true
 sha2                     = "0.10"
 
 [dev-dependencies]
