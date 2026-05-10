@@ -36,6 +36,7 @@ mime_guess       = "2"
 base64           = "0.22"
 toml             = "0.8"
 swe_justobserv_context  = { git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
+swe-observ-metrics      = { package = "swe_justobserv_metrics",   git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 swe-observ-processes    = { package = "swe_justobserv_processes", git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 reqwest          = { version = "0.12", features = ["json"], default-features = false }
 
