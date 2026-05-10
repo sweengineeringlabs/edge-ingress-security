@@ -1,8 +1,8 @@
 //! Registry-backed [`HttpInbound`] dispatcher implementation.
 
-use std::sync::Arc;
+use std::time::Instant;
 
-use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
+use edge_domain::{HandlerError, RequestContext};
 use futures::future::BoxFuture;
 
 use crate::api::handler_dispatch::HttpHandlerRegistryDispatcher;
@@ -13,6 +13,7 @@ use crate::api::value_object::{HttpRequest, HttpResponse};
 
 impl HttpInbound for HttpHandlerRegistryDispatcher {
     fn handle(&self, request: HttpRequest, ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+        let metrics = self.metrics.clone();
         Box::pin(async move {
             let path = path_from_url(&request.url);
             let id = {
@@ -30,10 +31,28 @@ impl HttpInbound for HttpHandlerRegistryDispatcher {
                     format!("route matched `{id}` but handler was not found in registry")
                 )),
             };
-            match handler.execute_with_context(request, ctx).await {
-                Ok(resp) => Ok(resp),
-                Err(e)   => Err(map_handler_error(e)),
+            let start = Instant::now();
+            let result = if ctx.trace_id.is_empty() {
+                handler.execute_with_context(request, ctx).await
+            } else {
+                let span_ctx = swe_justobserv_context::LogContext::builder()
+                    .trace_id(&ctx.trace_id)
+                    .build();
+                swe_justobserv_context::with_log_context(
+                    span_ctx,
+                    handler.execute_with_context(request, ctx),
+                ).await
+            };
+            if let Some(ref m) = metrics {
+                let latency = start.elapsed().as_micros() as f64;
+                let labels = &[("handler_id", id.as_str())];
+                m.record_counter("edge_handler_requests_total", 1.0, labels);
+                m.record_histogram("edge_handler_latency_us", latency, labels);
+                if result.is_err() {
+                    m.record_counter("edge_handler_errors_total", 1.0, labels);
+                }
             }
+            result.map_err(map_handler_error)
         })
     }
 
@@ -145,5 +164,65 @@ mod tests {
     #[test]
     fn test_map_handler_error_unsupported_maps_to_not_found() {
         assert!(matches!(map_handler_error(HandlerError::Unsupported("x".into())), HttpInboundError::NotFound(_)));
+    }
+
+    /// @covers: with_metrics — records edge_handler_requests_total on success.
+    #[tokio::test]
+    async fn test_handle_with_metrics_records_handler_requests_total_on_success() {
+        use std::sync::Arc;
+        use swe_observ_metrics::{MetricsProvider, create_local_metrics_backend};
+        fn dec(req: &HttpRequest) -> Result<HttpRequest, HttpInboundError> { Ok(req.clone()) }
+        fn enc(r: HttpResponse) -> HttpResponse { r }
+        let provider: Arc<dyn MetricsProvider> = Arc::new(create_local_metrics_backend());
+        let d = HttpHandlerRegistryDispatcher::new(Arc::new(HandlerRegistry::new()))
+            .with_metrics(Arc::clone(&provider));
+        d.register(HttpHandlerAdapter::new(Arc::new(PingHandler), dec, enc)).expect("ok");
+        d.handle(HttpRequest::get("/ping"), ctx()).await.expect("ok");
+        let snaps = provider.export();
+        assert!(snaps.iter().any(|s| s.name == "edge_handler_requests_total" && s.value == 1.0),
+            "expected edge_handler_requests_total=1, got {snaps:?}");
+    }
+
+    /// @covers: with_metrics — records edge_handler_errors_total on handler failure.
+    #[tokio::test]
+    async fn test_handle_with_metrics_records_handler_errors_total_on_failure() {
+        use std::sync::Arc;
+        use swe_observ_metrics::{MetricsProvider, create_local_metrics_backend};
+        struct FailHandler;
+        #[async_trait]
+        impl Handler<HttpRequest, HttpResponse> for FailHandler {
+            fn id(&self) -> &str { "fail" }
+            fn pattern(&self) -> &str { "/fail" }
+            async fn execute(&self, _: HttpRequest) -> Result<HttpResponse, HandlerError> {
+                Err(HandlerError::ExecutionFailed("boom".into()))
+            }
+        }
+        fn dec(req: &HttpRequest) -> Result<HttpRequest, HttpInboundError> { Ok(req.clone()) }
+        fn enc(r: HttpResponse) -> HttpResponse { r }
+        let provider: Arc<dyn MetricsProvider> = Arc::new(create_local_metrics_backend());
+        let d = HttpHandlerRegistryDispatcher::new(Arc::new(HandlerRegistry::new()))
+            .with_metrics(Arc::clone(&provider));
+        d.register(HttpHandlerAdapter::new(Arc::new(FailHandler), dec, enc)).expect("ok");
+        let _ = d.handle(HttpRequest::get("/fail"), ctx()).await;
+        let snaps = provider.export();
+        assert!(snaps.iter().any(|s| s.name == "edge_handler_errors_total" && s.value == 1.0),
+            "expected edge_handler_errors_total=1, got {snaps:?}");
+    }
+
+    /// @covers: with_metrics — records edge_handler_latency_us histogram.
+    #[tokio::test]
+    async fn test_handle_with_metrics_records_handler_latency_histogram() {
+        use std::sync::Arc;
+        use swe_observ_metrics::{MetricsProvider, create_local_metrics_backend};
+        fn dec(req: &HttpRequest) -> Result<HttpRequest, HttpInboundError> { Ok(req.clone()) }
+        fn enc(r: HttpResponse) -> HttpResponse { r }
+        let provider: Arc<dyn MetricsProvider> = Arc::new(create_local_metrics_backend());
+        let d = HttpHandlerRegistryDispatcher::new(Arc::new(HandlerRegistry::new()))
+            .with_metrics(Arc::clone(&provider));
+        d.register(HttpHandlerAdapter::new(Arc::new(PingHandler), dec, enc)).expect("ok");
+        d.handle(HttpRequest::get("/ping"), ctx()).await.expect("ok");
+        let snaps = provider.export();
+        assert!(snaps.iter().any(|s| s.name == "edge_handler_latency_us"),
+            "expected edge_handler_latency_us, got {snaps:?}");
     }
 }

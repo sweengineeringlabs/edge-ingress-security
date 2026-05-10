@@ -3,6 +3,7 @@
 use std::sync::Arc;
 
 use edge_domain::HandlerRegistry;
+use swe_observ_metrics::MetricsProvider;
 
 use crate::api::handler_adapter::GrpcHandlerAdapter;
 
@@ -10,12 +11,20 @@ use crate::api::handler_adapter::GrpcHandlerAdapter;
 /// [`HandlerRegistry`] keyed by the gRPC method path.
 pub struct GrpcHandlerRegistryDispatcher {
     pub(crate) registry: Arc<HandlerRegistry<Vec<u8>, Vec<u8>>>,
+    pub(crate) metrics:  Option<Arc<dyn MetricsProvider>>,
 }
 
 impl GrpcHandlerRegistryDispatcher {
     /// Construct a dispatcher backed by `registry`.
     pub fn new(registry: Arc<HandlerRegistry<Vec<u8>, Vec<u8>>>) -> Self {
-        Self { registry }
+        Self { registry, metrics: None }
+    }
+
+    /// Attach a metrics provider; per-handler counters and latency histograms
+    /// are recorded automatically on every dispatch.
+    pub fn with_metrics(mut self, provider: Arc<dyn MetricsProvider>) -> Self {
+        self.metrics = Some(provider);
+        self
     }
 
     /// Register a typed adapter under its `id()`.

@@ -32,6 +32,8 @@ tracing.workspace     = true
 swe-edge-ingress-tls.workspace      = true
 swe-edge-ingress-verifier.workspace = true
 edge-domain.workspace               = true
+swe-observ-metrics.workspace        = true
+swe_justobserv_context.workspace    = true
 matchit      = "0.8"
 parking_lot.workspace = true
 hyper      = { version = "1", features = ["http1", "http2"] }
