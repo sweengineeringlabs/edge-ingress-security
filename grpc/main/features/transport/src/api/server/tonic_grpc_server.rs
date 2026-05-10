@@ -9,25 +9,31 @@ use crate::api::interceptor::GrpcInboundInterceptorChain;
 use crate::api::port::grpc_inbound::GrpcInbound;
 use crate::api::value_object::{CompressionMode, GrpcServerConfig};
 
+/// Panic message when no `AuthorizationInterceptor` is registered and `allow_unauthenticated` is false.
 pub const MISSING_AUTHORIZATION_INTERCEPTOR_MSG: &str =
     "gRPC server requires an AuthorizationInterceptor in the chain \
      (e.g. swe-edge-egress-grpc-authz::AuthzInterceptor). To explicitly run \
      without authz, set `allow_unauthenticated = true` in \
      GrpcServerConfig (logged at startup as a warning).";
 
+/// Warning logged at startup when gRPC reflection is enabled.
 pub const REFLECTION_ENABLED_WARN_MSG: &str =
     "gRPC reflection enabled — exposes service surface to anyone reaching this endpoint. \
      Disable in production deployments.";
 
+/// Default maximum inbound message size (4 MiB).
 pub const MAX_MESSAGE_BYTES: usize = 4 * 1_024 * 1_024; // 4 MiB
 
 /// Error returned by [`TonicGrpcServer::serve`].
 #[derive(Debug, thiserror::Error)]
 pub enum TonicServerError {
+    /// Failed to bind the server socket.
     #[error("failed to bind to {0}: {1}")]
     Bind(String, #[source] std::io::Error),
+    /// TLS acceptor construction failed.
     #[error("TLS: {0}")]
     Tls(#[source] swe_edge_ingress_tls::IngressTlsError),
+    /// Server configuration was rejected.
     #[error("server config rejected: {0}")]
     Config(#[source] GrpcServerConfigError),
 }
@@ -40,6 +46,7 @@ pub enum GrpcServerConfigError {
          attach an IngressTlsConfig via with_tls(...) or call \
          allow_plaintext() to opt out"
     )]
+    /// `tls_required` is set but no `IngressTlsConfig` was attached.
     TlsRequiredButMissing,
 }
 
@@ -96,43 +103,52 @@ impl TonicGrpcServer {
         })
     }
 
+    /// Enable or disable gRPC server reflection.
     pub fn enable_reflection(mut self, enable: bool) -> Self {
         self.enable_reflection = enable;
         self
     }
 
+    /// Returns `true` if gRPC reflection is enabled.
     pub fn is_reflection_enabled(&self) -> bool { self.enable_reflection }
 
+    /// Replace the default no-op audit sink with a custom implementation.
     pub fn with_audit_sink(mut self, sink: Arc<dyn AuditSink>) -> Self {
         self.audit_sink = sink;
         self
     }
 
+    /// Allow requests without an `AuthorizationInterceptor` in the chain.
     pub fn allow_unauthenticated(mut self, allow: bool) -> Self {
         self.allow_unauthenticated = allow;
         self
     }
 
+    /// Override the maximum inbound message size in bytes.
     pub fn with_max_message_size(mut self, size: usize) -> Self {
         self.max_bytes = size;
         self
     }
 
+    /// Override the maximum number of concurrent HTTP/2 streams.
     pub fn with_max_concurrent_streams(mut self, streams: u32) -> Self {
         self.max_concurrent_streams = streams;
         self
     }
 
+    /// Attach an interceptor chain that runs before and after each dispatch.
     pub fn with_interceptors(mut self, chain: GrpcInboundInterceptorChain) -> Self {
         self.interceptors = chain;
         self
     }
 
+    /// Set the response compression mode.
     pub fn with_compression(mut self, mode: CompressionMode) -> Self {
         self.compression = mode;
         self
     }
 
+    /// Attach a TLS configuration (enables mTLS when a CA cert is provided).
     pub fn with_tls(mut self, config: IngressTlsConfig) -> Self {
         self.tls = Some(config);
         self
