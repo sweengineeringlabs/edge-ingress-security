@@ -12,7 +12,7 @@ use crate::api::port::http_inbound::{HttpInbound, HttpInboundError};
 use edge_domain::RequestContext;
 use swe_edge_ingress_verifier::TokenVerifier;
 
-use crate::api::server::axum_http_server::{AxumHttpServer, AxumServerError, MAX_BODY_BYTES};
+use crate::api::server::axum_http_server::{AxumHttpServer, AxumServerError};
 use crate::api::value_object::{HttpBody, HttpMethod, HttpRequest, HttpResponse};
 use swe_edge_ingress_tls::IngressTlsConfig;
 
@@ -157,6 +157,7 @@ where
 
 // ── Bearer auth ───────────────────────────────────────────────────────────────
 
+#[allow(clippy::result_large_err)]
 fn verify_auth(
     mut req:  axum::extract::Request,
     verifier: Option<&dyn TokenVerifier>,

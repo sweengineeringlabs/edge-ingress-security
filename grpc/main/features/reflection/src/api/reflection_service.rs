@@ -7,13 +7,18 @@ use parking_lot::RwLock;
 
 use crate::api::types::Descriptor;
 
+/// gRPC method path for server reflection info calls.
 pub const REFLECTION_INFO_METHOD: &str =
     "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo";
 
+/// Full service name for gRPC server reflection v1alpha.
 pub const REFLECTION_SERVICE_NAME: &str = "grpc.reflection.v1alpha.ServerReflection";
 
+/// gRPC status code: symbol or service not found.
 pub const ERROR_CODE_NOT_FOUND:         i32 = 5;
+/// gRPC status code: method not implemented.
 pub const ERROR_CODE_UNIMPLEMENTED:     i32 = 12;
+/// gRPC status code: invalid argument supplied.
 pub const ERROR_CODE_INVALID_ARGUMENT:  i32 = 3;
 
 /// Implementation of `grpc.reflection.v1alpha.ServerReflection`.
