@@ -2,7 +2,6 @@
 
 use jsonwebtoken::{Algorithm, DecodingKey, Validation};
 
-use crate::api::claims::Claims;
 use crate::api::jwt_config::{JwtConfig, JwtKey};
 use crate::api::verifier_error::VerifierError;
 

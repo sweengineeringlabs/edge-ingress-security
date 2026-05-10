@@ -1,13 +1,12 @@
 //! `ReflectionService` trait implementations and private helpers.
 
 use std::collections::BTreeSet;
-use std::sync::Arc;
 use std::time::Duration;
 
 use futures::future::BoxFuture;
 use futures::StreamExt;
 
-use edge_domain::{HandlerRegistry, RequestContext};
+use edge_domain::RequestContext;
 use swe_edge_ingress_grpc::{
     GrpcHealthCheck, GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcMessageStream,
     GrpcMetadata, GrpcRequest, GrpcResponse,

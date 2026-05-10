@@ -1,11 +1,11 @@
 [package]
 name         = "swe-edge-ingress-verifier"
-version.workspace     = true
-edition.workspace     = true
-license.workspace     = true
-rust-version.workspace = true
-authors.workspace     = true
-repository.workspace  = true
+version      = "0.1.0"
+edition      = "2021"
+license      = "MIT"
+rust-version = "1.75"
+authors      = ["SWE Engineering Labs"]
+repository   = "https://github.com/sweengineeringlabs/edge"
 description  = "Protocol-agnostic inbound credential verification — JWT, API key, client cert."
 keywords     = ["auth", "jwt", "verification", "inbound", "edge"]
 categories   = ["authentication", "network-programming"]
@@ -17,15 +17,16 @@ application_type = "lib"
 path = "src/lib.rs"
 
 [dependencies]
-serde.workspace      = true
-serde_json.workspace = true
-thiserror.workspace  = true
-tracing.workspace    = true
-jsonwebtoken         = "9"
-subtle               = "2"
+serde        = { version = "1.0", features = ["derive"] }
+serde_json   = "1.0"
+thiserror    = "2"
+tracing      = "0.1"
+jsonwebtoken = "9"
+subtle       = "2"
 
 [dev-dependencies]
-tokio = { workspace = true, features = ["macros", "rt"] }
+tokio = { version = "1.0", features = ["macros", "rt"] }
 
-[lints]
-workspace = true
+[lints.rust]
+unsafe_code  = "deny"
+missing_docs = "warn"

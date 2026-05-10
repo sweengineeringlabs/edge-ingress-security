@@ -1,7 +1,5 @@
 //! `TokenVerifier` impl for `JwtVerifier`.
 
-use jsonwebtoken;
-
 use crate::api::claims::Claims;
 use crate::api::jwt_verifier::{map_jwt_error, JwtVerifier};
 use crate::api::token_verifier::TokenVerifier;
