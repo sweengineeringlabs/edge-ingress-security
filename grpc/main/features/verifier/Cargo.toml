@@ -1,0 +1,31 @@
+[package]
+name         = "swe-edge-ingress-grpc-verifier"
+version.workspace     = true
+edition.workspace     = true
+license.workspace     = true
+rust-version.workspace = true
+authors.workspace     = true
+repository.workspace  = true
+description  = "gRPC interceptor that enforces JWT/API-key authentication on inbound calls."
+keywords     = ["auth", "jwt", "grpc", "interceptor", "edge"]
+categories   = ["authentication", "network-programming"]
+
+[package.metadata.struct-engine]
+application_type = "lib"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+thiserror.workspace   = true
+tracing.workspace     = true
+
+swe-edge-ingress-verifier.workspace       = true
+swe-edge-ingress-grpc-transport.workspace = true
+
+[dev-dependencies]
+tokio      = { workspace = true, features = ["rt", "macros"] }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true
