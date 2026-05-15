@@ -661,6 +661,7 @@ fn collect_metadata(headers: &http::HeaderMap) -> HashMap<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::GrpcServerConfig;
 
     // ── read_deadline ─────────────────────────────────────────────────────
 

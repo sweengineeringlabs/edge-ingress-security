@@ -539,7 +539,8 @@ mod dedicated_coverage {
     use crate::api::port::http_inbound::{HttpInbound, HttpInboundResult, HttpHealthCheck};
     use crate::api::value_object::{HttpRequest, HttpResponse};
     use swe_edge_ingress_tls::IngressTlsConfig;
-    use super::{AxumHttpServer, MAX_BODY_BYTES};
+    use super::AxumHttpServer;
+    use crate::api::server::axum_http_server::MAX_BODY_BYTES;
 
     struct Stub;
     impl HttpInbound for Stub {
