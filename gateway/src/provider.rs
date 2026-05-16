@@ -39,7 +39,7 @@ mod tests {
 
     #[test]
     fn test_stateless_provider_can_be_default_and_cloned() {
-        let p = TestStateless::default();
+        let p = TestStateless;
         let _ = p.clone();
     }
 

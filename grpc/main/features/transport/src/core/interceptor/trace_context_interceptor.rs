@@ -87,6 +87,6 @@ mod tests {
         interceptor
             .before_dispatch(&mut r)
             .expect("before_dispatch");
-        assert!(r.metadata.headers.get(EXTRACTED_TRACEPARENT).is_none());
+        assert!(!r.metadata.headers.contains_key(EXTRACTED_TRACEPARENT));
     }
 }

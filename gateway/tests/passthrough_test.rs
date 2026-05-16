@@ -2,9 +2,4 @@
 
 /// @covers: passthrough — api interface counterpart is accessible
 #[test]
-fn test_passthrough_api_module_documents_contract() {
-    assert!(
-        true,
-        "api/validator/passthrough module exists as interface counterpart"
-    );
-}
+fn test_passthrough_api_module_documents_contract() {}

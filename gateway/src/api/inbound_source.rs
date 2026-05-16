@@ -37,7 +37,7 @@ mod tests {
     #[test]
     fn test_inbound_source_file_exists_returns_false_for_stub() {
         let src = AlwaysEmpty;
-        assert_eq!(src.file_exists(Path::new("no_such_file")).unwrap(), false);
+        assert!(!src.file_exists(Path::new("no_such_file")).unwrap());
     }
 
     #[test]

@@ -231,8 +231,6 @@ async fn test_grpc_tls_server_returns_tls_error_for_missing_cert() {
 /// continues to work over h2c
 #[tokio::test]
 async fn test_plain_grpc_server_unaffected_when_tls_server_runs_concurrently() {
-    use bytes::Buf as _;
-
     // Plain h2c server
     let plain_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let plain_addr = plain_listener.local_addr().unwrap();

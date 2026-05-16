@@ -910,7 +910,6 @@ mod dedicated_coverage {
     use super::TonicGrpcServer;
     use crate::api::port::grpc_inbound::{GrpcHealthCheck, GrpcInbound, GrpcInboundResult};
     use crate::api::value_object::{CompressionMode, GrpcRequest, GrpcResponse};
-    use async_trait::async_trait;
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
     use std::sync::Arc;

@@ -194,7 +194,7 @@ async fn plaintext_to_tls_required_server_fails_before_handler_runs_int_test() {
 
     // Either the request failed outright, or it returned a non-grpc-OK
     // response.  Either way, the handler MUST NOT have run.
-    let resp_ok = matches!(&attempted, Ok(_));
+    let resp_ok = attempted.is_ok();
     if resp_ok {
         // Drain the body — even when the server returns a response,
         // the handler should not have executed.

@@ -208,10 +208,10 @@ mod tests {
 
     use super::{decode_health_check_request, encode_health_check_response, encode_varint};
     use crate::api::health_service::{
-        HealthAggregate, HealthService, ServingStatus, HEALTH_CHECK_METHOD, HEALTH_WATCH_METHOD,
+        HealthAggregate, HealthService, ServingStatus, HEALTH_CHECK_METHOD,
     };
     use crate::api::port::grpc_inbound::{
-        GrpcHealthCheck, GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcMessageStream,
+        GrpcHealthCheck, GrpcInbound, GrpcInboundResult,
     };
     use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
 

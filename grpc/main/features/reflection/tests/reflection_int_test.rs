@@ -319,8 +319,7 @@ fn parse_error_response_code(body: &[u8]) -> Option<i32> {
                 let fnum = (tag >> 3) as u32;
                 let wire = (tag & 0x7) as u8;
                 if (fnum, wire) == (1, 0) {
-                    let (v, sc2) = decode_varint(&payload[sidx..])?;
-                    sidx += sc2;
+                    let (v, _) = decode_varint(&payload[sidx..])?;
                     return Some(v as i32);
                 } else if wire == 0 {
                     let (_, sc2) = decode_varint(&payload[sidx..])?;
@@ -391,13 +390,12 @@ async fn grpc_call(addr: SocketAddr, path: &str, payload: &[u8]) -> (Option<Stri
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
+type EchoRegistry = Arc<HandlerRegistry<Vec<u8>, Vec<u8>>>;
+
 /// Build a dispatcher pre-loaded with EchoHandler under `/pkg.Demo/Echo`.
 /// Returns the registry as well so the caller can pass it into ReflectionService.
-fn dispatcher_with_echo() -> (
-    GrpcHandlerRegistryDispatcher,
-    Arc<HandlerRegistry<Vec<u8>, Vec<u8>>>,
-) {
-    let registry: Arc<HandlerRegistry<Vec<u8>, Vec<u8>>> = Arc::new(HandlerRegistry::new());
+fn dispatcher_with_echo() -> (GrpcHandlerRegistryDispatcher, EchoRegistry) {
+    let registry: EchoRegistry = Arc::new(HandlerRegistry::new());
     let dispatcher = GrpcHandlerRegistryDispatcher::new(registry.clone());
     dispatcher.register(GrpcHandlerAdapter::new(
         Arc::new(EchoHandler),

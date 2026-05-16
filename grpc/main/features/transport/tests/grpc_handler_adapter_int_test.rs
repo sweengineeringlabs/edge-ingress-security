@@ -20,7 +20,7 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
-use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
+use edge_domain::{Handler, HandlerError, HandlerRegistry};
 use swe_edge_ingress_grpc_transport::{
     GrpcHandlerAdapter, GrpcHandlerRegistryDispatcher, GrpcInboundError, TonicGrpcServer,
 };

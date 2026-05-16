@@ -2,7 +2,7 @@
 
 use futures::future::BoxFuture;
 use swe_edge_ingress_http::{
-    HttpAuth, HttpBody, HttpConfig, HttpHealthCheck, HttpInbound, HttpInboundError,
+    HttpAuth, HttpConfig, HttpHealthCheck, HttpInbound, HttpInboundError,
     HttpInboundResult, HttpMethod, HttpRequest, HttpResponse, RequestContext,
 };
 
