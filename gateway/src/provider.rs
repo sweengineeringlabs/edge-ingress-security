@@ -20,7 +20,10 @@ pub trait LazyInit<S: ?Sized>: Send + Sync {
 
 /// Trait for providers that support parameterized initialization.
 pub trait LazyInitWithConfig<S: ?Sized, C>: Send + Sync {
-    fn get_service_with_config(&self, config: &C) -> impl Future<Output = IngressResult<Arc<S>>> + Send;
+    fn get_service_with_config(
+        &self,
+        config: &C,
+    ) -> impl Future<Output = IngressResult<Arc<S>>> + Send;
 }
 
 #[cfg(test)]
@@ -36,7 +39,7 @@ mod tests {
 
     #[test]
     fn test_stateless_provider_can_be_default_and_cloned() {
-        let p = TestStateless::default();
+        let p = TestStateless;
         let _ = p.clone();
     }
 

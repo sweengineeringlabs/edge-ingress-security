@@ -31,13 +31,14 @@ impl GrpcInbound for EchoHandler {
         _ctx: RequestContext,
     ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move {
-            Ok(GrpcResponse { body: req.body, metadata: GrpcMetadata::default() })
+            Ok(GrpcResponse {
+                body: req.body,
+                metadata: GrpcMetadata::default(),
+            })
         })
     }
 
-    fn health_check(
-        &self,
-    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
         Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
     }
 }
@@ -125,11 +126,18 @@ fn grpc_frame(payload: &[u8]) -> Bytes {
     buf.freeze()
 }
 
-async fn grpc_call_tls(addr: SocketAddr, path: &str, payload: &[u8]) -> (u16, Option<String>, Bytes) {
+async fn grpc_call_tls(
+    addr: SocketAddr,
+    path: &str,
+    payload: &[u8],
+) -> (u16, Option<String>, Bytes) {
     let tcp = tokio::net::TcpStream::connect(addr).await.unwrap();
     let server_name = rustls::pki_types::ServerName::try_from("localhost").unwrap();
-    let tls = insecure_tls_connector().connect(server_name, tcp).await.unwrap();
-    let io  = TokioIo::new(tls);
+    let tls = insecure_tls_connector()
+        .connect(server_name, tcp)
+        .await
+        .unwrap();
+    let io = TokioIo::new(tls);
 
     let (mut sender, conn) = hyper::client::conn::http2::Builder::new(TokioExecutor::new())
         .handshake(io)
@@ -145,8 +153,8 @@ async fn grpc_call_tls(addr: SocketAddr, path: &str, payload: &[u8]) -> (u16, Op
         .body(Full::new(grpc_frame(payload)))
         .unwrap();
 
-    let resp      = sender.send_request(req).await.unwrap();
-    let status    = resp.status().as_u16();
+    let resp = sender.send_request(req).await.unwrap();
+    let status = resp.status().as_u16();
     let collected = resp.into_body().collect().await.unwrap();
     let grpc_status = collected
         .trailers()
@@ -160,14 +168,16 @@ async fn grpc_call_tls(addr: SocketAddr, path: &str, payload: &[u8]) -> (u16, Op
 
 async fn start_tls_server(tls: IngressTlsConfig) -> (SocketAddr, oneshot::Sender<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr     = listener.local_addr().unwrap();
-    let server   = TonicGrpcServer::new("127.0.0.1:0", Arc::new(EchoHandler))
+    let addr = listener.local_addr().unwrap();
+    let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(EchoHandler))
         .with_tls(tls)
         .allow_unauthenticated(true);
     let (tx, rx) = oneshot::channel::<()>();
     tokio::spawn(async move {
         server
-            .serve_with_listener(listener, async move { let _ = rx.await; })
+            .serve_with_listener(listener, async move {
+                let _ = rx.await;
+            })
             .await
             .unwrap();
     });
@@ -183,7 +193,7 @@ async fn start_tls_server(tls: IngressTlsConfig) -> (SocketAddr, oneshot::Sender
 async fn test_grpc_tls_server_echoes_payload_with_status_0() {
     let (cert_pem, key_pem) = self_signed();
     let cert_f = write_temp(&cert_pem);
-    let key_f  = write_temp(&key_pem);
+    let key_f = write_temp(&key_pem);
 
     let cfg = IngressTlsConfig::tls(
         cert_f.path().to_str().unwrap(),
@@ -221,17 +231,17 @@ async fn test_grpc_tls_server_returns_tls_error_for_missing_cert() {
 /// continues to work over h2c
 #[tokio::test]
 async fn test_plain_grpc_server_unaffected_when_tls_server_runs_concurrently() {
-    use bytes::Buf as _;
-
     // Plain h2c server
     let plain_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let plain_addr     = plain_listener.local_addr().unwrap();
-    let (ptx, prx)     = oneshot::channel::<()>();
-    let plain_server   = TonicGrpcServer::new("127.0.0.1:0", Arc::new(EchoHandler))
-        .allow_unauthenticated(true);
+    let plain_addr = plain_listener.local_addr().unwrap();
+    let (ptx, prx) = oneshot::channel::<()>();
+    let plain_server =
+        TonicGrpcServer::new("127.0.0.1:0", Arc::new(EchoHandler)).allow_unauthenticated(true);
     tokio::spawn(async move {
         plain_server
-            .serve_with_listener(plain_listener, async move { let _ = prx.await; })
+            .serve_with_listener(plain_listener, async move {
+                let _ = prx.await;
+            })
             .await
             .unwrap();
     });
@@ -239,7 +249,7 @@ async fn test_plain_grpc_server_unaffected_when_tls_server_runs_concurrently() {
     // TLS server
     let (cert_pem, key_pem) = self_signed();
     let cert_f = write_temp(&cert_pem);
-    let key_f  = write_temp(&key_pem);
+    let key_f = write_temp(&key_pem);
     let cfg = IngressTlsConfig::tls(
         cert_f.path().to_str().unwrap(),
         key_f.path().to_str().unwrap(),
@@ -248,7 +258,7 @@ async fn test_plain_grpc_server_unaffected_when_tls_server_runs_concurrently() {
 
     // The plain server still responds normally over h2c.
     let stream = tokio::net::TcpStream::connect(plain_addr).await.unwrap();
-    let io     = TokioIo::new(stream);
+    let io = TokioIo::new(stream);
     let (mut sender, conn) = hyper::client::conn::http2::Builder::new(TokioExecutor::new())
         .handshake(io)
         .await

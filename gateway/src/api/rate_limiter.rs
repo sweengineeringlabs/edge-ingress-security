@@ -18,22 +18,38 @@ pub struct RateLimiterBuilder {
 
 impl RateLimiterBuilder {
     /// Create a builder with defaults: capacity 100, refill rate 10/s.
-    pub fn new() -> Self { Self { capacity: 100, refill_rate: 10.0 } }
+    pub fn new() -> Self {
+        Self {
+            capacity: 100,
+            refill_rate: 10.0,
+        }
+    }
 
     /// Set the bucket capacity (minimum 1).
-    pub fn capacity(mut self, capacity: u64) -> Self { self.capacity = capacity.max(1); self }
+    pub fn capacity(mut self, capacity: u64) -> Self {
+        self.capacity = capacity.max(1);
+        self
+    }
 
     /// Set the token refill rate per second (minimum 0.001).
-    pub fn refill_rate(mut self, rate: f64) -> Self { self.refill_rate = rate.max(0.001); self }
+    pub fn refill_rate(mut self, rate: f64) -> Self {
+        self.refill_rate = rate.max(0.001);
+        self
+    }
 
     /// Finalise the spec.
     pub fn build(self) -> RateLimiterSpec {
-        RateLimiterSpec { capacity: self.capacity, refill_rate: self.refill_rate }
+        RateLimiterSpec {
+            capacity: self.capacity,
+            refill_rate: self.refill_rate,
+        }
     }
 }
 
 impl Default for RateLimiterBuilder {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// Finalized rate-limiter configuration.
@@ -44,10 +60,14 @@ pub struct RateLimiterSpec {
 
 impl RateLimiterSpec {
     /// Return the configured bucket capacity.
-    pub fn capacity(&self) -> u64 { self.capacity }
+    pub fn capacity(&self) -> u64 {
+        self.capacity
+    }
 
     /// Return the configured refill rate (tokens per second).
-    pub fn refill_rate(&self) -> f64 { self.refill_rate }
+    pub fn refill_rate(&self) -> f64 {
+        self.refill_rate
+    }
 }
 
 #[cfg(test)]

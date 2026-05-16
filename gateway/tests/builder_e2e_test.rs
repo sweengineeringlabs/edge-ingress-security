@@ -1,6 +1,6 @@
 //! End-to-end tests for the swe_edge_ingress SAF builder surface.
 
-use swe_edge_ingress::{build_file_input, file_input, Builder, InboundSource};
+use swe_edge_ingress::{build_file_input, file_input, ApplicationConfigBuilder, InboundSource};
 
 /// @covers: file_input
 #[test]
@@ -12,7 +12,7 @@ fn test_file_input_builds_and_checks_existing_path() {
 
 #[test]
 fn test_builder_new_constructs_successfully() {
-    let _ = Builder::new();
+    let _ = ApplicationConfigBuilder::new();
 }
 
 #[test]

@@ -73,15 +73,29 @@ pub struct GrpcHealthCheck {
 
 impl GrpcHealthCheck {
     /// Create a healthy result.
-    pub fn healthy() -> Self { Self { healthy: true, message: None } }
+    pub fn healthy() -> Self {
+        Self {
+            healthy: true,
+            message: None,
+        }
+    }
     /// Create an unhealthy result with a message.
-    pub fn unhealthy(msg: impl Into<String>) -> Self { Self { healthy: false, message: Some(msg.into()) } }
+    pub fn unhealthy(msg: impl Into<String>) -> Self {
+        Self {
+            healthy: false,
+            message: Some(msg.into()),
+        }
+    }
 }
 
 /// Handles inbound gRPC requests (server-side).
 pub trait GrpcInbound: Send + Sync {
     /// Handle a single unary request.
-    fn handle_unary(&self, request: GrpcRequest, ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>>;
+    fn handle_unary(
+        &self,
+        request: GrpcRequest,
+        ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>>;
 
     /// Handle a streaming request (client-streaming, server-streaming, or bidi).
     ///
@@ -106,16 +120,15 @@ pub trait GrpcInbound: Send + Sync {
             use futures::StreamExt;
             let mut messages = messages;
             let body = match messages.next().await {
-                Some(Ok(b))  => b,
+                Some(Ok(b)) => b,
                 Some(Err(e)) => return Err(e),
-                None         => vec![],
+                None => vec![],
             };
-            let req  = GrpcRequest::new(method, body, std::time::Duration::from_secs(30))
+            let req = GrpcRequest::new(method, body, std::time::Duration::from_secs(30))
                 .with_metadata(metadata);
             let resp = self.handle_unary(req, ctx).await?;
-            let out: GrpcMessageStream = Box::pin(futures::stream::once(
-                futures::future::ready(Ok(resp.body)),
-            ));
+            let out: GrpcMessageStream =
+                Box::pin(futures::stream::once(futures::future::ready(Ok(resp.body))));
             Ok((out, resp.metadata))
         })
     }
@@ -143,7 +156,7 @@ mod tests {
     #[test]
     fn test_grpc_inbound_error_status_variant_carries_code_and_message() {
         let err = GrpcInboundError::Status(GrpcStatusCode::Aborted, "tx aborted".into());
-        let s   = err.to_string();
+        let s = err.to_string();
         assert!(s.contains("Aborted"));
         assert!(s.contains("tx aborted"));
     }

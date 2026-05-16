@@ -11,7 +11,7 @@ use swe_edge_ingress_verifier::TokenVerifier;
 /// auth failures become `401 Unauthorized` responses without reaching the inner service.
 #[derive(Clone)]
 pub struct BearerService<S> {
-    pub(crate) inner:    S,
+    pub(crate) inner: S,
     pub(crate) verifier: Arc<dyn TokenVerifier>,
 }
 
@@ -31,7 +31,7 @@ mod tests {
     #[test]
     fn test_bearer_service_stores_verifier_and_inner() {
         let svc = BearerService {
-            inner:    (),
+            inner: (),
             verifier: Arc::new(AlwaysOk) as Arc<dyn TokenVerifier>,
         };
         assert!(svc.verifier.verify("any").is_ok());

@@ -33,17 +33,25 @@ pub enum HttpAuth {
 impl HttpAuth {
     /// Create Bearer token auth.
     pub fn bearer(token: impl Into<String>) -> Self {
-        Self::Bearer { token: token.into() }
+        Self::Bearer {
+            token: token.into(),
+        }
     }
 
     /// Create Basic auth with username and password.
     pub fn basic(username: impl Into<String>, password: impl Into<String>) -> Self {
-        Self::Basic { username: username.into(), password: password.into() }
+        Self::Basic {
+            username: username.into(),
+            password: password.into(),
+        }
     }
 
     /// Create API key auth via a custom header name.
     pub fn api_key(header: impl Into<String>, key: impl Into<String>) -> Self {
-        Self::ApiKey { header: header.into(), key: key.into() }
+        Self::ApiKey {
+            header: header.into(),
+            key: key.into(),
+        }
     }
 }
 

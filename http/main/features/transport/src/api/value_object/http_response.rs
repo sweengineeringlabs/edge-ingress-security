@@ -18,17 +18,27 @@ pub struct HttpResponse {
 impl HttpResponse {
     /// Create a response with `status` and `body`.
     pub fn new(status: u16, body: Vec<u8>) -> Self {
-        Self { status, headers: HashMap::new(), body }
+        Self {
+            status,
+            headers: HashMap::new(),
+            body,
+        }
     }
 
     /// Returns `true` for 2xx status codes.
-    pub fn is_success(&self) -> bool { (200..300).contains(&self.status) }
+    pub fn is_success(&self) -> bool {
+        (200..300).contains(&self.status)
+    }
 
     /// Returns `true` for 4xx status codes.
-    pub fn is_client_error(&self) -> bool { (400..500).contains(&self.status) }
+    pub fn is_client_error(&self) -> bool {
+        (400..500).contains(&self.status)
+    }
 
     /// Returns `true` for 5xx status codes.
-    pub fn is_server_error(&self) -> bool { (500..600).contains(&self.status) }
+    pub fn is_server_error(&self) -> bool {
+        (500..600).contains(&self.status)
+    }
 
     /// Deserialise the body as JSON.
     pub fn json<T: for<'de> Deserialize<'de>>(&self) -> Result<T, serde_json::Error> {
@@ -92,7 +102,8 @@ mod tests {
     #[test]
     fn test_header_returns_value_for_exact_case_match() {
         let mut resp = HttpResponse::new(200, vec![]);
-        resp.headers.insert("Content-Type".to_string(), "text/html".to_string());
+        resp.headers
+            .insert("Content-Type".to_string(), "text/html".to_string());
         assert_eq!(resp.header("Content-Type"), Some("text/html"));
         assert!(resp.header("X-Missing").is_none());
     }
@@ -101,7 +112,8 @@ mod tests {
     #[test]
     fn test_header_returns_value_for_lowercase_lookup() {
         let mut resp = HttpResponse::new(200, vec![]);
-        resp.headers.insert("Content-Type".to_string(), "text/html".to_string());
+        resp.headers
+            .insert("Content-Type".to_string(), "text/html".to_string());
         assert_eq!(resp.header("content-type"), Some("text/html"));
     }
 
@@ -109,7 +121,8 @@ mod tests {
     #[test]
     fn test_header_returns_value_for_mixed_case_lookup() {
         let mut resp = HttpResponse::new(200, vec![]);
-        resp.headers.insert("Content-Type".to_string(), "text/html".to_string());
+        resp.headers
+            .insert("Content-Type".to_string(), "text/html".to_string());
         assert_eq!(resp.header("CONTENT-TYPE"), Some("text/html"));
     }
 

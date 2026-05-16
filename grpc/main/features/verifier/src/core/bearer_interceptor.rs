@@ -1,8 +1,8 @@
 //! `GrpcInboundInterceptor` + `AuthorizationInterceptor` impl for `BearerTokenInterceptor`.
 
 use swe_edge_ingress_grpc_transport::{
-    AuthorizationInterceptor, GrpcInboundError, GrpcInboundInterceptor, GrpcRequest,
-    GrpcResponse, GrpcStatusCode,
+    AuthorizationInterceptor, GrpcInboundError, GrpcInboundInterceptor, GrpcRequest, GrpcResponse,
+    GrpcStatusCode,
 };
 use swe_edge_ingress_verifier::VerifierError;
 
@@ -32,13 +32,11 @@ impl GrpcInboundInterceptor for BearerTokenInterceptor {
 
         self.verifier.verify(token).map(|_| ()).map_err(|e| {
             let msg = match &e {
-                VerifierError::Expired       => "token has expired".into(),
-                VerifierError::NotYetValid   => "token is not yet valid".into(),
+                VerifierError::Expired => "token has expired".into(),
+                VerifierError::NotYetValid => "token is not yet valid".into(),
                 VerifierError::UnknownApiKey => "unknown API key".into(),
                 VerifierError::ClaimMismatch(c) => format!("claim mismatch: {c}"),
-                VerifierError::Invalid(_) | VerifierError::Config(_) => {
-                    "invalid token".into()
-                }
+                VerifierError::Invalid(_) | VerifierError::Config(_) => "invalid token".into(),
             };
             GrpcInboundError::Status(GrpcStatusCode::Unauthenticated, msg)
         })
@@ -48,7 +46,9 @@ impl GrpcInboundInterceptor for BearerTokenInterceptor {
         Ok(())
     }
 
-    fn is_authorization(&self) -> bool { true }
+    fn is_authorization(&self) -> bool {
+        true
+    }
 }
 
 impl AuthorizationInterceptor for BearerTokenInterceptor {}
@@ -58,9 +58,7 @@ mod tests {
     use std::sync::Arc;
     use std::time::Duration;
 
-    use swe_edge_ingress_grpc_transport::{
-        GrpcInboundInterceptor, GrpcRequest, GrpcStatusCode,
-    };
+    use swe_edge_ingress_grpc_transport::{GrpcInboundInterceptor, GrpcRequest, GrpcStatusCode};
     use swe_edge_ingress_verifier::{Claims, VerifierError};
 
     use crate::api::bearer_interceptor::BearerTokenInterceptor;
@@ -81,7 +79,9 @@ mod tests {
 
     fn req_with_bearer(token: &str) -> GrpcRequest {
         let mut r = GrpcRequest::new("svc/M", vec![], Duration::from_secs(1));
-        r.metadata.headers.insert("authorization".into(), format!("Bearer {token}"));
+        r.metadata
+            .headers
+            .insert("authorization".into(), format!("Bearer {token}"));
         r
     }
 
@@ -99,7 +99,13 @@ mod tests {
         let i = BearerTokenInterceptor::new(Arc::new(AlwaysOk));
         let mut req = GrpcRequest::new("svc/M", vec![], Duration::from_secs(1));
         let err = i.before_dispatch(&mut req).unwrap_err();
-        assert!(matches!(err, swe_edge_ingress_grpc_transport::GrpcInboundError::Status(GrpcStatusCode::Unauthenticated, _)));
+        assert!(matches!(
+            err,
+            swe_edge_ingress_grpc_transport::GrpcInboundError::Status(
+                GrpcStatusCode::Unauthenticated,
+                _
+            )
+        ));
     }
 
     /// @covers: before_dispatch — malformed Bearer prefix returns Unauthenticated.
@@ -107,9 +113,17 @@ mod tests {
     fn test_before_dispatch_malformed_prefix_returns_unauthenticated() {
         let i = BearerTokenInterceptor::new(Arc::new(AlwaysOk));
         let mut req = GrpcRequest::new("svc/M", vec![], Duration::from_secs(1));
-        req.metadata.headers.insert("authorization".into(), "Basic abc".into());
+        req.metadata
+            .headers
+            .insert("authorization".into(), "Basic abc".into());
         let err = i.before_dispatch(&mut req).unwrap_err();
-        assert!(matches!(err, swe_edge_ingress_grpc_transport::GrpcInboundError::Status(GrpcStatusCode::Unauthenticated, _)));
+        assert!(matches!(
+            err,
+            swe_edge_ingress_grpc_transport::GrpcInboundError::Status(
+                GrpcStatusCode::Unauthenticated,
+                _
+            )
+        ));
     }
 
     /// @covers: before_dispatch — expired token returns Unauthenticated.
@@ -118,7 +132,13 @@ mod tests {
         let i = BearerTokenInterceptor::new(Arc::new(AlwaysFail));
         let mut req = req_with_bearer("expired-token");
         let err = i.before_dispatch(&mut req).unwrap_err();
-        assert!(matches!(err, swe_edge_ingress_grpc_transport::GrpcInboundError::Status(GrpcStatusCode::Unauthenticated, _)));
+        assert!(matches!(
+            err,
+            swe_edge_ingress_grpc_transport::GrpcInboundError::Status(
+                GrpcStatusCode::Unauthenticated,
+                _
+            )
+        ));
     }
 
     /// @covers: is_authorization — returns true for auth interceptors.

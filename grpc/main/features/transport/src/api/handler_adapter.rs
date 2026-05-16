@@ -13,7 +13,7 @@
 //! adapter in the registry by `Handler::id`, decodes the request bytes,
 //! invokes the typed handler, and encodes the response bytes back onto
 //! the wire.
-
+
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -45,59 +45,76 @@ pub type EncodeFn<Resp> = fn(&Resp) -> Vec<u8>;
 /// (e.g. `"/pkg.Service/Method"`).
 pub struct GrpcHandlerAdapter<Req, Resp>
 where
-    Req:  Send + 'static,
+    Req: Send + 'static,
     Resp: Send + 'static,
 {
-    inner:  Arc<dyn Handler<Req, Resp>>,
+    inner: Arc<dyn Handler<Req, Resp>>,
     decode: DecodeFn<Req>,
     encode: EncodeFn<Resp>,
 }
 
 impl<Req, Resp> GrpcHandlerAdapter<Req, Resp>
 where
-    Req:  Send + 'static,
+    Req: Send + 'static,
     Resp: Send + 'static,
 {
     /// Construct a new adapter from an inner typed handler and a
     /// decode/encode pair.
     pub fn new(
-        inner:  Arc<dyn Handler<Req, Resp>>,
+        inner: Arc<dyn Handler<Req, Resp>>,
         decode: DecodeFn<Req>,
         encode: EncodeFn<Resp>,
     ) -> Self {
-        Self { inner, decode, encode }
+        Self {
+            inner,
+            decode,
+            encode,
+        }
     }
 
     /// Borrow the inner typed handler — useful for administrative
     /// tooling that wants to interrogate the underlying domain unit.
-    pub fn inner(&self) -> &Arc<dyn Handler<Req, Resp>> { &self.inner }
+    pub fn inner(&self) -> &Arc<dyn Handler<Req, Resp>> {
+        &self.inner
+    }
 }
 
 #[async_trait]
 impl<Req, Resp> Handler<Vec<u8>, Vec<u8>> for GrpcHandlerAdapter<Req, Resp>
 where
-    Req:  Send + 'static,
+    Req: Send + 'static,
     Resp: Send + 'static,
 {
-    fn id(&self) -> &str { self.inner.id() }
-
-    fn pattern(&self) -> &str { self.inner.pattern() }
-
-    async fn execute(&self, req: Vec<u8>) -> Result<Vec<u8>, HandlerError> {
-        self.execute_with_context(req, RequestContext::unauthenticated()).await
+    fn id(&self) -> &str {
+        self.inner.id()
     }
 
-    async fn execute_with_context(&self, req: Vec<u8>, ctx: RequestContext) -> Result<Vec<u8>, HandlerError> {
+    fn pattern(&self) -> &str {
+        self.inner.pattern()
+    }
+
+    async fn execute(&self, req: Vec<u8>) -> Result<Vec<u8>, HandlerError> {
+        self.execute_with_context(req, RequestContext::unauthenticated())
+            .await
+    }
+
+    async fn execute_with_context(
+        &self,
+        req: Vec<u8>,
+        ctx: RequestContext,
+    ) -> Result<Vec<u8>, HandlerError> {
         let typed = (self.decode)(&req).map_err(|e| match e {
             GrpcInboundError::InvalidArgument(msg) => HandlerError::InvalidRequest(msg),
-            GrpcInboundError::Status(_, msg)       => HandlerError::InvalidRequest(msg),
-            other                                  => HandlerError::InvalidRequest(other.to_string()),
+            GrpcInboundError::Status(_, msg) => HandlerError::InvalidRequest(msg),
+            other => HandlerError::InvalidRequest(other.to_string()),
         })?;
         let resp = self.inner.execute_with_context(typed, ctx).await?;
         Ok((self.encode)(&resp))
     }
 
-    async fn health_check(&self) -> bool { self.inner.health_check().await }
+    async fn health_check(&self) -> bool {
+        self.inner.health_check().await
+    }
 }
 
 #[cfg(test)]
@@ -107,17 +124,22 @@ mod tests {
     use super::*;
 
     #[derive(Debug, PartialEq, Eq)]
-    struct TestReq { value: u32 }
+    struct TestReq {
+        value: u32,
+    }
 
     #[derive(Debug, PartialEq, Eq)]
-    struct TestResp { value: u32 }
+    struct TestResp {
+        value: u32,
+    }
 
     /// 4-byte big-endian decode — fails on anything else.
     fn decode_test_req(bytes: &[u8]) -> Result<TestReq, GrpcInboundError> {
         if bytes.len() != 4 {
-            return Err(GrpcInboundError::InvalidArgument(
-                format!("expected 4 bytes, got {}", bytes.len())
-            ));
+            return Err(GrpcInboundError::InvalidArgument(format!(
+                "expected 4 bytes, got {}",
+                bytes.len()
+            )));
         }
         let value = u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
         Ok(TestReq { value })
@@ -131,10 +153,16 @@ mod tests {
 
     #[async_trait]
     impl Handler<TestReq, TestResp> for DoublingHandler {
-        fn id(&self) -> &str { "/pkg.Service/Double" }
-        fn pattern(&self) -> &str { "test" }
+        fn id(&self) -> &str {
+            "/pkg.Service/Double"
+        }
+        fn pattern(&self) -> &str {
+            "test"
+        }
         async fn execute(&self, req: TestReq) -> Result<TestResp, HandlerError> {
-            Ok(TestResp { value: req.value.wrapping_mul(2) })
+            Ok(TestResp {
+                value: req.value.wrapping_mul(2),
+            })
         }
     }
 
@@ -142,37 +170,39 @@ mod tests {
 
     #[async_trait]
     impl Handler<TestReq, TestResp> for UnhealthyHandler {
-        fn id(&self) -> &str { "/pkg.Service/Sick" }
-        fn pattern(&self) -> &str { "test" }
+        fn id(&self) -> &str {
+            "/pkg.Service/Sick"
+        }
+        fn pattern(&self) -> &str {
+            "test"
+        }
         async fn execute(&self, _: TestReq) -> Result<TestResp, HandlerError> {
             Err(HandlerError::Unhealthy)
         }
-        async fn health_check(&self) -> bool { false }
+        async fn health_check(&self) -> bool {
+            false
+        }
     }
 
     /// @covers: GrpcHandlerAdapter::new — id and pattern are forwarded verbatim.
     #[tokio::test]
     async fn test_new_forwards_id_and_pattern_from_inner_handler() {
-        let adapter: GrpcHandlerAdapter<TestReq, TestResp> = GrpcHandlerAdapter::new(
-            Arc::new(DoublingHandler),
-            decode_test_req,
-            encode_test_resp,
-        );
-        assert_eq!(adapter.id(),      "/pkg.Service/Double");
+        let adapter: GrpcHandlerAdapter<TestReq, TestResp> =
+            GrpcHandlerAdapter::new(Arc::new(DoublingHandler), decode_test_req, encode_test_resp);
+        assert_eq!(adapter.id(), "/pkg.Service/Double");
         assert_eq!(adapter.pattern(), "test");
     }
 
     /// @covers: GrpcHandlerAdapter::execute — decodes, runs inner, encodes.
     #[tokio::test]
     async fn test_execute_decodes_invokes_inner_and_encodes_response() {
-        let adapter: GrpcHandlerAdapter<TestReq, TestResp> = GrpcHandlerAdapter::new(
-            Arc::new(DoublingHandler),
-            decode_test_req,
-            encode_test_resp,
-        );
+        let adapter: GrpcHandlerAdapter<TestReq, TestResp> =
+            GrpcHandlerAdapter::new(Arc::new(DoublingHandler), decode_test_req, encode_test_resp);
         let req_bytes = 21u32.to_be_bytes().to_vec();
         let resp = (&adapter as &dyn Handler<Vec<u8>, Vec<u8>>)
-            .execute_with_context(req_bytes, RequestContext::unauthenticated()).await.expect("execute");
+            .execute_with_context(req_bytes, RequestContext::unauthenticated())
+            .await
+            .expect("execute");
         let value = u32::from_be_bytes([resp[0], resp[1], resp[2], resp[3]]);
         assert_eq!(value, 42, "DoublingHandler should multiply input by 2");
     }
@@ -180,17 +210,19 @@ mod tests {
     /// @covers: GrpcHandlerAdapter::execute — decode failure surfaces as InvalidRequest.
     #[tokio::test]
     async fn test_execute_returns_invalid_request_when_decode_fails() {
-        let adapter: GrpcHandlerAdapter<TestReq, TestResp> = GrpcHandlerAdapter::new(
-            Arc::new(DoublingHandler),
-            decode_test_req,
-            encode_test_resp,
-        );
+        let adapter: GrpcHandlerAdapter<TestReq, TestResp> =
+            GrpcHandlerAdapter::new(Arc::new(DoublingHandler), decode_test_req, encode_test_resp);
         let bad_bytes = vec![1u8, 2, 3]; // wrong length
         let err = (&adapter as &dyn Handler<Vec<u8>, Vec<u8>>)
-            .execute_with_context(bad_bytes, RequestContext::unauthenticated()).await.expect_err("decode failure must error");
+            .execute_with_context(bad_bytes, RequestContext::unauthenticated())
+            .await
+            .expect_err("decode failure must error");
         match err {
             HandlerError::InvalidRequest(msg) => {
-                assert!(msg.contains("4 bytes"), "msg should describe decode failure: {msg}");
+                assert!(
+                    msg.contains("4 bytes"),
+                    "msg should describe decode failure: {msg}"
+                );
             }
             other => panic!("expected InvalidRequest, got {other:?}"),
         }
@@ -206,35 +238,39 @@ mod tests {
         );
         let req_bytes = 1u32.to_be_bytes().to_vec();
         let err = (&adapter as &dyn Handler<Vec<u8>, Vec<u8>>)
-            .execute_with_context(req_bytes, RequestContext::unauthenticated()).await.expect_err("unhealthy must error");
+            .execute_with_context(req_bytes, RequestContext::unauthenticated())
+            .await
+            .expect_err("unhealthy must error");
         assert!(matches!(err, HandlerError::Unhealthy), "got: {err:?}");
     }
 
     /// @covers: GrpcHandlerAdapter::health_check — forwarded from inner.
     #[tokio::test]
     async fn test_health_check_forwards_to_inner_handler() {
-        let healthy: GrpcHandlerAdapter<TestReq, TestResp> = GrpcHandlerAdapter::new(
-            Arc::new(DoublingHandler),
-            decode_test_req,
-            encode_test_resp,
-        );
+        let healthy: GrpcHandlerAdapter<TestReq, TestResp> =
+            GrpcHandlerAdapter::new(Arc::new(DoublingHandler), decode_test_req, encode_test_resp);
         let unhealthy: GrpcHandlerAdapter<TestReq, TestResp> = GrpcHandlerAdapter::new(
             Arc::new(UnhealthyHandler),
             decode_test_req,
             encode_test_resp,
         );
-        assert!(  (&healthy   as &dyn Handler<Vec<u8>, Vec<u8>>).health_check().await);
-        assert!(!(&unhealthy as &dyn Handler<Vec<u8>, Vec<u8>>).health_check().await);
+        assert!(
+            (&healthy as &dyn Handler<Vec<u8>, Vec<u8>>)
+                .health_check()
+                .await
+        );
+        assert!(
+            !(&unhealthy as &dyn Handler<Vec<u8>, Vec<u8>>)
+                .health_check()
+                .await
+        );
     }
 
     /// @covers: GrpcHandlerAdapter::inner — exposes the wrapped Arc<Handler>.
     #[tokio::test]
     async fn test_inner_returns_wrapped_handler() {
-        let adapter: GrpcHandlerAdapter<TestReq, TestResp> = GrpcHandlerAdapter::new(
-            Arc::new(DoublingHandler),
-            decode_test_req,
-            encode_test_resp,
-        );
+        let adapter: GrpcHandlerAdapter<TestReq, TestResp> =
+            GrpcHandlerAdapter::new(Arc::new(DoublingHandler), decode_test_req, encode_test_resp);
         assert_eq!(adapter.inner().id(), "/pkg.Service/Double");
     }
 }

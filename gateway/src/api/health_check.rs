@@ -38,22 +38,46 @@ pub struct HealthCheck {
 impl HealthCheck {
     /// Create a healthy result with no latency or message.
     pub fn healthy() -> Self {
-        Self { status: HealthStatus::Healthy, message: None, latency_ms: None, metadata: HashMap::new(), checked_at: Utc::now() }
+        Self {
+            status: HealthStatus::Healthy,
+            message: None,
+            latency_ms: None,
+            metadata: HashMap::new(),
+            checked_at: Utc::now(),
+        }
     }
 
     /// Create a healthy result that includes a measured latency.
     pub fn healthy_with_latency(latency_ms: u64) -> Self {
-        Self { status: HealthStatus::Healthy, message: None, latency_ms: Some(latency_ms), metadata: HashMap::new(), checked_at: Utc::now() }
+        Self {
+            status: HealthStatus::Healthy,
+            message: None,
+            latency_ms: Some(latency_ms),
+            metadata: HashMap::new(),
+            checked_at: Utc::now(),
+        }
     }
 
     /// Create an unhealthy result with a descriptive message.
     pub fn unhealthy(message: impl Into<String>) -> Self {
-        Self { status: HealthStatus::Unhealthy, message: Some(message.into()), latency_ms: None, metadata: HashMap::new(), checked_at: Utc::now() }
+        Self {
+            status: HealthStatus::Unhealthy,
+            message: Some(message.into()),
+            latency_ms: None,
+            metadata: HashMap::new(),
+            checked_at: Utc::now(),
+        }
     }
 
     /// Create a degraded result with a descriptive message.
     pub fn degraded(message: impl Into<String>) -> Self {
-        Self { status: HealthStatus::Degraded, message: Some(message.into()), latency_ms: None, metadata: HashMap::new(), checked_at: Utc::now() }
+        Self {
+            status: HealthStatus::Degraded,
+            message: Some(message.into()),
+            latency_ms: None,
+            metadata: HashMap::new(),
+            checked_at: Utc::now(),
+        }
     }
 
     /// Attach an arbitrary metadata entry to this result.

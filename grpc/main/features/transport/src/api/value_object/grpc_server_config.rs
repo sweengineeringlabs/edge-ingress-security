@@ -52,13 +52,13 @@ impl GrpcServerConfig {
     pub fn new(bind: SocketAddr) -> Self {
         Self {
             bind,
-            tls_required:           true,
-            tls:                    None,
-            max_message_bytes:      DEFAULT_MAX_MESSAGE_BYTES,
+            tls_required: true,
+            tls: None,
+            max_message_bytes: DEFAULT_MAX_MESSAGE_BYTES,
             max_concurrent_streams: DEFAULT_MAX_CONCURRENT_STREAMS,
-            allow_unauthenticated:  false,
-            compression:            CompressionMode::None,
-            enable_reflection:      false,
+            allow_unauthenticated: false,
+            compression: CompressionMode::None,
+            enable_reflection: false,
         }
     }
 
@@ -120,14 +120,14 @@ impl Default for GrpcServerConfig {
     /// in production deployments.
     fn default() -> Self {
         Self {
-            bind:                   "0.0.0.0:0".parse().expect("static literal"),
-            tls_required:           true,
-            tls:                    None,
-            max_message_bytes:      DEFAULT_MAX_MESSAGE_BYTES,
+            bind: "0.0.0.0:0".parse().expect("static literal"),
+            tls_required: true,
+            tls: None,
+            max_message_bytes: DEFAULT_MAX_MESSAGE_BYTES,
             max_concurrent_streams: DEFAULT_MAX_CONCURRENT_STREAMS,
-            allow_unauthenticated:  false,
-            compression:            CompressionMode::None,
-            enable_reflection:      false,
+            allow_unauthenticated: false,
+            compression: CompressionMode::None,
+            enable_reflection: false,
         }
     }
 }

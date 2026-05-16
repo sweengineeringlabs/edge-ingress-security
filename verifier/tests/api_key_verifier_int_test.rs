@@ -31,7 +31,10 @@ fn test_api_key_verifier_prefix_rejected() {
 fn test_api_key_verifier_empty_set_rejects_all() {
     let v = ApiKeyVerifier::new(vec![]);
     assert!(v.is_empty());
-    assert!(matches!(v.verify(b"anything"), Err(VerifierError::UnknownApiKey)));
+    assert!(matches!(
+        v.verify(b"anything"),
+        Err(VerifierError::UnknownApiKey)
+    ));
 }
 
 /// @covers: ApiKeyVerifier — len / is_empty reflect key count.
