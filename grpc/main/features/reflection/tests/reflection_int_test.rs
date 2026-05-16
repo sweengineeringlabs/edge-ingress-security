@@ -18,7 +18,7 @@
 //! 4. With a `FileDescriptorSet` registered, `FileByFilename` and
 //!    `FileContainingSymbol` return the registered bytes; without
 //!    one they return a structured `ErrorResponse(NOT_FOUND)`.
-
+
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 
@@ -32,7 +32,7 @@ use tokio::sync::oneshot;
 
 use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
 use swe_edge_ingress_grpc::{
-    GrpcHandlerAdapter, GrpcInboundError, GrpcHandlerRegistryDispatcher, TonicGrpcServer,
+    GrpcHandlerAdapter, GrpcHandlerRegistryDispatcher, GrpcInboundError, TonicGrpcServer,
     REFLECTION_ENABLED_WARN_MSG,
 };
 use swe_edge_ingress_grpc_reflection::{
@@ -51,14 +51,20 @@ fn decode_echo(bytes: &[u8]) -> Result<EchoReq, GrpcInboundError> {
     Ok(EchoReq(bytes.to_vec()))
 }
 
-fn encode_echo(resp: &EchoResp) -> Vec<u8> { resp.0.clone() }
+fn encode_echo(resp: &EchoResp) -> Vec<u8> {
+    resp.0.clone()
+}
 
 struct EchoHandler;
 
 #[async_trait]
 impl Handler<EchoReq, EchoResp> for EchoHandler {
-    fn id(&self) -> &str { "/pkg.Demo/Echo" }
-    fn pattern(&self) -> &str { "demo" }
+    fn id(&self) -> &str {
+        "/pkg.Demo/Echo"
+    }
+    fn pattern(&self) -> &str {
+        "demo"
+    }
     async fn execute(&self, req: EchoReq) -> Result<EchoResp, HandlerError> {
         Ok(EchoResp(req.0))
     }
@@ -77,14 +83,22 @@ struct ReflectionHandlerWrapper {
 
 #[async_trait]
 impl Handler<Vec<u8>, Vec<u8>> for ReflectionHandlerWrapper {
-    fn id(&self) -> &str { REFLECTION_INFO_METHOD }
-    fn pattern(&self) -> &str { "reflection" }
+    fn id(&self) -> &str {
+        REFLECTION_INFO_METHOD
+    }
+    fn pattern(&self) -> &str {
+        "reflection"
+    }
     async fn execute(&self, req: Vec<u8>) -> Result<Vec<u8>, HandlerError> {
+        use std::time::Duration;
         use swe_edge_ingress_grpc::GrpcInbound;
         use swe_edge_ingress_grpc::GrpcRequest;
-        use std::time::Duration;
         let r = GrpcRequest::new(REFLECTION_INFO_METHOD, req, Duration::from_secs(5));
-        match self.service.handle_unary(r, RequestContext::unauthenticated()).await {
+        match self
+            .service
+            .handle_unary(r, RequestContext::unauthenticated())
+            .await
+        {
             Ok(resp) => Ok(resp.body),
             Err(e) => Err(HandlerError::ExecutionFailed(e.to_string())),
         }
@@ -122,7 +136,7 @@ fn encode_varint(mut value: u64, out: &mut Vec<u8>) {
 
 fn decode_varint(bytes: &[u8]) -> Option<(u64, usize)> {
     let mut result = 0u64;
-    let mut shift  = 0u32;
+    let mut shift = 0u32;
     for (i, byte) in bytes.iter().take(10).enumerate() {
         result |= ((byte & 0x7f) as u64) << shift;
         if byte & 0x80 == 0 {
@@ -330,14 +344,16 @@ async fn start_server_with_dispatcher(
     enable_reflection: bool,
 ) -> (SocketAddr, oneshot::Sender<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr     = listener.local_addr().unwrap();
-    let server   = TonicGrpcServer::new("127.0.0.1:0", Arc::new(dispatcher))
+    let addr = listener.local_addr().unwrap();
+    let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(dispatcher))
         .allow_unauthenticated(true)
         .enable_reflection(enable_reflection);
     let (tx, rx) = oneshot::channel::<()>();
     tokio::spawn(async move {
         server
-            .serve_with_listener(listener, async move { let _ = rx.await; })
+            .serve_with_listener(listener, async move {
+                let _ = rx.await;
+            })
             .await
             .unwrap();
     });
@@ -345,11 +361,7 @@ async fn start_server_with_dispatcher(
     (addr, tx)
 }
 
-async fn grpc_call(
-    addr: SocketAddr,
-    path: &str,
-    payload: &[u8],
-) -> (Option<String>, Bytes) {
+async fn grpc_call(addr: SocketAddr, path: &str, payload: &[u8]) -> (Option<String>, Bytes) {
     let stream = tokio::net::TcpStream::connect(addr).await.unwrap();
     let io = TokioIo::new(stream);
     let (mut sender, conn) = hyper::client::conn::http2::Builder::new(TokioExecutor::new())
@@ -366,7 +378,7 @@ async fn grpc_call(
         .body(Full::new(grpc_frame(payload)))
         .unwrap();
 
-    let resp      = sender.send_request(req).await.unwrap();
+    let resp = sender.send_request(req).await.unwrap();
     let collected = resp.into_body().collect().await.unwrap();
     let grpc_status = collected
         .trailers()
@@ -381,7 +393,10 @@ async fn grpc_call(
 
 /// Build a dispatcher pre-loaded with EchoHandler under `/pkg.Demo/Echo`.
 /// Returns the registry as well so the caller can pass it into ReflectionService.
-fn dispatcher_with_echo() -> (GrpcHandlerRegistryDispatcher, Arc<HandlerRegistry<Vec<u8>, Vec<u8>>>) {
+fn dispatcher_with_echo() -> (
+    GrpcHandlerRegistryDispatcher,
+    Arc<HandlerRegistry<Vec<u8>, Vec<u8>>>,
+) {
     let registry: Arc<HandlerRegistry<Vec<u8>, Vec<u8>>> = Arc::new(HandlerRegistry::new());
     let dispatcher = GrpcHandlerRegistryDispatcher::new(registry.clone());
     dispatcher.register(GrpcHandlerAdapter::new(
@@ -447,13 +462,11 @@ async fn test_list_services_returns_unimplemented_when_reflection_not_registered
 #[tokio::test]
 async fn test_file_by_filename_returns_registered_descriptor_bytes() {
     let (dispatcher, registry) = dispatcher_with_echo();
-    let svc = Arc::new(
-        ReflectionService::new(registry).add_descriptor(Descriptor {
-            filename: "demo.proto".into(),
-            symbols:  vec!["pkg.Demo".into(), "pkg.Demo.Echo".into()],
-            bytes:    vec![0xde, 0xad, 0xbe, 0xef],
-        }),
-    );
+    let svc = Arc::new(ReflectionService::new(registry).add_descriptor(Descriptor {
+        filename: "demo.proto".into(),
+        symbols: vec!["pkg.Demo".into(), "pkg.Demo.Echo".into()],
+        bytes: vec![0xde, 0xad, 0xbe, 0xef],
+    }));
     registry_register_reflection(&dispatcher, svc);
 
     let (addr, _shutdown) = start_server_with_dispatcher(dispatcher, true).await;
@@ -486,13 +499,11 @@ async fn test_file_by_filename_yields_not_found_when_no_descriptor_registered() 
 #[tokio::test]
 async fn test_file_containing_symbol_locates_descriptor_via_symbol_list() {
     let (dispatcher, registry) = dispatcher_with_echo();
-    let svc = Arc::new(
-        ReflectionService::new(registry).add_descriptor(Descriptor {
-            filename: "demo.proto".into(),
-            symbols:  vec!["pkg.Demo".into(), "pkg.Demo.Echo".into()],
-            bytes:    vec![1, 2, 3, 4],
-        }),
-    );
+    let svc = Arc::new(ReflectionService::new(registry).add_descriptor(Descriptor {
+        filename: "demo.proto".into(),
+        symbols: vec!["pkg.Demo".into(), "pkg.Demo.Echo".into()],
+        bytes: vec![1, 2, 3, 4],
+    }));
     registry_register_reflection(&dispatcher, svc);
 
     let (addr, _shutdown) = start_server_with_dispatcher(dispatcher, true).await;
@@ -524,7 +535,9 @@ impl tracing::Subscriber for CapturingSubscriber {
     fn record(&self, _: &tracing::span::Id, _: &tracing::span::Record<'_>) {}
     fn record_follows_from(&self, _: &tracing::span::Id, _: &tracing::span::Id) {}
     fn event(&self, event: &tracing::Event<'_>) {
-        struct StringVisitor<'a> { acc: &'a mut String }
+        struct StringVisitor<'a> {
+            acc: &'a mut String,
+        }
         impl<'a> tracing::field::Visit for StringVisitor<'a> {
             fn record_debug(&mut self, _: &tracing::field::Field, value: &dyn std::fmt::Debug) {
                 use std::fmt::Write;
@@ -549,7 +562,9 @@ impl tracing::Subscriber for CapturingSubscriber {
 #[tokio::test]
 async fn test_server_logs_warn_on_startup_when_reflection_enabled() {
     let events = Arc::new(Mutex::new(Vec::<String>::new()));
-    let sub = CapturingSubscriber { events: events.clone() };
+    let sub = CapturingSubscriber {
+        events: events.clone(),
+    };
     let dispatch = tracing::Dispatch::new(sub);
 
     // Enter the dispatcher scope explicitly so the server's tokio
@@ -564,7 +579,9 @@ async fn test_server_logs_warn_on_startup_when_reflection_enabled() {
 
     let captured = events.lock().unwrap();
     assert!(
-        captured.iter().any(|e| e.contains(REFLECTION_ENABLED_WARN_MSG)),
+        captured
+            .iter()
+            .any(|e| e.contains(REFLECTION_ENABLED_WARN_MSG)),
         "expected WARN containing {REFLECTION_ENABLED_WARN_MSG:?}, got events: {captured:?}"
     );
 }
@@ -574,7 +591,9 @@ async fn test_server_logs_warn_on_startup_when_reflection_enabled() {
 #[tokio::test]
 async fn test_server_does_not_log_reflection_warn_when_flag_disabled() {
     let events = Arc::new(Mutex::new(Vec::<String>::new()));
-    let sub = CapturingSubscriber { events: events.clone() };
+    let sub = CapturingSubscriber {
+        events: events.clone(),
+    };
     let dispatch = tracing::Dispatch::new(sub);
 
     let _guard = tracing::dispatcher::set_default(&dispatch);
@@ -586,7 +605,9 @@ async fn test_server_does_not_log_reflection_warn_when_flag_disabled() {
 
     let captured = events.lock().unwrap();
     assert!(
-        !captured.iter().any(|e| e.contains(REFLECTION_ENABLED_WARN_MSG)),
+        !captured
+            .iter()
+            .any(|e| e.contains(REFLECTION_ENABLED_WARN_MSG)),
         "WARN must NOT fire when enable_reflection=false; events: {captured:?}"
     );
 }

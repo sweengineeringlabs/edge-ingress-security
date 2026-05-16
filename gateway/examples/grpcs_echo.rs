@@ -29,13 +29,14 @@ impl GrpcInbound for EchoHandler {
         _ctx: RequestContext,
     ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move {
-            Ok(GrpcResponse { body: req.body, metadata: GrpcMetadata::default() })
+            Ok(GrpcResponse {
+                body: req.body,
+                metadata: GrpcMetadata::default(),
+            })
         })
     }
 
-    fn health_check(
-        &self,
-    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
         Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
     }
 }
@@ -51,7 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Generate a fresh self-signed cert for localhost.
     let cert = rcgen::generate_simple_self_signed(vec!["localhost".to_string()])?;
     let cert_f = write_temp(&cert.cert.pem());
-    let key_f  = write_temp(&cert.key_pair.serialize_pem());
+    let key_f = write_temp(&cert.key_pair.serialize_pem());
 
     let tls = IngressTlsConfig::tls(
         cert_f.path().to_str().unwrap(),
@@ -69,8 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
     println!("Press Ctrl+C to stop.");
 
-    let server =
-        TonicGrpcServer::new("127.0.0.1:50443", Arc::new(EchoHandler)).with_tls(tls);
+    let server = TonicGrpcServer::new("127.0.0.1:50443", Arc::new(EchoHandler)).with_tls(tls);
     server
         .serve(async {
             let _ = tokio::signal::ctrl_c().await;

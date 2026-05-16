@@ -27,17 +27,23 @@ pub enum AxumServerError {
 /// Axum-based HTTP server that routes all inbound requests through an
 /// [`HttpInbound`] port.
 pub struct AxumHttpServer {
-    pub(crate) bind:             String,
-    pub(crate) handler:          Arc<dyn HttpInbound>,
-    pub(crate) body_limit:       usize,
-    pub(crate) tls:              Option<IngressTlsConfig>,
-    pub(crate) bearer_verifier:  Option<Arc<dyn TokenVerifier>>,
+    pub(crate) bind: String,
+    pub(crate) handler: Arc<dyn HttpInbound>,
+    pub(crate) body_limit: usize,
+    pub(crate) tls: Option<IngressTlsConfig>,
+    pub(crate) bearer_verifier: Option<Arc<dyn TokenVerifier>>,
 }
 
 impl AxumHttpServer {
     /// Create a server that will bind to `bind` and delegate to `handler`.
     pub fn new(bind: impl Into<String>, handler: Arc<dyn HttpInbound>) -> Self {
-        Self { bind: bind.into(), handler, body_limit: MAX_BODY_BYTES, tls: None, bearer_verifier: None }
+        Self {
+            bind: bind.into(),
+            handler,
+            body_limit: MAX_BODY_BYTES,
+            tls: None,
+            bearer_verifier: None,
+        }
     }
 
     /// Override the maximum request body size (default: [`MAX_BODY_BYTES`]).
@@ -68,16 +74,20 @@ impl AxumHttpServer {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use super::*;
-    use edge_domain::RequestContext;
-    use crate::api::port::http_inbound::{HttpInbound, HttpInboundResult, HttpHealthCheck};
+    use crate::api::port::http_inbound::{HttpHealthCheck, HttpInbound, HttpInboundResult};
     use crate::api::value_object::{HttpRequest, HttpResponse};
+    use edge_domain::RequestContext;
     use futures::future::BoxFuture;
+    use std::sync::Arc;
 
     struct DummyHandler;
     impl HttpInbound for DummyHandler {
-        fn handle(&self, _: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+        fn handle(
+            &self,
+            _: HttpRequest,
+            _ctx: RequestContext,
+        ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
             Box::pin(async { Ok(HttpResponse::new(200, vec![])) })
         }
         fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
@@ -96,8 +106,7 @@ mod tests {
     /// @covers: with_body_limit — overrides the body size cap.
     #[test]
     fn test_with_body_limit_overrides_default() {
-        let s = AxumHttpServer::new("127.0.0.1:0", Arc::new(DummyHandler))
-            .with_body_limit(1024);
+        let s = AxumHttpServer::new("127.0.0.1:0", Arc::new(DummyHandler)).with_body_limit(1024);
         assert_eq!(s.body_limit, 1024);
     }
 

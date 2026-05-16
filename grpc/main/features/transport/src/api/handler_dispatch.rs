@@ -11,13 +11,16 @@ use crate::api::handler_adapter::GrpcHandlerAdapter;
 /// [`HandlerRegistry`] keyed by the gRPC method path.
 pub struct GrpcHandlerRegistryDispatcher {
     pub(crate) registry: Arc<HandlerRegistry<Vec<u8>, Vec<u8>>>,
-    pub(crate) metrics:  Option<Arc<dyn MetricsProvider>>,
+    pub(crate) metrics: Option<Arc<dyn MetricsProvider>>,
 }
 
 impl GrpcHandlerRegistryDispatcher {
     /// Construct a dispatcher backed by `registry`.
     pub fn new(registry: Arc<HandlerRegistry<Vec<u8>, Vec<u8>>>) -> Self {
-        Self { registry, metrics: None }
+        Self {
+            registry,
+            metrics: None,
+        }
     }
 
     /// Attach a metrics provider; per-handler counters and latency histograms
@@ -30,7 +33,7 @@ impl GrpcHandlerRegistryDispatcher {
     /// Register a typed adapter under its `id()`.
     pub fn register<Req, Resp>(&self, adapter: GrpcHandlerAdapter<Req, Resp>)
     where
-        Req:  Send + 'static,
+        Req: Send + 'static,
         Resp: Send + 'static,
     {
         self.registry.register(Arc::new(adapter));
@@ -44,9 +47,9 @@ impl GrpcHandlerRegistryDispatcher {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-    use edge_domain::HandlerRegistry;
     use super::GrpcHandlerRegistryDispatcher;
+    use edge_domain::HandlerRegistry;
+    use std::sync::Arc;
 
     /// @covers: new — creates empty dispatcher.
     #[test]

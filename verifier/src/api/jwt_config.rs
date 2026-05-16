@@ -39,7 +39,9 @@ pub struct JwtConfig {
     pub leeway_seconds: u64,
 }
 
-fn default_leeway() -> u64 { 0 }
+fn default_leeway() -> u64 {
+    0
+}
 
 #[cfg(test)]
 mod tests {

@@ -10,7 +10,7 @@ use crate::api::verifier_error::VerifierError;
 /// Validates signature, `exp`, `nbf`, and optionally `iss` and `aud`.
 /// Construct via [`JwtVerifier::from_config`].
 pub struct JwtVerifier {
-    pub(crate) key:        DecodingKey,
+    pub(crate) key: DecodingKey,
     pub(crate) validation: Validation,
 }
 
@@ -38,9 +38,10 @@ impl JwtVerifier {
 
 pub(crate) fn build_decoding_key(key: &JwtKey) -> Result<(DecodingKey, Algorithm), VerifierError> {
     match key {
-        JwtKey::Hs256 { secret } => {
-            Ok((DecodingKey::from_secret(secret.as_slice()), Algorithm::HS256))
-        }
+        JwtKey::Hs256 { secret } => Ok((
+            DecodingKey::from_secret(secret.as_slice()),
+            Algorithm::HS256,
+        )),
         JwtKey::Rs256 { public_pem } => {
             let k = DecodingKey::from_rsa_pem(public_pem.as_bytes())
                 .map_err(|e| VerifierError::Config(e.to_string()))?;
@@ -57,12 +58,12 @@ pub(crate) fn build_decoding_key(key: &JwtKey) -> Result<(DecodingKey, Algorithm
 pub(crate) fn map_jwt_error(e: jsonwebtoken::errors::Error) -> VerifierError {
     use jsonwebtoken::errors::ErrorKind;
     match e.kind() {
-        ErrorKind::ExpiredSignature  => VerifierError::Expired,
+        ErrorKind::ExpiredSignature => VerifierError::Expired,
         ErrorKind::ImmatureSignature => VerifierError::NotYetValid,
-        ErrorKind::InvalidIssuer     => VerifierError::ClaimMismatch("iss".into()),
-        ErrorKind::InvalidAudience   => VerifierError::ClaimMismatch("aud".into()),
-        ErrorKind::InvalidSubject    => VerifierError::ClaimMismatch("sub".into()),
-        _                            => VerifierError::Invalid(e.to_string()),
+        ErrorKind::InvalidIssuer => VerifierError::ClaimMismatch("iss".into()),
+        ErrorKind::InvalidAudience => VerifierError::ClaimMismatch("aud".into()),
+        ErrorKind::InvalidSubject => VerifierError::ClaimMismatch("sub".into()),
+        _ => VerifierError::Invalid(e.to_string()),
     }
 }
 
@@ -73,10 +74,12 @@ mod tests {
 
     fn config(secret: &[u8]) -> JwtConfig {
         JwtConfig {
-            key:               JwtKey::Hs256 { secret: secret.to_vec() },
-            required_issuer:   None,
+            key: JwtKey::Hs256 {
+                secret: secret.to_vec(),
+            },
+            required_issuer: None,
             required_audience: None,
-            leeway_seconds:    0,
+            leeway_seconds: 0,
         }
     }
 
@@ -90,10 +93,12 @@ mod tests {
     #[test]
     fn test_from_config_fails_for_invalid_rs256_pem() {
         let cfg = JwtConfig {
-            key:               JwtKey::Rs256 { public_pem: "not-a-pem".into() },
-            required_issuer:   None,
+            key: JwtKey::Rs256 {
+                public_pem: "not-a-pem".into(),
+            },
+            required_issuer: None,
             required_audience: None,
-            leeway_seconds:    0,
+            leeway_seconds: 0,
         };
         assert!(JwtVerifier::from_config(&cfg).is_err());
     }

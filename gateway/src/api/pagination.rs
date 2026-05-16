@@ -13,10 +13,14 @@ pub struct Pagination {
 
 impl Pagination {
     /// Create pagination with explicit offset and limit.
-    pub fn new(offset: usize, limit: usize) -> Self { Self { offset, limit } }
+    pub fn new(offset: usize, limit: usize) -> Self {
+        Self { offset, limit }
+    }
 
     /// Create pagination starting at offset 0 with the given limit.
-    pub fn first(limit: usize) -> Self { Self { offset: 0, limit } }
+    pub fn first(limit: usize) -> Self {
+        Self { offset: 0, limit }
+    }
 }
 
 /// A paginated response containing items and metadata.
@@ -38,7 +42,13 @@ impl<T> PaginatedResponse<T> {
     /// Create a paginated response, computing [`has_more`](Self::has_more) automatically.
     pub fn new(items: Vec<T>, total: usize, offset: usize, limit: usize) -> Self {
         let has_more = offset + items.len() < total;
-        Self { items, total, offset, limit, has_more }
+        Self {
+            items,
+            total,
+            offset,
+            limit,
+            has_more,
+        }
     }
 }
 

@@ -22,7 +22,11 @@ use swe_edge_ingress_http::{
 struct EchoHandler;
 
 impl HttpInbound for EchoHandler {
-    fn handle(&self, req: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    fn handle(
+        &self,
+        req: HttpRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
         Box::pin(async move {
             let body = format!("{} {}", req.method, req.url).into_bytes();
             Ok(HttpResponse::new(200, body))
@@ -116,7 +120,10 @@ async fn https_get(addr: SocketAddr, path: &str) -> String {
 
     let tcp = tokio::net::TcpStream::connect(addr).await.unwrap();
     let server_name = rustls::pki_types::ServerName::try_from("localhost").unwrap();
-    let mut tls = insecure_connector().connect(server_name, tcp).await.unwrap();
+    let mut tls = insecure_connector()
+        .connect(server_name, tcp)
+        .await
+        .unwrap();
 
     let req = format!("GET {path} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n");
     tls.write_all(req.as_bytes()).await.unwrap();
@@ -136,13 +143,15 @@ async fn https_get(addr: SocketAddr, path: &str) -> String {
 
 async fn start_tls_server(tls: IngressTlsConfig) -> (SocketAddr, oneshot::Sender<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr     = listener.local_addr().unwrap();
+    let addr = listener.local_addr().unwrap();
     let (tx, rx) = oneshot::channel::<()>();
 
     let server = AxumHttpServer::new(addr.to_string(), Arc::new(EchoHandler)).with_tls(tls);
     tokio::spawn(async move {
         server
-            .serve_with_listener(listener, async move { let _ = rx.await; })
+            .serve_with_listener(listener, async move {
+                let _ = rx.await;
+            })
             .await
             .unwrap();
     });
@@ -160,7 +169,7 @@ async fn start_tls_server(tls: IngressTlsConfig) -> (SocketAddr, oneshot::Sender
 async fn test_https_server_returns_200_for_get_request() {
     let (cert_pem, key_pem) = self_signed();
     let cert_f = write_temp(&cert_pem);
-    let key_f  = write_temp(&key_pem);
+    let key_f = write_temp(&key_pem);
 
     let cfg = IngressTlsConfig::tls(
         cert_f.path().to_str().unwrap(),
@@ -182,7 +191,7 @@ async fn test_https_server_echoes_method_and_path_in_response_body() {
 
     let (cert_pem, key_pem) = self_signed();
     let cert_f = write_temp(&cert_pem);
-    let key_f  = write_temp(&key_pem);
+    let key_f = write_temp(&key_pem);
 
     let cfg = IngressTlsConfig::tls(
         cert_f.path().to_str().unwrap(),
@@ -192,7 +201,10 @@ async fn test_https_server_echoes_method_and_path_in_response_body() {
 
     let tcp = tokio::net::TcpStream::connect(addr).await.unwrap();
     let server_name = rustls::pki_types::ServerName::try_from("localhost").unwrap();
-    let mut tls = insecure_connector().connect(server_name, tcp).await.unwrap();
+    let mut tls = insecure_connector()
+        .connect(server_name, tcp)
+        .await
+        .unwrap();
 
     tls.write_all(b"GET /echo-me HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
         .await
@@ -214,10 +226,7 @@ async fn test_https_server_returns_tls_error_for_missing_cert_file() {
     let cfg = IngressTlsConfig::tls("/no/such/cert.pem", "/no/such/key.pem");
     let server = AxumHttpServer::new("127.0.0.1:0", Arc::new(EchoHandler)).with_tls(cfg);
     let err = server.serve(std::future::pending::<()>()).await;
-    assert!(
-        err.is_err(),
-        "expected TLS error for missing cert, got Ok"
-    );
+    assert!(err.is_err(), "expected TLS error for missing cert, got Ok");
     let msg = err.unwrap_err().to_string();
     assert!(
         msg.contains("TLS") || msg.contains("cert"),
@@ -230,12 +239,14 @@ async fn test_https_server_returns_tls_error_for_missing_cert_file() {
 async fn test_plain_server_unaffected_when_tls_server_runs_concurrently() {
     // Plain server
     let plain_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let plain_addr     = plain_listener.local_addr().unwrap();
+    let plain_addr = plain_listener.local_addr().unwrap();
     let (plain_tx, plain_rx) = oneshot::channel::<()>();
     let plain_server = AxumHttpServer::new(plain_addr.to_string(), Arc::new(EchoHandler));
     tokio::spawn(async move {
         plain_server
-            .serve_with_listener(plain_listener, async move { let _ = plain_rx.await; })
+            .serve_with_listener(plain_listener, async move {
+                let _ = plain_rx.await;
+            })
             .await
             .unwrap();
     });
@@ -243,7 +254,7 @@ async fn test_plain_server_unaffected_when_tls_server_runs_concurrently() {
     // TLS server
     let (cert_pem, key_pem) = self_signed();
     let cert_f = write_temp(&cert_pem);
-    let key_f  = write_temp(&key_pem);
+    let key_f = write_temp(&key_pem);
     let cfg = IngressTlsConfig::tls(
         cert_f.path().to_str().unwrap(),
         key_f.path().to_str().unwrap(),
@@ -253,7 +264,9 @@ async fn test_plain_server_unaffected_when_tls_server_runs_concurrently() {
     tokio::time::sleep(std::time::Duration::from_millis(20)).await;
 
     // The plain server should still respond over HTTP.
-    let resp = reqwest::get(format!("http://{plain_addr}/check")).await.unwrap();
+    let resp = reqwest::get(format!("http://{plain_addr}/check"))
+        .await
+        .unwrap();
     assert_eq!(resp.status(), 200);
 
     let _ = plain_tx.send(());

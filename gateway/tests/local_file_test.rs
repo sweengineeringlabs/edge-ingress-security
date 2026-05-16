@@ -3,5 +3,8 @@
 /// @covers: local_file — api interface counterpart is accessible
 #[test]
 fn test_local_file_api_module_documents_contract() {
-    assert!(true, "api/file/local_file module exists as interface counterpart");
+    assert!(
+        true,
+        "api/file/local_file module exists as interface counterpart"
+    );
 }

@@ -19,22 +19,21 @@ use tokio_util::sync::CancellationToken;
 use edge_domain::RequestContext;
 
 use crate::api::audit_sink::{AuditEvent, AuditSink};
-use crate::api::interceptor::GrpcInboundInterceptorChain;
-use crate::api::port::grpc_inbound::{GrpcInbound, GrpcInboundError, GrpcMessageStream};
-use crate::api::value_object::{
-    is_reserved_peer_key, CompressionMode, GrpcMetadata, GrpcRequest, GrpcResponse,
-    GrpcStatusCode, PEER_CN,
-};
 use crate::api::grpc_timeout::{parse_grpc_timeout, DEFAULT_DEADLINE};
+use crate::api::interceptor::GrpcInboundInterceptorChain;
 use crate::api::peer_identity::extract_peer_identity;
+use crate::api::port::grpc_inbound::{GrpcInbound, GrpcInboundError, GrpcMessageStream};
 use crate::api::server::tonic_grpc_server::{
-    TonicGrpcServer, TonicServerError,
-    MISSING_AUTHORIZATION_INTERCEPTOR_MSG, REFLECTION_ENABLED_WARN_MSG,
+    TonicGrpcServer, TonicServerError, MISSING_AUTHORIZATION_INTERCEPTOR_MSG,
+    REFLECTION_ENABLED_WARN_MSG,
 };
 use crate::api::status_codes::{from_tonic_code, map_inbound_error};
+use crate::api::value_object::{
+    is_reserved_peer_key, CompressionMode, GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode,
+    PEER_CN,
+};
 
 type BoxBody = http_body_util::combinators::BoxBody<Bytes, Infallible>;
-
 
 impl TonicGrpcServer {
     /// Bind and serve until `shutdown` resolves.
@@ -116,13 +115,13 @@ impl TonicGrpcServer {
             tracing::warn!("{REFLECTION_ENABLED_WARN_MSG}");
         }
 
-        let handler                = self.handler.clone();
-        let max_bytes              = self.max_bytes;
+        let handler = self.handler.clone();
+        let max_bytes = self.max_bytes;
         let max_concurrent_streams = self.max_concurrent_streams;
-        let interceptors           = self.interceptors.clone();
-        let compression            = self.compression;
-        let audit_sink             = self.audit_sink.clone();
-        let mut shutdown           = std::pin::pin!(shutdown);
+        let interceptors = self.interceptors.clone();
+        let compression = self.compression;
+        let audit_sink = self.audit_sink.clone();
+        let mut shutdown = std::pin::pin!(shutdown);
 
         loop {
             tokio::select! {
@@ -239,16 +238,16 @@ fn read_deadline(headers: &http::HeaderMap) -> Duration {
 }
 
 async fn dispatch(
-    req:           Request<hyper::body::Incoming>,
-    handler:       Arc<dyn GrpcInbound>,
-    max_bytes:     usize,
-    interceptors:  GrpcInboundInterceptorChain,
-    compression:   CompressionMode,
+    req: Request<hyper::body::Incoming>,
+    handler: Arc<dyn GrpcInbound>,
+    max_bytes: usize,
+    interceptors: GrpcInboundInterceptorChain,
+    compression: CompressionMode,
     peer_metadata: HashMap<String, String>,
-    audit_sink:    Arc<dyn AuditSink>,
+    audit_sink: Arc<dyn AuditSink>,
 ) -> Response<BoxBody> {
-    let method   = req.uri().path().to_string();
-    let started  = Instant::now();
+    let method = req.uri().path().to_string();
+    let started = Instant::now();
     let timestamp = SystemTime::now();
     let metadata = collect_metadata(req.headers());
     let deadline = read_deadline(req.headers());
@@ -263,9 +262,9 @@ async fn dispatch(
     let emit = |code: tonic::Code, response: Response<BoxBody>| {
         let evt = AuditEvent {
             timestamp,
-            method:      method.clone(),
-            identity:    identity.clone(),
-            status:      from_tonic_code(code),
+            method: method.clone(),
+            identity: identity.clone(),
+            status: from_tonic_code(code),
             duration_ms: started.elapsed().as_millis() as u64,
         };
         audit_sink.record(evt);
@@ -287,10 +286,12 @@ async fn dispatch(
 
     let body_bytes = match Limited::new(req.into_body(), max_bytes).collect().await {
         Ok(collected) => collected.to_bytes(),
-        Err(_)        => return emit(
-            tonic::Code::ResourceExhausted,
-            grpc_error(tonic::Code::ResourceExhausted, "message too large"),
-        ),
+        Err(_) => {
+            return emit(
+                tonic::Code::ResourceExhausted,
+                grpc_error(tonic::Code::ResourceExhausted, "message too large"),
+            )
+        }
     };
 
     // Per-request cancellation token — fired implicitly when this future is
@@ -303,7 +304,9 @@ async fn dispatch(
     // Decode all gRPC length-prefix frames from the body.
     let frames = decode_grpc_frames(&body_bytes);
     let message_stream: GrpcMessageStream = Box::pin(futures::stream::iter(
-        frames.into_iter().map(|f| Ok::<Vec<u8>, GrpcInboundError>(f.to_vec())),
+        frames
+            .into_iter()
+            .map(|f| Ok::<Vec<u8>, GrpcInboundError>(f.to_vec())),
     ));
 
     // Build merged request metadata.  Reserved peer-identity keys
@@ -326,12 +329,10 @@ async fn dispatch(
 
     // Build a synthetic GrpcRequest envelope so interceptors can
     // observe headers + body before dispatch.
-    let mut intercept_req = GrpcRequest::new(
-        method.clone(),
-        body_bytes.to_vec(),
-        deadline,
-    );
-    intercept_req.metadata = GrpcMetadata { headers: headers.clone() };
+    let mut intercept_req = GrpcRequest::new(method.clone(), body_bytes.to_vec(), deadline);
+    intercept_req.metadata = GrpcMetadata {
+        headers: headers.clone(),
+    };
 
     // Run before_dispatch — first failure short-circuits and the
     // handler never runs.
@@ -346,7 +347,8 @@ async fn dispatch(
     // For mTLS the peer CN lands in merged_headers[PEER_CN]; JWT-based
     // interceptors may inject x-edge-subject / x-edge-issuer / x-edge-tenant-id.
     let ctx = if interceptors.contains_authorization() {
-        let subject = merged_headers.get(PEER_CN)
+        let subject = merged_headers
+            .get(PEER_CN)
             .or_else(|| merged_headers.get("x-edge-subject"))
             .cloned()
             .unwrap_or_default();
@@ -354,7 +356,10 @@ async fn dispatch(
             subject,
             merged_headers.get("x-edge-issuer").cloned(),
             merged_headers.get("x-edge-tenant-id").cloned(),
-            merged_headers.iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
+            merged_headers
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect(),
         )
     } else {
         RequestContext::unauthenticated()
@@ -365,11 +370,13 @@ async fn dispatch(
     // propagate handler partial output.
     let handler_fut = handler.handle_stream(
         method.clone(),
-        GrpcMetadata { headers: merged_headers },
+        GrpcMetadata {
+            headers: merged_headers,
+        },
         message_stream,
         ctx,
     );
-    let cancel_fut  = cancel.cancelled();
+    let cancel_fut = cancel.cancelled();
 
     let result = tokio::select! {
         biased;
@@ -403,22 +410,23 @@ async fn dispatch(
             // `handle_stream()` setup, not the drain.  Re-arm it here so
             // infinite / long-running streams can't bypass the per-call
             // budget.
-            let collected_payload = match tokio::time::timeout(
-                deadline,
-                collect_response_payload(resp_stream),
-            ).await {
-                Ok(Ok(p))  => p,
-                Ok(Err(e)) => {
-                    let (code, msg) = map_inbound_error(e);
-                    return emit(code, grpc_error(code, msg));
-                }
-                Err(_elapsed) => {
-                    return emit(
-                        tonic::Code::DeadlineExceeded,
-                        grpc_error(tonic::Code::DeadlineExceeded, "streaming deadline exceeded"),
-                    );
-                }
-            };
+            let collected_payload =
+                match tokio::time::timeout(deadline, collect_response_payload(resp_stream)).await {
+                    Ok(Ok(p)) => p,
+                    Ok(Err(e)) => {
+                        let (code, msg) = map_inbound_error(e);
+                        return emit(code, grpc_error(code, msg));
+                    }
+                    Err(_elapsed) => {
+                        return emit(
+                            tonic::Code::DeadlineExceeded,
+                            grpc_error(
+                                tonic::Code::DeadlineExceeded,
+                                "streaming deadline exceeded",
+                            ),
+                        );
+                    }
+                };
             // Synthesise an interceptor-visible response.  The body
             // surface is the concatenation of all stream frames — when
             // an after_dispatch hook mutates it we send the mutated
@@ -426,7 +434,7 @@ async fn dispatch(
             // original frame boundaries.
             let original_payload = collected_payload.clone();
             let mut response = GrpcResponse {
-                body:     collected_payload.concat(),
+                body: collected_payload.concat(),
                 metadata: resp_meta,
             };
 
@@ -473,12 +481,10 @@ fn sanitize_authz_error(err: GrpcInboundError) -> GrpcInboundError {
         GrpcInboundError::PermissionDenied(_) => {
             GrpcInboundError::PermissionDenied("authorization denied".into())
         }
-        GrpcInboundError::Status(GrpcStatusCode::PermissionDenied, _) => {
-            GrpcInboundError::Status(
-                GrpcStatusCode::PermissionDenied,
-                "authorization denied".into(),
-            )
-        }
+        GrpcInboundError::Status(GrpcStatusCode::PermissionDenied, _) => GrpcInboundError::Status(
+            GrpcStatusCode::PermissionDenied,
+            "authorization denied".into(),
+        ),
         other => other,
     }
 }
@@ -512,7 +518,7 @@ fn decode_grpc_frames(data: &Bytes) -> Vec<Bytes> {
             data[offset + 4],
         ]) as usize;
         let payload_start = offset + HEADER;
-        let payload_end   = payload_start + len;
+        let payload_end = payload_start + len;
         if payload_end > data.len() {
             break; // truncated — stop rather than panic
         }
@@ -530,7 +536,7 @@ fn decode_grpc_frames(data: &Bytes) -> Vec<Bytes> {
 /// Build an HTTP/2 response from already-buffered payloads + final metadata.
 async fn grpc_stream_response_from_payloads(
     payloads: Vec<Vec<u8>>,
-    meta:     GrpcMetadata,
+    meta: GrpcMetadata,
 ) -> Response<BoxBody> {
     let mut frames: Vec<Bytes> = Vec::with_capacity(payloads.len());
     for payload in payloads {
@@ -552,8 +558,10 @@ async fn grpc_stream_response_from_payloads(
         }
     }
 
-    let mut http_frames: Vec<Result<http_body::Frame<Bytes>, Infallible>> =
-        frames.into_iter().map(|b| Ok(http_body::Frame::data(b))).collect();
+    let mut http_frames: Vec<Result<http_body::Frame<Bytes>, Infallible>> = frames
+        .into_iter()
+        .map(|b| Ok(http_body::Frame::data(b)))
+        .collect();
     http_frames.push(Ok(http_body::Frame::trailers(trailers)));
 
     let response_body = BodyExt::boxed(StreamBody::new(futures::stream::iter(http_frames)));
@@ -568,7 +576,10 @@ async fn grpc_stream_response_from_payloads(
 /// Collect a response stream into a single HTTP/2 response with one DATA frame
 /// per stream item plus a trailing `grpc-status=0` header and any response metadata.
 #[allow(dead_code)]
-async fn grpc_stream_response(mut stream: GrpcMessageStream, meta: GrpcMetadata) -> Response<BoxBody> {
+async fn grpc_stream_response(
+    mut stream: GrpcMessageStream,
+    meta: GrpcMetadata,
+) -> Response<BoxBody> {
     use futures::StreamExt;
 
     // Collect all response messages.
@@ -602,8 +613,10 @@ async fn grpc_stream_response(mut stream: GrpcMessageStream, meta: GrpcMetadata)
     }
 
     // Build the response body: one DATA frame per response message, then trailers.
-    let mut http_frames: Vec<Result<http_body::Frame<Bytes>, Infallible>> =
-        frames.into_iter().map(|b| Ok(http_body::Frame::data(b))).collect();
+    let mut http_frames: Vec<Result<http_body::Frame<Bytes>, Infallible>> = frames
+        .into_iter()
+        .map(|b| Ok(http_body::Frame::data(b)))
+        .collect();
     http_frames.push(Ok(http_body::Frame::trailers(trailers)));
 
     let response_body = BodyExt::boxed(StreamBody::new(futures::stream::iter(http_frames)));
@@ -628,9 +641,12 @@ fn grpc_error(code: tonic::Code, message: impl Into<String>) -> Response<BoxBody
         trailers.insert("grpc-message", val);
     }
 
-    let response_body = StreamBody::new(futures::stream::iter([
-        Ok::<http_body::Frame<Bytes>, Infallible>(http_body::Frame::trailers(trailers)),
-    ]))
+    let response_body = StreamBody::new(futures::stream::iter([Ok::<
+        http_body::Frame<Bytes>,
+        Infallible,
+    >(http_body::Frame::trailers(
+        trailers,
+    ))]))
     .boxed();
 
     Response::builder()
@@ -760,22 +776,39 @@ mod tests {
 
     // ── enforce_authorization_invariant ──────────────────────────────────
 
-    use crate::api::interceptor::{AuthorizationInterceptor, GrpcInboundInterceptor, GrpcInboundInterceptorChain};
-    use crate::api::port::grpc_inbound::{GrpcInbound, GrpcHealthCheck, GrpcInboundResult};
+    use crate::api::interceptor::{
+        AuthorizationInterceptor, GrpcInboundInterceptor, GrpcInboundInterceptorChain,
+    };
+    use crate::api::port::grpc_inbound::{GrpcHealthCheck, GrpcInbound, GrpcInboundResult};
     use futures::future::BoxFuture;
 
     struct FakeAuthz;
     impl GrpcInboundInterceptor for FakeAuthz {
-        fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> { Ok(()) }
-        fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> { Ok(()) }
-        fn is_authorization(&self) -> bool { true }
+        fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> {
+            Ok(())
+        }
+        fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+            Ok(())
+        }
+        fn is_authorization(&self) -> bool {
+            true
+        }
     }
     impl AuthorizationInterceptor for FakeAuthz {}
 
     struct DummyHandler;
     impl GrpcInbound for DummyHandler {
-        fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
-            Box::pin(async { Ok(GrpcResponse { body: vec![], metadata: GrpcMetadata::default() }) })
+        fn handle_unary(
+            &self,
+            _: GrpcRequest,
+            _ctx: RequestContext,
+        ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+            Box::pin(async {
+                Ok(GrpcResponse {
+                    body: vec![],
+                    metadata: GrpcMetadata::default(),
+                })
+            })
         }
         fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
             Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
@@ -786,8 +819,8 @@ mod tests {
     #[test]
     fn test_enforce_authorization_invariant_succeeds_with_authz_interceptor() {
         let chain = GrpcInboundInterceptorChain::new().push(Arc::new(FakeAuthz));
-        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler))
-            .with_interceptors(chain);
+        let server =
+            TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler)).with_interceptors(chain);
         // Should not panic.
         server.enforce_authorization_invariant();
     }
@@ -795,8 +828,8 @@ mod tests {
     /// @covers: enforce_authorization_invariant — passes with allow_unauthenticated.
     #[test]
     fn test_enforce_authorization_invariant_succeeds_when_allow_unauthenticated_is_set() {
-        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler))
-            .allow_unauthenticated(true);
+        let server =
+            TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler)).allow_unauthenticated(true);
         // Should not panic, only WARN.
         server.enforce_authorization_invariant();
     }
@@ -824,14 +857,14 @@ mod tests {
         }
         let calls = Arc::new(Mutex::new(0usize));
         let sink: Arc<dyn AuditSink> = Arc::new(CountingSink(calls.clone()));
-        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler))
-            .with_audit_sink(sink);
+        let server =
+            TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler)).with_audit_sink(sink);
         // Drive the sink directly through the server's stored Arc.
         server.audit_sink.record(AuditEvent {
-            timestamp:   SystemTime::UNIX_EPOCH,
-            method:      "/x".into(),
-            identity:    None,
-            status:      GrpcStatusCode::Ok,
+            timestamp: SystemTime::UNIX_EPOCH,
+            method: "/x".into(),
+            identity: None,
+            status: GrpcStatusCode::Ok,
             duration_ms: 0,
         });
         assert_eq!(*calls.lock().unwrap(), 1);
@@ -840,8 +873,8 @@ mod tests {
     /// @covers: TonicGrpcServer::allow_unauthenticated — sets the flag.
     #[test]
     fn test_allow_unauthenticated_sets_the_flag() {
-        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler))
-            .allow_unauthenticated(true);
+        let server =
+            TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler)).allow_unauthenticated(true);
         assert!(server.allow_unauthenticated);
     }
 
@@ -855,8 +888,8 @@ mod tests {
     /// @covers: TonicGrpcServer::enable_reflection — sets the flag.
     #[test]
     fn test_enable_reflection_builder_flips_the_flag() {
-        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler))
-            .enable_reflection(true);
+        let server =
+            TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler)).enable_reflection(true);
         assert!(server.is_reflection_enabled());
     }
 
@@ -866,33 +899,49 @@ mod tests {
         let cfg = GrpcServerConfig::new("127.0.0.1:0".parse().unwrap())
             .allow_plaintext()
             .enable_reflection();
-        let server = TonicGrpcServer::from_config(&cfg, Arc::new(DummyHandler))
-            .expect("config valid");
+        let server =
+            TonicGrpcServer::from_config(&cfg, Arc::new(DummyHandler)).expect("config valid");
         assert!(server.is_reflection_enabled());
     }
 }
 
 #[cfg(test)]
 mod dedicated_coverage {
-    use std::sync::Arc;
-    use futures::future::BoxFuture;
+    use super::TonicGrpcServer;
+    use crate::api::port::grpc_inbound::{GrpcHealthCheck, GrpcInbound, GrpcInboundResult};
+    use crate::api::value_object::{CompressionMode, GrpcRequest, GrpcResponse};
     use async_trait::async_trait;
     use edge_domain::RequestContext;
-    use crate::api::port::grpc_inbound::{GrpcInbound, GrpcHealthCheck, GrpcInboundResult};
-    use crate::api::value_object::{GrpcRequest, GrpcResponse, CompressionMode};
-    use super::TonicGrpcServer;
+    use futures::future::BoxFuture;
+    use std::sync::Arc;
 
     struct Stub;
     impl GrpcInbound for Stub {
-        fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
-            Box::pin(async { Ok(GrpcResponse { body: vec![], metadata: Default::default() }) })
+        fn handle_unary(
+            &self,
+            _: GrpcRequest,
+            _ctx: RequestContext,
+        ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+            Box::pin(async {
+                Ok(GrpcResponse {
+                    body: vec![],
+                    metadata: Default::default(),
+                })
+            })
         }
         fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
-            Box::pin(async { Ok(GrpcHealthCheck { healthy: true, message: None }) })
+            Box::pin(async {
+                Ok(GrpcHealthCheck {
+                    healthy: true,
+                    message: None,
+                })
+            })
         }
     }
 
-    fn server() -> TonicGrpcServer { TonicGrpcServer::new("127.0.0.1:0", Arc::new(Stub)).allow_unauthenticated(true) }
+    fn server() -> TonicGrpcServer {
+        TonicGrpcServer::new("127.0.0.1:0", Arc::new(Stub)).allow_unauthenticated(true)
+    }
 
     /// @covers: is_reflection_enabled
     #[test]
@@ -953,27 +1002,43 @@ mod dedicated_coverage {
         use tokio::net::TcpListener;
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let s = server();
-        let result = s.serve_with_listener(listener, std::future::ready(())).await;
+        let result = s
+            .serve_with_listener(listener, std::future::ready(()))
+            .await;
         assert!(result.is_ok());
     }
 }
 
 #[cfg(test)]
 mod sync_coverage {
-    use std::sync::Arc;
-    use futures::future::BoxFuture;
-    use edge_domain::RequestContext;
-    use crate::api::port::grpc_inbound::{GrpcInbound, GrpcHealthCheck, GrpcInboundResult};
-    use crate::api::value_object::{GrpcRequest, GrpcResponse};
     use super::TonicGrpcServer;
+    use crate::api::port::grpc_inbound::{GrpcHealthCheck, GrpcInbound, GrpcInboundResult};
+    use crate::api::value_object::{GrpcRequest, GrpcResponse};
+    use edge_domain::RequestContext;
+    use futures::future::BoxFuture;
+    use std::sync::Arc;
 
     struct Stub;
     impl GrpcInbound for Stub {
-        fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
-            Box::pin(async { Ok(GrpcResponse { body: vec![], metadata: Default::default() }) })
+        fn handle_unary(
+            &self,
+            _: GrpcRequest,
+            _ctx: RequestContext,
+        ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+            Box::pin(async {
+                Ok(GrpcResponse {
+                    body: vec![],
+                    metadata: Default::default(),
+                })
+            })
         }
         fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
-            Box::pin(async { Ok(GrpcHealthCheck { healthy: true, message: None }) })
+            Box::pin(async {
+                Ok(GrpcHealthCheck {
+                    healthy: true,
+                    message: None,
+                })
+            })
         }
     }
 

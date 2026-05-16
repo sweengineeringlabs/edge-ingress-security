@@ -23,9 +23,15 @@ mod tests {
 
     struct AlwaysEmpty;
     impl InboundSource for AlwaysEmpty {
-        fn scan_files(&self, _root: &Path) -> Result<Vec<PathBuf>, IngressError> { Ok(vec![]) }
-        fn read_file(&self, _path: &Path) -> Result<Vec<u8>, IngressError> { Ok(vec![]) }
-        fn file_exists(&self, _path: &Path) -> Result<bool, IngressError> { Ok(false) }
+        fn scan_files(&self, _root: &Path) -> Result<Vec<PathBuf>, IngressError> {
+            Ok(vec![])
+        }
+        fn read_file(&self, _path: &Path) -> Result<Vec<u8>, IngressError> {
+            Ok(vec![])
+        }
+        fn file_exists(&self, _path: &Path) -> Result<bool, IngressError> {
+            Ok(false)
+        }
     }
 
     #[test]

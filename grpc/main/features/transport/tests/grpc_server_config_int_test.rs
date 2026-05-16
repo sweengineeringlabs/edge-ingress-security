@@ -39,13 +39,14 @@ impl GrpcInbound for RecordingHandler {
         let hit = self.hit.clone();
         Box::pin(async move {
             hit.store(true, Ordering::SeqCst);
-            Ok(GrpcResponse { body: req.body, metadata: GrpcMetadata::default() })
+            Ok(GrpcResponse {
+                body: req.body,
+                metadata: GrpcMetadata::default(),
+            })
         })
     }
 
-    fn health_check(
-        &self,
-    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
         Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
     }
 }
@@ -85,7 +86,9 @@ fn transport_struct_default_requires_tls_int_test() {
 #[test]
 fn transport_struct_from_config_rejects_tls_required_without_tls_int_test() {
     let cfg = GrpcServerConfig::default(); // tls_required=true, tls=None
-    let handler = Arc::new(RecordingHandler { hit: Arc::new(AtomicBool::new(false)) });
+    let handler = Arc::new(RecordingHandler {
+        hit: Arc::new(AtomicBool::new(false)),
+    });
     match TonicGrpcServer::from_config(&cfg, handler) {
         Err(GrpcServerConfigError::TlsRequiredButMissing) => {}
         Ok(_) => panic!("must reject tls_required=true with tls=None"),
@@ -97,7 +100,9 @@ fn transport_struct_from_config_rejects_tls_required_without_tls_int_test() {
 fn transport_struct_from_config_accepts_plaintext_with_opt_in_int_test() {
     let bind: SocketAddr = "127.0.0.1:0".parse().unwrap();
     let cfg = GrpcServerConfig::new(bind).allow_plaintext();
-    let handler = Arc::new(RecordingHandler { hit: Arc::new(AtomicBool::new(false)) });
+    let handler = Arc::new(RecordingHandler {
+        hit: Arc::new(AtomicBool::new(false)),
+    });
     assert!(TonicGrpcServer::from_config(&cfg, handler).is_ok());
 }
 
@@ -106,13 +111,15 @@ fn transport_struct_from_config_accepts_plaintext_with_opt_in_int_test() {
 fn transport_struct_from_config_accepts_tls_int_test() {
     let (cert_pem, key_pem) = self_signed();
     let cert_f = write_temp(&cert_pem);
-    let key_f  = write_temp(&key_pem);
+    let key_f = write_temp(&key_pem);
     let bind: SocketAddr = "127.0.0.1:0".parse().unwrap();
     let cfg = GrpcServerConfig::new(bind).with_tls(IngressTlsConfig::tls(
         cert_f.path().to_str().unwrap(),
         key_f.path().to_str().unwrap(),
     ));
-    let handler = Arc::new(RecordingHandler { hit: Arc::new(AtomicBool::new(false)) });
+    let handler = Arc::new(RecordingHandler {
+        hit: Arc::new(AtomicBool::new(false)),
+    });
     assert!(TonicGrpcServer::from_config(&cfg, handler).is_ok());
 }
 
@@ -128,7 +135,7 @@ fn transport_struct_from_config_accepts_tls_int_test() {
 async fn plaintext_to_tls_required_server_fails_before_handler_runs_int_test() {
     let (cert_pem, key_pem) = self_signed();
     let cert_f = write_temp(&cert_pem);
-    let key_f  = write_temp(&key_pem);
+    let key_f = write_temp(&key_pem);
     let tls_cfg = IngressTlsConfig::tls(
         cert_f.path().to_str().unwrap(),
         key_f.path().to_str().unwrap(),
@@ -138,14 +145,16 @@ async fn plaintext_to_tls_required_server_fails_before_handler_runs_int_test() {
     let handler = Arc::new(RecordingHandler { hit: hit.clone() });
 
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr     = listener.local_addr().unwrap();
+    let addr = listener.local_addr().unwrap();
     let server = TonicGrpcServer::new("127.0.0.1:0", handler)
         .with_tls(tls_cfg)
         .allow_unauthenticated(true);
     let (tx, rx) = oneshot::channel::<()>();
     tokio::spawn(async move {
         server
-            .serve_with_listener(listener, async move { let _ = rx.await; })
+            .serve_with_listener(listener, async move {
+                let _ = rx.await;
+            })
             .await
             .unwrap();
     });
@@ -155,7 +164,7 @@ async fn plaintext_to_tls_required_server_fails_before_handler_runs_int_test() {
     // see TLS-record-shaped expectations; an h2c preface is invalid TLS
     // so the connection MUST fail.
     let stream = tokio::net::TcpStream::connect(addr).await.unwrap();
-    let io     = TokioIo::new(stream);
+    let io = TokioIo::new(stream);
     let handshake_result = hyper::client::conn::http2::Builder::new(TokioExecutor::new())
         .handshake::<_, Full<Bytes>>(io)
         .await;
@@ -175,7 +184,10 @@ async fn plaintext_to_tls_required_server_fails_before_handler_runs_int_test() {
         Err(_) => {
             // h2c handshake itself failed — that is the expected failure mode.
             let _ = tx.send(());
-            assert!(!hit.load(Ordering::SeqCst), "handler ran despite TLS-required");
+            assert!(
+                !hit.load(Ordering::SeqCst),
+                "handler ran despite TLS-required"
+            );
             return;
         }
     };
@@ -206,22 +218,27 @@ async fn transport_struct_advertises_grpc_accept_encoding_when_gzip_set_int_test
     use swe_edge_ingress_grpc_transport::CompressionMode;
 
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr     = listener.local_addr().unwrap();
-    let hit      = Arc::new(AtomicBool::new(false));
-    let server   = TonicGrpcServer::new("127.0.0.1:0", Arc::new(RecordingHandler { hit: hit.clone() }))
-        .with_compression(CompressionMode::Gzip)
-        .allow_unauthenticated(true);
+    let addr = listener.local_addr().unwrap();
+    let hit = Arc::new(AtomicBool::new(false));
+    let server = TonicGrpcServer::new(
+        "127.0.0.1:0",
+        Arc::new(RecordingHandler { hit: hit.clone() }),
+    )
+    .with_compression(CompressionMode::Gzip)
+    .allow_unauthenticated(true);
     let (tx, rx) = oneshot::channel::<()>();
     tokio::spawn(async move {
         server
-            .serve_with_listener(listener, async move { let _ = rx.await; })
+            .serve_with_listener(listener, async move {
+                let _ = rx.await;
+            })
             .await
             .unwrap();
     });
     tokio::time::sleep(Duration::from_millis(20)).await;
 
     let stream = tokio::net::TcpStream::connect(addr).await.unwrap();
-    let io     = TokioIo::new(stream);
+    let io = TokioIo::new(stream);
     let (mut sender, conn) = hyper::client::conn::http2::Builder::new(TokioExecutor::new())
         .handshake(io)
         .await
@@ -243,7 +260,10 @@ async fn transport_struct_advertises_grpc_accept_encoding_when_gzip_set_int_test
         .and_then(|v| v.to_str().ok())
         .map(str::to_owned);
     assert_eq!(advertised.as_deref(), Some("gzip"));
-    assert!(hit.load(Ordering::SeqCst), "handler must have run for compressed call");
+    assert!(
+        hit.load(Ordering::SeqCst),
+        "handler must have run for compressed call"
+    );
 
     let _ = tx.send(());
 }

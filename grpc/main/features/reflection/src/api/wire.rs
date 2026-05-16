@@ -13,33 +13,61 @@ pub fn decode_request(body: &[u8]) -> Result<ReflectionRequest, ReflectionError>
             .ok_or_else(|| ReflectionError::Malformed("varint tag".into()))?;
         idx += consumed;
         let field_number = (tag >> 3) as u32;
-        let wire_type    = (tag & 0x7) as u8;
+        let wire_type = (tag & 0x7) as u8;
         match (field_number, wire_type) {
             (1, 2) => {
                 let (len, c) = decode_varint(&body[idx..])
                     .ok_or_else(|| ReflectionError::Malformed("host length".into()))?;
                 idx += c;
-                let end = idx.checked_add(len as usize)
+                let end = idx
+                    .checked_add(len as usize)
                     .ok_or_else(|| ReflectionError::Malformed("host overflow".into()))?;
-                if end > body.len() { return Err(ReflectionError::Malformed("host truncated".into())); }
+                if end > body.len() {
+                    return Err(ReflectionError::Malformed("host truncated".into()));
+                }
                 idx = end;
             }
-            (3, 2) => { let (s, c) = decode_string(&body[idx..])?; idx += c; found = Some(ReflectionRequest::FileByFilename(s)); }
-            (4, 2) => { let (s, c) = decode_string(&body[idx..])?; idx += c; found = Some(ReflectionRequest::FileContainingSymbol(s)); }
+            (3, 2) => {
+                let (s, c) = decode_string(&body[idx..])?;
+                idx += c;
+                found = Some(ReflectionRequest::FileByFilename(s));
+            }
+            (4, 2) => {
+                let (s, c) = decode_string(&body[idx..])?;
+                idx += c;
+                found = Some(ReflectionRequest::FileContainingSymbol(s));
+            }
             (5, 2) => {
                 let (len, c) = decode_varint(&body[idx..])
                     .ok_or_else(|| ReflectionError::Malformed("ext-req length".into()))?;
                 idx += c;
-                let end = idx.checked_add(len as usize)
+                let end = idx
+                    .checked_add(len as usize)
                     .ok_or_else(|| ReflectionError::Malformed("ext-req overflow".into()))?;
-                if end > body.len() { return Err(ReflectionError::Malformed("ext-req truncated".into())); }
-                let (containing_type, extension_number) = decode_extension_request(&body[idx..end])?;
+                if end > body.len() {
+                    return Err(ReflectionError::Malformed("ext-req truncated".into()));
+                }
+                let (containing_type, extension_number) =
+                    decode_extension_request(&body[idx..end])?;
                 idx = end;
-                found = Some(ReflectionRequest::FileContainingExtension { containing_type, extension_number });
+                found = Some(ReflectionRequest::FileContainingExtension {
+                    containing_type,
+                    extension_number,
+                });
             }
-            (6, 2) => { let (s, c) = decode_string(&body[idx..])?; idx += c; found = Some(ReflectionRequest::AllExtensionNumbersOfType(s)); }
-            (7, 2) => { let (s, c) = decode_string(&body[idx..])?; idx += c; found = Some(ReflectionRequest::ListServices(s)); }
-            (_, wt) => { idx += skip_field(&body[idx..], wt)?; }
+            (6, 2) => {
+                let (s, c) = decode_string(&body[idx..])?;
+                idx += c;
+                found = Some(ReflectionRequest::AllExtensionNumbersOfType(s));
+            }
+            (7, 2) => {
+                let (s, c) = decode_string(&body[idx..])?;
+                idx += c;
+                found = Some(ReflectionRequest::ListServices(s));
+            }
+            (_, wt) => {
+                idx += skip_field(&body[idx..], wt)?;
+            }
         }
     }
 
@@ -57,14 +85,20 @@ fn decode_extension_request(body: &[u8]) -> Result<(String, i32), ReflectionErro
         let fnum = (tag >> 3) as u32;
         let wire = (tag & 0x7) as u8;
         match (fnum, wire) {
-            (1, 2) => { let (s, c) = decode_string(&body[idx..])?; idx += c; containing_type = s; }
+            (1, 2) => {
+                let (s, c) = decode_string(&body[idx..])?;
+                idx += c;
+                containing_type = s;
+            }
             (2, 0) => {
                 let (v, c) = decode_varint(&body[idx..])
                     .ok_or_else(|| ReflectionError::Malformed("ext-req number".into()))?;
                 idx += c;
                 extension_number = v as i32;
             }
-            (_, wt) => { idx += skip_field(&body[idx..], wt)?; }
+            (_, wt) => {
+                idx += skip_field(&body[idx..], wt)?;
+            }
         }
     }
     Ok((containing_type, extension_number))
@@ -105,9 +139,15 @@ pub fn encode_response(response: &ReflectionResponse, original_request: &[u8]) -
             encode_varint(sub.len() as u64, &mut out);
             out.extend_from_slice(&sub);
         }
-        ReflectionResponse::Error { error_code, error_message } => {
+        ReflectionResponse::Error {
+            error_code,
+            error_message,
+        } => {
             let mut sub = Vec::new();
-            if *error_code != 0 { sub.push(0x08); encode_varint(*error_code as i64 as u64, &mut sub); }
+            if *error_code != 0 {
+                sub.push(0x08);
+                encode_varint(*error_code as i64 as u64, &mut sub);
+            }
             if !error_message.is_empty() {
                 sub.push(0x12);
                 encode_varint(error_message.len() as u64, &mut sub);
@@ -122,42 +162,74 @@ pub fn encode_response(response: &ReflectionResponse, original_request: &[u8]) -
 }
 
 fn decode_string(body: &[u8]) -> Result<(String, usize), ReflectionError> {
-    let (len, c) = decode_varint(body).ok_or_else(|| ReflectionError::Malformed("string length".into()))?;
-    let total = c.checked_add(len as usize).ok_or_else(|| ReflectionError::Malformed("string overflow".into()))?;
-    if total > body.len() { return Err(ReflectionError::Malformed("string truncated".into())); }
+    let (len, c) =
+        decode_varint(body).ok_or_else(|| ReflectionError::Malformed("string length".into()))?;
+    let total = c
+        .checked_add(len as usize)
+        .ok_or_else(|| ReflectionError::Malformed("string overflow".into()))?;
+    if total > body.len() {
+        return Err(ReflectionError::Malformed("string truncated".into()));
+    }
     let s = std::str::from_utf8(&body[c..c + len as usize])
-        .map_err(|_| ReflectionError::Malformed("string utf-8".into()))?.to_string();
+        .map_err(|_| ReflectionError::Malformed("string utf-8".into()))?
+        .to_string();
     Ok((s, total))
 }
 
 fn skip_field(body: &[u8], wire_type: u8) -> Result<usize, ReflectionError> {
     match wire_type {
-        0 => { let (_, c) = decode_varint(body).ok_or_else(|| ReflectionError::Malformed("skip varint".into()))?; Ok(c) }
-        1 => { if body.len() < 8 { return Err(ReflectionError::Malformed("skip fixed64".into())); } Ok(8) }
+        0 => {
+            let (_, c) = decode_varint(body)
+                .ok_or_else(|| ReflectionError::Malformed("skip varint".into()))?;
+            Ok(c)
+        }
+        1 => {
+            if body.len() < 8 {
+                return Err(ReflectionError::Malformed("skip fixed64".into()));
+            }
+            Ok(8)
+        }
         2 => {
-            let (len, c) = decode_varint(body).ok_or_else(|| ReflectionError::Malformed("skip ld length".into()))?;
-            let total = c.checked_add(len as usize).ok_or_else(|| ReflectionError::Malformed("skip ld overflow".into()))?;
-            if total > body.len() { return Err(ReflectionError::Malformed("skip ld truncated".into())); }
+            let (len, c) = decode_varint(body)
+                .ok_or_else(|| ReflectionError::Malformed("skip ld length".into()))?;
+            let total = c
+                .checked_add(len as usize)
+                .ok_or_else(|| ReflectionError::Malformed("skip ld overflow".into()))?;
+            if total > body.len() {
+                return Err(ReflectionError::Malformed("skip ld truncated".into()));
+            }
             Ok(total)
         }
-        5 => { if body.len() < 4 { return Err(ReflectionError::Malformed("skip fixed32".into())); } Ok(4) }
-        wt => Err(ReflectionError::Malformed(format!("unsupported wire type {wt}"))),
+        5 => {
+            if body.len() < 4 {
+                return Err(ReflectionError::Malformed("skip fixed32".into()));
+            }
+            Ok(4)
+        }
+        wt => Err(ReflectionError::Malformed(format!(
+            "unsupported wire type {wt}"
+        ))),
     }
 }
 
 pub(crate) fn decode_varint(bytes: &[u8]) -> Option<(u64, usize)> {
     let mut result = 0u64;
-    let mut shift  = 0u32;
+    let mut shift = 0u32;
     for (i, byte) in bytes.iter().take(10).enumerate() {
         result |= ((byte & 0x7f) as u64) << shift;
-        if byte & 0x80 == 0 { return Some((result, i + 1)); }
+        if byte & 0x80 == 0 {
+            return Some((result, i + 1));
+        }
         shift += 7;
     }
     None
 }
 
 pub(crate) fn encode_varint(mut value: u64, out: &mut Vec<u8>) {
-    while value >= 0x80 { out.push((value as u8) | 0x80); value >>= 7; }
+    while value >= 0x80 {
+        out.push((value as u8) | 0x80);
+        value >>= 7;
+    }
     out.push(value as u8);
 }
 
@@ -194,13 +266,19 @@ mod tests {
     #[test]
     fn test_decode_request_list_services_round_trips() {
         let body = encode_string_field(0x3a, "");
-        assert_eq!(decode_request(&body).unwrap(), ReflectionRequest::ListServices(String::new()));
+        assert_eq!(
+            decode_request(&body).unwrap(),
+            ReflectionRequest::ListServices(String::new())
+        );
     }
 
     /// @covers: decode_request — file_by_filename field=3.
     #[test]
     fn test_decode_request_file_by_filename_round_trips() {
         let body = encode_string_field(0x1a, "pkg/foo.proto");
-        assert_eq!(decode_request(&body).unwrap(), ReflectionRequest::FileByFilename("pkg/foo.proto".into()));
+        assert_eq!(
+            decode_request(&body).unwrap(),
+            ReflectionRequest::FileByFilename("pkg/foo.proto".into())
+        );
     }
 }

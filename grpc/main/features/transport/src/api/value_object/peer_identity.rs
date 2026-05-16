@@ -58,7 +58,9 @@ pub struct PeerIdentity {
 
 impl PeerIdentity {
     /// Construct an empty identity (used when only the fingerprint is known).
-    pub fn empty() -> Self { Self::default() }
+    pub fn empty() -> Self {
+        Self::default()
+    }
 
     /// Returns `true` when neither CN nor any SAN is populated.
     pub fn is_empty(&self) -> bool {

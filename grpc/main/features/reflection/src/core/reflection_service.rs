@@ -13,9 +13,8 @@ use swe_edge_ingress_grpc::{
 };
 
 use crate::api::reflection_service::{
-    ReflectionService, REFLECTION_SERVICE_NAME,
-    ERROR_CODE_INVALID_ARGUMENT, ERROR_CODE_NOT_FOUND, ERROR_CODE_UNIMPLEMENTED,
-    REFLECTION_INFO_METHOD,
+    ReflectionService, ERROR_CODE_INVALID_ARGUMENT, ERROR_CODE_NOT_FOUND, ERROR_CODE_UNIMPLEMENTED,
+    REFLECTION_INFO_METHOD, REFLECTION_SERVICE_NAME,
 };
 use crate::api::types::{ReflectionRequest, ReflectionResponse};
 use crate::api::wire::{decode_request, encode_response};
@@ -37,9 +36,13 @@ impl ReflectionService {
 
     pub(crate) fn handle_request(&self, request: ReflectionRequest) -> ReflectionResponse {
         match request {
-            ReflectionRequest::ListServices(_) => ReflectionResponse::ListServices(self.list_services()),
+            ReflectionRequest::ListServices(_) => {
+                ReflectionResponse::ListServices(self.list_services())
+            }
             ReflectionRequest::FileByFilename(name) => self.descriptor_response_by_filename(&name),
-            ReflectionRequest::FileContainingSymbol(symbol) => self.descriptor_response_by_symbol(&symbol),
+            ReflectionRequest::FileContainingSymbol(symbol) => {
+                self.descriptor_response_by_symbol(&symbol)
+            }
             ReflectionRequest::FileContainingExtension { .. } => ReflectionResponse::Error {
                 error_code: ERROR_CODE_UNIMPLEMENTED,
                 error_message: "FileContainingExtension is not implemented".into(),
@@ -83,53 +86,64 @@ impl ReflectionService {
 }
 
 impl GrpcInbound for ReflectionService {
-    fn handle_unary(&self, request: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(
+        &self,
+        request: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move {
             if request.method.as_str() != REFLECTION_INFO_METHOD {
                 return Err(GrpcInboundError::Unimplemented(format!(
-                    "unknown method {}", request.method
+                    "unknown method {}",
+                    request.method
                 )));
             }
             let parsed = match decode_request(&request.body) {
-                Ok(p)  => p,
-                Err(e) => return Err(GrpcInboundError::InvalidArgument(format!(
-                    "malformed ServerReflectionRequest: {e}"
-                ))),
+                Ok(p) => p,
+                Err(e) => {
+                    return Err(GrpcInboundError::InvalidArgument(format!(
+                        "malformed ServerReflectionRequest: {e}"
+                    )))
+                }
             };
             let response = self.handle_request(parsed);
             let bytes = encode_response(&response, &request.body);
-            Ok(GrpcResponse { body: bytes, metadata: GrpcMetadata::default() })
+            Ok(GrpcResponse {
+                body: bytes,
+                metadata: GrpcMetadata::default(),
+            })
         })
     }
 
     fn handle_stream(
         &self,
-        method:    String,
+        method: String,
         _metadata: GrpcMetadata,
-        messages:  GrpcMessageStream,
-        _ctx:      RequestContext,
+        messages: GrpcMessageStream,
+        _ctx: RequestContext,
     ) -> BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
         Box::pin(async move {
             if method.as_str() != REFLECTION_INFO_METHOD {
-                return Err(GrpcInboundError::Unimplemented(format!("unknown method {method}")));
+                return Err(GrpcInboundError::Unimplemented(format!(
+                    "unknown method {method}"
+                )));
             }
             let mut messages = messages;
             let mut requests: Vec<Vec<u8>> = Vec::new();
             while let Some(item) = messages.next().await {
                 match item {
-                    Ok(b)  => requests.push(b),
+                    Ok(b) => requests.push(b),
                     Err(e) => return Err(e),
                 }
             }
             if requests.is_empty() {
                 let resp = ReflectionResponse::Error {
-                    error_code:    ERROR_CODE_INVALID_ARGUMENT,
+                    error_code: ERROR_CODE_INVALID_ARGUMENT,
                     error_message: "empty ServerReflectionInfo stream".into(),
                 };
                 let bytes = encode_response(&resp, &[]);
-                let out: GrpcMessageStream = Box::pin(futures::stream::once(
-                    futures::future::ready(Ok(bytes)),
-                ));
+                let out: GrpcMessageStream =
+                    Box::pin(futures::stream::once(futures::future::ready(Ok(bytes))));
                 return Ok((out, GrpcMetadata::default()));
             }
             let mut responses: Vec<Vec<u8>> = Vec::with_capacity(requests.len());
@@ -138,7 +152,7 @@ impl GrpcInbound for ReflectionService {
                     Ok(p) => p,
                     Err(e) => {
                         let resp = ReflectionResponse::Error {
-                            error_code:    ERROR_CODE_INVALID_ARGUMENT,
+                            error_code: ERROR_CODE_INVALID_ARGUMENT,
                             error_message: format!("malformed request frame: {e}"),
                         };
                         responses.push(encode_response(&resp, &body));
@@ -162,9 +176,9 @@ impl GrpcInbound for ReflectionService {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    use crate::api::reflection_service::{service_name_from_method_path, ReflectionService};
     use edge_domain::HandlerRegistry;
-    use crate::api::reflection_service::{ReflectionService, service_name_from_method_path};
+    use std::sync::Arc;
 
     /// @covers: list_services — empty registry still includes reflection service itself.
     #[test]
@@ -177,7 +191,10 @@ mod tests {
     /// @covers: service_name_from_method_path — extracts service name.
     #[test]
     fn test_service_name_from_method_path_extracts_service_portion() {
-        assert_eq!(service_name_from_method_path("/pkg.Svc/Method"), Some("pkg.Svc"));
+        assert_eq!(
+            service_name_from_method_path("/pkg.Svc/Method"),
+            Some("pkg.Svc")
+        );
     }
 
     /// @covers: service_name_from_method_path — None for malformed path.
@@ -205,7 +222,10 @@ mod tests {
         let resp = svc.handle_request(ReflectionRequest::Unknown);
         match resp {
             ReflectionResponse::Error { error_code, .. } => {
-                assert_eq!(error_code, crate::api::reflection_service::ERROR_CODE_INVALID_ARGUMENT);
+                assert_eq!(
+                    error_code,
+                    crate::api::reflection_service::ERROR_CODE_INVALID_ARGUMENT
+                );
             }
             other => panic!("expected Error, got {other:?}"),
         }

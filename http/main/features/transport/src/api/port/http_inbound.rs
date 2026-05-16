@@ -54,9 +54,19 @@ pub struct HttpHealthCheck {
 
 impl HttpHealthCheck {
     /// Create a healthy result.
-    pub fn healthy() -> Self { Self { healthy: true, message: None } }
+    pub fn healthy() -> Self {
+        Self {
+            healthy: true,
+            message: None,
+        }
+    }
     /// Create an unhealthy result with a message.
-    pub fn unhealthy(msg: impl Into<String>) -> Self { Self { healthy: false, message: Some(msg.into()) } }
+    pub fn unhealthy(msg: impl Into<String>) -> Self {
+        Self {
+            healthy: false,
+            message: Some(msg.into()),
+        }
+    }
 }
 
 /// Receives and handles inbound HTTP requests.
@@ -65,7 +75,11 @@ pub trait HttpInbound: Send + Sync {
     ///
     /// `ctx` carries the authenticated identity, tenant, and trace metadata
     /// extracted by the ingress middleware stack before dispatch.
-    fn handle(&self, request: HttpRequest, ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>>;
+    fn handle(
+        &self,
+        request: HttpRequest,
+        ctx: RequestContext,
+    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>>;
     /// Perform a health check of this handler.
     fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>>;
 }

@@ -19,54 +19,70 @@ pub type HttpEncodeFn<Resp> = fn(Resp) -> HttpResponse;
 /// [`HandlerRegistry`](edge_domain::HandlerRegistry).
 pub struct HttpHandlerAdapter<Req, Resp>
 where
-    Req:  Send + 'static,
+    Req: Send + 'static,
     Resp: Send + 'static,
 {
-    inner:  Arc<dyn Handler<Req, Resp>>,
+    inner: Arc<dyn Handler<Req, Resp>>,
     decode: HttpDecodeFn<Req>,
     encode: HttpEncodeFn<Resp>,
 }
 
 impl<Req, Resp> HttpHandlerAdapter<Req, Resp>
 where
-    Req:  Send + 'static,
+    Req: Send + 'static,
     Resp: Send + 'static,
 {
     /// Construct a new adapter from an inner typed handler and a decode/encode pair.
     pub fn new(
-        inner:  Arc<dyn Handler<Req, Resp>>,
+        inner: Arc<dyn Handler<Req, Resp>>,
         decode: HttpDecodeFn<Req>,
         encode: HttpEncodeFn<Resp>,
     ) -> Self {
-        Self { inner, decode, encode }
+        Self {
+            inner,
+            decode,
+            encode,
+        }
     }
 
     /// Borrow the inner typed handler.
-    pub fn inner(&self) -> &Arc<dyn Handler<Req, Resp>> { &self.inner }
+    pub fn inner(&self) -> &Arc<dyn Handler<Req, Resp>> {
+        &self.inner
+    }
 }
 
 #[async_trait]
 impl<Req, Resp> Handler<HttpRequest, HttpResponse> for HttpHandlerAdapter<Req, Resp>
 where
-    Req:  Send + 'static,
+    Req: Send + 'static,
     Resp: Send + 'static,
 {
-    fn id(&self) -> &str { self.inner.id() }
-
-    fn pattern(&self) -> &str { self.inner.pattern() }
-
-    async fn execute(&self, req: HttpRequest) -> Result<HttpResponse, HandlerError> {
-        self.execute_with_context(req, RequestContext::unauthenticated()).await
+    fn id(&self) -> &str {
+        self.inner.id()
     }
 
-    async fn execute_with_context(&self, req: HttpRequest, ctx: RequestContext) -> Result<HttpResponse, HandlerError> {
-        let typed = (self.decode)(&req)
-            .map_err(|e| HandlerError::InvalidRequest(e.to_string()))?;
+    fn pattern(&self) -> &str {
+        self.inner.pattern()
+    }
+
+    async fn execute(&self, req: HttpRequest) -> Result<HttpResponse, HandlerError> {
+        self.execute_with_context(req, RequestContext::unauthenticated())
+            .await
+    }
+
+    async fn execute_with_context(
+        &self,
+        req: HttpRequest,
+        ctx: RequestContext,
+    ) -> Result<HttpResponse, HandlerError> {
+        let typed = (self.decode)(&req).map_err(|e| HandlerError::InvalidRequest(e.to_string()))?;
         let resp = self.inner.execute_with_context(typed, ctx).await?;
         Ok((self.encode)(resp))
     }
 
-    async fn health_check(&self) -> bool { self.inner.health_check().await }
+    async fn health_check(&self) -> bool {
+        self.inner.health_check().await
+    }
 }
 
 #[cfg(test)]
@@ -74,40 +90,61 @@ mod tests {
     use super::*;
 
     #[derive(Debug, PartialEq)]
-    struct GetUserReq { id: u32 }
+    struct GetUserReq {
+        id: u32,
+    }
     #[derive(Debug, PartialEq)]
-    struct GetUserResp { name: String }
+    struct GetUserResp {
+        name: String,
+    }
 
     fn decode(req: &HttpRequest) -> Result<GetUserReq, HttpInboundError> {
-        req.query.get("id")
+        req.query
+            .get("id")
             .and_then(|v| v.parse::<u32>().ok())
             .map(|id| GetUserReq { id })
             .ok_or_else(|| HttpInboundError::InvalidInput("missing id".into()))
     }
-    fn encode(resp: GetUserResp) -> HttpResponse { HttpResponse::new(200, resp.name.into_bytes()) }
+    fn encode(resp: GetUserResp) -> HttpResponse {
+        HttpResponse::new(200, resp.name.into_bytes())
+    }
 
     struct EchoUserHandler;
     #[async_trait]
     impl Handler<GetUserReq, GetUserResp> for EchoUserHandler {
-        fn id(&self) -> &str { "get-user" }
-        fn pattern(&self) -> &str { "/users" }
+        fn id(&self) -> &str {
+            "get-user"
+        }
+        fn pattern(&self) -> &str {
+            "/users"
+        }
         async fn execute(&self, req: GetUserReq) -> Result<GetUserResp, HandlerError> {
-            Ok(GetUserResp { name: format!("user-{}", req.id) })
+            Ok(GetUserResp {
+                name: format!("user-{}", req.id),
+            })
         }
     }
 
     struct FailingHandler;
     #[async_trait]
     impl Handler<GetUserReq, GetUserResp> for FailingHandler {
-        fn id(&self) -> &str { "fail" }
-        fn pattern(&self) -> &str { "/fail" }
+        fn id(&self) -> &str {
+            "fail"
+        }
+        fn pattern(&self) -> &str {
+            "/fail"
+        }
         async fn execute(&self, _: GetUserReq) -> Result<GetUserResp, HandlerError> {
             Err(HandlerError::ExecutionFailed("boom".into()))
         }
-        async fn health_check(&self) -> bool { false }
+        async fn health_check(&self) -> bool {
+            false
+        }
     }
 
-    fn ctx() -> RequestContext { RequestContext::unauthenticated() }
+    fn ctx() -> RequestContext {
+        RequestContext::unauthenticated()
+    }
 
     /// @covers: new — id and pattern forwarded from inner.
     #[tokio::test]
@@ -123,7 +160,10 @@ mod tests {
         let a = HttpHandlerAdapter::new(Arc::new(EchoUserHandler), decode, encode);
         let mut req = HttpRequest::get("/users");
         req.query.insert("id".into(), "42".into());
-        let resp = (&a as &dyn Handler<HttpRequest, HttpResponse>).execute_with_context(req, ctx()).await.unwrap();
+        let resp = (&a as &dyn Handler<HttpRequest, HttpResponse>)
+            .execute_with_context(req, ctx())
+            .await
+            .unwrap();
         assert_eq!(resp.status, 200);
         assert_eq!(resp.body, b"user-42");
     }
@@ -133,7 +173,10 @@ mod tests {
     async fn test_execute_returns_invalid_request_when_decode_fails() {
         let a = HttpHandlerAdapter::new(Arc::new(EchoUserHandler), decode, encode);
         let req = HttpRequest::get("/users");
-        let err = (&a as &dyn Handler<HttpRequest, HttpResponse>).execute_with_context(req, ctx()).await.unwrap_err();
+        let err = (&a as &dyn Handler<HttpRequest, HttpResponse>)
+            .execute_with_context(req, ctx())
+            .await
+            .unwrap_err();
         assert!(matches!(err, HandlerError::InvalidRequest(_)));
     }
 
@@ -143,17 +186,28 @@ mod tests {
         let a = HttpHandlerAdapter::new(Arc::new(FailingHandler), decode, encode);
         let mut req = HttpRequest::get("/fail");
         req.query.insert("id".into(), "1".into());
-        let err = (&a as &dyn Handler<HttpRequest, HttpResponse>).execute_with_context(req, ctx()).await.unwrap_err();
+        let err = (&a as &dyn Handler<HttpRequest, HttpResponse>)
+            .execute_with_context(req, ctx())
+            .await
+            .unwrap_err();
         assert!(matches!(err, HandlerError::ExecutionFailed(_)));
     }
 
     /// @covers: health_check — forwarded from inner.
     #[tokio::test]
     async fn test_health_check_forwards_to_inner_handler() {
-        let healthy   = HttpHandlerAdapter::new(Arc::new(EchoUserHandler), decode, encode);
-        let unhealthy = HttpHandlerAdapter::new(Arc::new(FailingHandler),  decode, encode);
-        assert!( (&healthy   as &dyn Handler<HttpRequest, HttpResponse>).health_check().await);
-        assert!(!(&unhealthy as &dyn Handler<HttpRequest, HttpResponse>).health_check().await);
+        let healthy = HttpHandlerAdapter::new(Arc::new(EchoUserHandler), decode, encode);
+        let unhealthy = HttpHandlerAdapter::new(Arc::new(FailingHandler), decode, encode);
+        assert!(
+            (&healthy as &dyn Handler<HttpRequest, HttpResponse>)
+                .health_check()
+                .await
+        );
+        assert!(
+            !(&unhealthy as &dyn Handler<HttpRequest, HttpResponse>)
+                .health_check()
+                .await
+        );
     }
 
     /// @covers: inner — exposes wrapped Arc<Handler>.

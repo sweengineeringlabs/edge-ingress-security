@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use std::convert::Infallible;
 use std::sync::Arc;
 
-use axum::Router;
 use axum::http::StatusCode;
+use axum::Router;
 use tokio::net::TcpListener;
 
 use crate::api::port::http_inbound::{HttpInbound, HttpInboundError};
@@ -51,26 +51,34 @@ impl AxumHttpServer {
 
         if let Some(ref tls_cfg) = self.tls {
             tracing::info!(bind = %bind_addr, mtls = tls_cfg.is_mtls(), "HTTPS server listening");
-            serve_tls(listener, self.handler.clone(), self.body_limit, self.bearer_verifier.clone(), tls_cfg, shutdown).await
+            serve_tls(
+                listener,
+                self.handler.clone(),
+                self.body_limit,
+                self.bearer_verifier.clone(),
+                tls_cfg,
+                shutdown,
+            )
+            .await
         } else {
             tracing::info!(bind = %bind_addr, "HTTP server listening");
 
-            let handler    = self.handler.clone();
+            let handler = self.handler.clone();
             let body_limit = self.body_limit;
-            let verifier   = self.bearer_verifier.clone();
+            let verifier = self.bearer_verifier.clone();
 
             let app = Router::new().fallback(move |req: axum::extract::Request| {
-                let handler  = handler.clone();
+                let handler = handler.clone();
                 let verifier = verifier.clone();
                 async move {
                     let req = match verify_auth(req, verifier.as_deref()) {
-                        Ok(r)    => r,
+                        Ok(r) => r,
                         Err(rsp) => return rsp,
                     };
                     match extract_request(req, body_limit).await {
                         Ok((http_req, ctx)) => match handler.handle(http_req, ctx).await {
                             Ok(resp) => build_response(resp),
-                            Err(e)   => error_response(e),
+                            Err(e) => error_response(e),
                         },
                         Err(resp) => resp,
                     }
@@ -88,20 +96,20 @@ impl AxumHttpServer {
 // ── TLS accept loop ───────────────────────────────────────────────────────────
 
 async fn serve_tls<F>(
-    listener:   TcpListener,
-    handler:    Arc<dyn HttpInbound>,
+    listener: TcpListener,
+    handler: Arc<dyn HttpInbound>,
     body_limit: usize,
-    verifier:   Option<Arc<dyn TokenVerifier>>,
-    tls_cfg:    &IngressTlsConfig,
-    shutdown:   F,
+    verifier: Option<Arc<dyn TokenVerifier>>,
+    tls_cfg: &IngressTlsConfig,
+    shutdown: F,
 ) -> Result<(), AxumServerError>
 where
     F: std::future::Future<Output = ()> + Send + 'static,
 {
     use hyper_util::rt::{TokioExecutor, TokioIo};
 
-    let acceptor = swe_edge_ingress_tls::build_tls_acceptor(tls_cfg)
-        .map_err(AxumServerError::Tls)?;
+    let acceptor =
+        swe_edge_ingress_tls::build_tls_acceptor(tls_cfg).map_err(AxumServerError::Tls)?;
 
     let mut shutdown = std::pin::pin!(shutdown);
 
@@ -159,10 +167,12 @@ where
 
 #[allow(clippy::result_large_err)]
 fn verify_auth(
-    mut req:  axum::extract::Request,
+    mut req: axum::extract::Request,
     verifier: Option<&dyn TokenVerifier>,
 ) -> Result<axum::extract::Request, axum::response::Response> {
-    let Some(verifier) = verifier else { return Ok(req) };
+    let Some(verifier) = verifier else {
+        return Ok(req);
+    };
 
     let token = req
         .headers()
@@ -172,7 +182,9 @@ fn verify_auth(
         .ok_or_else(|| {
             axum::response::Response::builder()
                 .status(StatusCode::UNAUTHORIZED)
-                .body(axum::body::Body::from("missing or malformed Authorization header"))
+                .body(axum::body::Body::from(
+                    "missing or malformed Authorization header",
+                ))
                 .unwrap()
         })?;
 
@@ -187,9 +199,15 @@ fn verify_auth(
     let ctx = RequestContext::authenticated(
         claims.sub.clone().unwrap_or_default(),
         claims.iss.clone(),
-        claims.custom.get("tenant_id")
+        claims
+            .custom
+            .get("tenant_id")
             .map(|v| v.to_string().trim_matches('"').to_string()),
-        claims.custom.iter().map(|(k, v)| (k.clone(), v.to_string())).collect(),
+        claims
+            .custom
+            .iter()
+            .map(|(k, v)| (k.clone(), v.to_string()))
+            .collect(),
     );
     req.extensions_mut().insert(ctx);
     Ok(req)
@@ -204,35 +222,50 @@ async fn extract_request(
     let (parts, body) = req.into_parts();
 
     // Read RequestContext inserted by upstream auth/trace middleware.
-    let ctx = parts.extensions
+    let ctx = parts
+        .extensions
         .get::<RequestContext>()
         .cloned()
         .unwrap_or_default();
 
-    let method  = map_method(&parts.method);
-    let url     = parts.uri.to_string();
-    let query   = parse_query(parts.uri.query());
+    let method = map_method(&parts.method);
+    let url = parts.uri.to_string();
+    let query = parse_query(parts.uri.query());
     let headers = collect_headers(&parts.headers);
-    let ct      = headers.get("content-type").map(|s| s.as_str()).unwrap_or("").to_owned();
+    let ct = headers
+        .get("content-type")
+        .map(|s| s.as_str())
+        .unwrap_or("")
+        .to_owned();
 
     let bytes = axum::body::to_bytes(axum::body::Body::new(body), body_limit)
         .await
         .map_err(|_| payload_too_large())?;
 
     let body = build_body(&bytes, &ct);
-    Ok((HttpRequest { method, url, headers, query, body, timeout: None }, ctx))
+    Ok((
+        HttpRequest {
+            method,
+            url,
+            headers,
+            query,
+            body,
+            timeout: None,
+        },
+        ctx,
+    ))
 }
 
 fn map_method(m: &axum::http::Method) -> HttpMethod {
     match *m {
-        axum::http::Method::GET     => HttpMethod::Get,
-        axum::http::Method::POST    => HttpMethod::Post,
-        axum::http::Method::PUT     => HttpMethod::Put,
-        axum::http::Method::PATCH   => HttpMethod::Patch,
-        axum::http::Method::DELETE  => HttpMethod::Delete,
-        axum::http::Method::HEAD    => HttpMethod::Head,
+        axum::http::Method::GET => HttpMethod::Get,
+        axum::http::Method::POST => HttpMethod::Post,
+        axum::http::Method::PUT => HttpMethod::Put,
+        axum::http::Method::PATCH => HttpMethod::Patch,
+        axum::http::Method::DELETE => HttpMethod::Delete,
+        axum::http::Method::HEAD => HttpMethod::Head,
         axum::http::Method::OPTIONS => HttpMethod::Options,
-        _                           => HttpMethod::Get,
+        _ => HttpMethod::Get,
     }
 }
 
@@ -241,22 +274,27 @@ fn parse_query(raw: Option<&str>) -> HashMap<String, String> {
     if let Some(q) = raw {
         for pair in q.split('&') {
             let mut parts = pair.splitn(2, '=');
-            let key   = percent_decode(parts.next().unwrap_or(""));
+            let key = percent_decode(parts.next().unwrap_or(""));
             let value = percent_decode(parts.next().unwrap_or(""));
-            if !key.is_empty() { map.insert(key, value); }
+            if !key.is_empty() {
+                map.insert(key, value);
+            }
         }
     }
     map
 }
 
 fn collect_headers(headers: &axum::http::HeaderMap) -> HashMap<String, String> {
-    headers.iter()
+    headers
+        .iter()
         .filter_map(|(k, v)| v.to_str().ok().map(|vs| (k.to_string(), vs.to_string())))
         .collect()
 }
 
 fn build_body(bytes: &bytes::Bytes, content_type: &str) -> Option<HttpBody> {
-    if bytes.is_empty() { return None; }
+    if bytes.is_empty() {
+        return None;
+    }
     if content_type.contains("application/json") {
         serde_json::from_slice(bytes)
             .ok()
@@ -274,9 +312,11 @@ fn parse_form(bytes: &bytes::Bytes) -> HashMap<String, String> {
     let s = std::str::from_utf8(bytes).unwrap_or("");
     for pair in s.split('&') {
         let mut parts = pair.splitn(2, '=');
-        let key   = percent_decode(parts.next().unwrap_or(""));
+        let key = percent_decode(parts.next().unwrap_or(""));
         let value = percent_decode(parts.next().unwrap_or(""));
-        if !key.is_empty() { map.insert(key, value); }
+        if !key.is_empty() {
+            map.insert(key, value);
+        }
     }
     map
 }
@@ -284,7 +324,7 @@ fn parse_form(bytes: &bytes::Bytes) -> HashMap<String, String> {
 /// Minimal percent-decode: `+` → space, `%XX` → byte.
 fn percent_decode(s: &str) -> String {
     let s = s.replace('+', " ");
-    let mut out   = String::with_capacity(s.len());
+    let mut out = String::with_capacity(s.len());
     let mut chars = s.chars().peekable();
     while let Some(c) = chars.next() {
         if c == '%' {
@@ -301,8 +341,13 @@ fn percent_decode(s: &str) -> String {
                         out.push(b);
                     }
                 }
-                (Some(a), None) => { out.push('%'); out.push(a); }
-                _               => { out.push('%'); }
+                (Some(a), None) => {
+                    out.push('%');
+                    out.push(a);
+                }
+                _ => {
+                    out.push('%');
+                }
             }
             continue;
         }
@@ -327,16 +372,16 @@ fn build_response(resp: HttpResponse) -> axum::response::Response {
 
 fn error_response(e: HttpInboundError) -> axum::response::Response {
     let status = match &e {
-        HttpInboundError::NotFound(_)         => axum::http::StatusCode::NOT_FOUND,
-        HttpInboundError::InvalidInput(_)     => axum::http::StatusCode::BAD_REQUEST,
-        HttpInboundError::Unauthorized(_)     => axum::http::StatusCode::UNAUTHORIZED,
+        HttpInboundError::NotFound(_) => axum::http::StatusCode::NOT_FOUND,
+        HttpInboundError::InvalidInput(_) => axum::http::StatusCode::BAD_REQUEST,
+        HttpInboundError::Unauthorized(_) => axum::http::StatusCode::UNAUTHORIZED,
         HttpInboundError::PermissionDenied(_) => axum::http::StatusCode::FORBIDDEN,
-        HttpInboundError::Conflict(_)            => axum::http::StatusCode::CONFLICT,
-        HttpInboundError::MethodNotAllowed(_)    => axum::http::StatusCode::METHOD_NOT_ALLOWED,
+        HttpInboundError::Conflict(_) => axum::http::StatusCode::CONFLICT,
+        HttpInboundError::MethodNotAllowed(_) => axum::http::StatusCode::METHOD_NOT_ALLOWED,
         HttpInboundError::UnprocessableEntity(_) => axum::http::StatusCode::UNPROCESSABLE_ENTITY,
-        HttpInboundError::Timeout(_)             => axum::http::StatusCode::GATEWAY_TIMEOUT,
-        HttpInboundError::Unavailable(_)         => axum::http::StatusCode::SERVICE_UNAVAILABLE,
-        HttpInboundError::Internal(_)            => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+        HttpInboundError::Timeout(_) => axum::http::StatusCode::GATEWAY_TIMEOUT,
+        HttpInboundError::Unavailable(_) => axum::http::StatusCode::SERVICE_UNAVAILABLE,
+        HttpInboundError::Internal(_) => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
     };
     axum::response::Response::builder()
         .status(status)
@@ -370,13 +415,16 @@ mod tests {
 
     #[test]
     fn test_map_method_maps_all_standard_http_verbs() {
-        assert_eq!(map_method(&axum::http::Method::GET),     HttpMethod::Get);
-        assert_eq!(map_method(&axum::http::Method::POST),    HttpMethod::Post);
-        assert_eq!(map_method(&axum::http::Method::PUT),     HttpMethod::Put);
-        assert_eq!(map_method(&axum::http::Method::PATCH),   HttpMethod::Patch);
-        assert_eq!(map_method(&axum::http::Method::DELETE),  HttpMethod::Delete);
-        assert_eq!(map_method(&axum::http::Method::HEAD),    HttpMethod::Head);
-        assert_eq!(map_method(&axum::http::Method::OPTIONS), HttpMethod::Options);
+        assert_eq!(map_method(&axum::http::Method::GET), HttpMethod::Get);
+        assert_eq!(map_method(&axum::http::Method::POST), HttpMethod::Post);
+        assert_eq!(map_method(&axum::http::Method::PUT), HttpMethod::Put);
+        assert_eq!(map_method(&axum::http::Method::PATCH), HttpMethod::Patch);
+        assert_eq!(map_method(&axum::http::Method::DELETE), HttpMethod::Delete);
+        assert_eq!(map_method(&axum::http::Method::HEAD), HttpMethod::Head);
+        assert_eq!(
+            map_method(&axum::http::Method::OPTIONS),
+            HttpMethod::Options
+        );
     }
 
     // ── parse_query ───────────────────────────────────────────────────────
@@ -416,25 +464,37 @@ mod tests {
     fn test_build_body_parses_valid_json_content_type_as_json_variant() {
         let json = serde_json::json!({"k": "v"});
         let bytes = bytes::Bytes::from(serde_json::to_vec(&json).unwrap());
-        assert!(matches!(build_body(&bytes, "application/json"), Some(HttpBody::Json(_))));
+        assert!(matches!(
+            build_body(&bytes, "application/json"),
+            Some(HttpBody::Json(_))
+        ));
     }
 
     #[test]
     fn test_build_body_falls_back_to_raw_for_malformed_json() {
         let bytes = bytes::Bytes::from_static(b"not-json");
-        assert!(matches!(build_body(&bytes, "application/json"), Some(HttpBody::Raw(_))));
+        assert!(matches!(
+            build_body(&bytes, "application/json"),
+            Some(HttpBody::Raw(_))
+        ));
     }
 
     #[test]
     fn test_build_body_parses_form_encoded_content_type_as_form_variant() {
         let bytes = bytes::Bytes::from_static(b"a=1&b=2");
-        assert!(matches!(build_body(&bytes, "application/x-www-form-urlencoded"), Some(HttpBody::Form(_))));
+        assert!(matches!(
+            build_body(&bytes, "application/x-www-form-urlencoded"),
+            Some(HttpBody::Form(_))
+        ));
     }
 
     #[test]
     fn test_build_body_uses_raw_for_octet_stream_content_type() {
         let bytes = bytes::Bytes::from_static(b"\x00\x01\x02");
-        assert!(matches!(build_body(&bytes, "application/octet-stream"), Some(HttpBody::Raw(_))));
+        assert!(matches!(
+            build_body(&bytes, "application/octet-stream"),
+            Some(HttpBody::Raw(_))
+        ));
     }
 
     // ── parse_form ────────────────────────────────────────────────────────
@@ -537,18 +597,22 @@ mod tests {
 
 #[cfg(test)]
 mod dedicated_coverage {
-    use std::sync::Arc;
+    use super::AxumHttpServer;
+    use crate::api::port::http_inbound::{HttpHealthCheck, HttpInbound, HttpInboundResult};
+    use crate::api::server::axum_http_server::MAX_BODY_BYTES;
+    use crate::api::value_object::{HttpRequest, HttpResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
-    use crate::api::port::http_inbound::{HttpInbound, HttpInboundResult, HttpHealthCheck};
-    use crate::api::value_object::{HttpRequest, HttpResponse};
+    use std::sync::Arc;
     use swe_edge_ingress_tls::IngressTlsConfig;
-    use super::AxumHttpServer;
-    use crate::api::server::axum_http_server::MAX_BODY_BYTES;
 
     struct Stub;
     impl HttpInbound for Stub {
-        fn handle(&self, _: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+        fn handle(
+            &self,
+            _: HttpRequest,
+            _ctx: RequestContext,
+        ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
             Box::pin(async { Ok(HttpResponse::new(200, vec![])) })
         }
         fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
@@ -556,7 +620,9 @@ mod dedicated_coverage {
         }
     }
 
-    fn server() -> AxumHttpServer { AxumHttpServer::new("127.0.0.1:0", Arc::new(Stub)) }
+    fn server() -> AxumHttpServer {
+        AxumHttpServer::new("127.0.0.1:0", Arc::new(Stub))
+    }
 
     /// @covers: new
     #[test]
@@ -594,23 +660,29 @@ mod dedicated_coverage {
         use tokio::net::TcpListener;
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let s = server();
-        let result = s.serve_with_listener(listener, std::future::ready(())).await;
+        let result = s
+            .serve_with_listener(listener, std::future::ready(()))
+            .await;
         assert!(result.is_ok());
     }
 }
 
 #[cfg(test)]
 mod sync_coverage {
-    use std::sync::Arc;
+    use super::AxumHttpServer;
+    use crate::api::port::http_inbound::{HttpHealthCheck, HttpInbound, HttpInboundResult};
+    use crate::api::value_object::{HttpRequest, HttpResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
-    use crate::api::port::http_inbound::{HttpInbound, HttpInboundResult, HttpHealthCheck};
-    use crate::api::value_object::{HttpRequest, HttpResponse};
-    use super::AxumHttpServer;
+    use std::sync::Arc;
 
     struct Stub;
     impl HttpInbound for Stub {
-        fn handle(&self, _: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+        fn handle(
+            &self,
+            _: HttpRequest,
+            _ctx: RequestContext,
+        ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
             Box::pin(async { Ok(HttpResponse::new(200, vec![])) })
         }
         fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
