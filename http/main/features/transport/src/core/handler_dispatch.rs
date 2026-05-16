@@ -89,10 +89,13 @@ fn map_handler_error(err: HandlerError) -> HttpInboundError {
     match err {
         HandlerError::Unsupported(m)        => HttpInboundError::NotFound(m),
         HandlerError::InvalidRequest(m)     => HttpInboundError::InvalidInput(m),
+        HandlerError::NotFound(m)           => HttpInboundError::NotFound(m),
+        HandlerError::Conflict(m)           => HttpInboundError::Conflict(m),
         HandlerError::ExecutionFailed(m)    => HttpInboundError::Internal(m),
         HandlerError::Unhealthy             => HttpInboundError::Unavailable("handler unhealthy".into()),
         HandlerError::FailedPrecondition(m) => HttpInboundError::InvalidInput(m),
-        HandlerError::Other(m)              => HttpInboundError::Internal(m),
+        HandlerError::Unauthorized(m)       => HttpInboundError::Unauthorized(m),
+        HandlerError::PermissionDenied(m)   => HttpInboundError::PermissionDenied(m),
     }
 }
 

@@ -24,6 +24,19 @@ pub enum VerifierError {
     Config(String),
 }
 
+impl From<VerifierError> for edge_domain::HandlerError {
+    fn from(e: VerifierError) -> Self {
+        match e {
+            VerifierError::Invalid(_)
+            | VerifierError::Expired
+            | VerifierError::NotYetValid
+            | VerifierError::UnknownApiKey      => edge_domain::HandlerError::Unauthorized(e.to_string()),
+            VerifierError::ClaimMismatch(_)     => edge_domain::HandlerError::PermissionDenied(e.to_string()),
+            VerifierError::Config(_)            => edge_domain::HandlerError::ExecutionFailed(e.to_string()),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

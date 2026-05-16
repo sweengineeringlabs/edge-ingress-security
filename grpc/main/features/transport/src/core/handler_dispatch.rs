@@ -79,13 +79,17 @@ impl GrpcInbound for GrpcHandlerRegistryDispatcher {
 }
 
 fn map_handler_error(err: HandlerError) -> GrpcInboundError {
+    use crate::saf::GrpcStatusCode;
     match err {
         HandlerError::Unsupported(m)        => GrpcInboundError::Unimplemented(m),
         HandlerError::InvalidRequest(m)     => GrpcInboundError::InvalidArgument(m),
+        HandlerError::NotFound(m)           => GrpcInboundError::NotFound(m),
+        HandlerError::Conflict(m)           => GrpcInboundError::Status(GrpcStatusCode::AlreadyExists, m),
         HandlerError::ExecutionFailed(m)    => GrpcInboundError::Internal(m),
         HandlerError::Unhealthy             => GrpcInboundError::Unavailable("handler unhealthy".into()),
-        HandlerError::FailedPrecondition(m) => GrpcInboundError::Status(crate::saf::GrpcStatusCode::FailedPrecondition, m),
-        HandlerError::Other(m)              => GrpcInboundError::Internal(m),
+        HandlerError::FailedPrecondition(m) => GrpcInboundError::Status(GrpcStatusCode::FailedPrecondition, m),
+        HandlerError::Unauthorized(m)       => GrpcInboundError::Status(GrpcStatusCode::Unauthenticated, m),
+        HandlerError::PermissionDenied(m)   => GrpcInboundError::PermissionDenied(m),
     }
 }
 

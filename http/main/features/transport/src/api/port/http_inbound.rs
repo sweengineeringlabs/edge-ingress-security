@@ -26,9 +26,15 @@ pub enum HttpInboundError {
     /// Operation timed out.
     #[error("timeout: {0}")]
     Timeout(String),
+    /// Caller is not authenticated.
+    #[error("unauthorized: {0}")]
+    Unauthorized(String),
     /// Caller lacks permission.
     #[error("permission denied: {0}")]
     PermissionDenied(String),
+    /// The operation conflicts with existing state.
+    #[error("conflict: {0}")]
+    Conflict(String),
 }
 
 /// Minimal health-check result for the HTTP domain.
