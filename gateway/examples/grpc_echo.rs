@@ -25,15 +25,13 @@ impl GrpcInbound for EchoHandler {
     ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move {
             Ok(GrpcResponse {
-                body:     req.body,
+                body: req.body,
                 metadata: GrpcMetadata::default(),
             })
         })
     }
 
-    fn health_check(
-        &self,
-    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
         Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
     }
 }

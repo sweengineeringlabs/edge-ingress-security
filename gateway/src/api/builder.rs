@@ -1,14 +1,14 @@
-//! Builder type for inbound adapter configuration.
+//! ApplicationConfigBuilder type for inbound adapter configuration.
 
 use std::sync::Arc;
 
 use crate::api::inbound_source::InboundSource;
 
-/// Builder for inbound adapter configuration.
+/// ApplicationConfigBuilder for inbound adapter configuration.
 #[derive(Debug, Default)]
-pub struct Builder;
+pub struct ApplicationConfigBuilder;
 
-impl Builder {
+impl ApplicationConfigBuilder {
     /// Construct with default configuration.
     pub fn new() -> Self {
         Self
@@ -26,7 +26,7 @@ mod tests {
 
     #[test]
     fn test_builder_new_returns_default() {
-        let _ = Builder::new();
+        let _ = ApplicationConfigBuilder::new();
     }
 
     /// @covers: build_file_input

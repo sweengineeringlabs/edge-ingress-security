@@ -23,7 +23,10 @@ use crate::api::verified_claims::VerifiedClaims;
 impl<S> Layer<S> for BearerLayer {
     type Service = BearerService<S>;
     fn layer(&self, inner: S) -> Self::Service {
-        BearerService { inner, verifier: Arc::clone(&self.verifier) }
+        BearerService {
+            inner,
+            verifier: Arc::clone(&self.verifier),
+        }
     }
 }
 
@@ -59,9 +62,13 @@ where
                         let ctx = RequestContext::authenticated(
                             claims.sub.clone().unwrap_or_default(),
                             claims.iss.clone(),
-                            claims.custom.get("tenant_id")
+                            claims
+                                .custom
+                                .get("tenant_id")
                                 .map(|v| v.to_string().trim_matches('"').to_string()),
-                            claims.custom.iter()
+                            claims
+                                .custom
+                                .iter()
                                 .map(|(k, v)| (k.clone(), v.to_string()))
                                 .collect(),
                         );

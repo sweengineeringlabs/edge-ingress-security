@@ -1,7 +1,7 @@
 //! Pipeline and Router traits.
 
-use async_trait::async_trait;
 use crate::api::ingress_error::IngressError;
+use async_trait::async_trait;
 
 /// Router — dispatches a request to produce a response.
 #[async_trait]
@@ -9,7 +9,8 @@ pub trait Router<
     Req: Send + Sync + 'static = serde_json::Value,
     Resp: Send + Sync + 'static = serde_json::Value,
     Err: Send + Sync + 'static = IngressError,
->: Send + Sync {
+>: Send + Sync
+{
     /// Dispatch the request and return a response or error.
     async fn dispatch(&self, request: &Req) -> Result<Resp, Err>;
 }
@@ -20,7 +21,8 @@ pub trait Pipeline<
     Req: Send + Sync + 'static = serde_json::Value,
     Resp: Send + Sync + 'static = serde_json::Value,
     Err: Send + Sync + 'static = IngressError,
->: Send + Sync {
+>: Send + Sync
+{
     /// Execute the request through all pipeline stages.
     async fn execute(&self, request: Req) -> Result<Resp, Err>;
 }

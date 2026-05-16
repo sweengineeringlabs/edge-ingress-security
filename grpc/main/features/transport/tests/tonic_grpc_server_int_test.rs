@@ -26,9 +26,18 @@ use swe_edge_ingress_grpc_transport::{
 struct ThreeFrameServerStreamHandler;
 
 impl GrpcInbound for ThreeFrameServerStreamHandler {
-    fn handle_unary(&self, _req: GrpcRequest, _ctx: RequestContext) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(
+        &self,
+        _req: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move {
-            Ok(GrpcResponse { body: vec![], metadata: GrpcMetadata { headers: HashMap::new() } })
+            Ok(GrpcResponse {
+                body: vec![],
+                metadata: GrpcMetadata {
+                    headers: HashMap::new(),
+                },
+            })
         })
     }
 
@@ -58,9 +67,16 @@ impl GrpcInbound for ThreeFrameServerStreamHandler {
 struct FrameCountHandler;
 
 impl GrpcInbound for FrameCountHandler {
-    fn handle_unary(&self, _req: GrpcRequest, _ctx: RequestContext) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(
+        &self,
+        _req: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move {
-            Ok(GrpcResponse { body: vec![], metadata: GrpcMetadata::default() })
+            Ok(GrpcResponse {
+                body: vec![],
+                metadata: GrpcMetadata::default(),
+            })
         })
     }
 
@@ -74,9 +90,8 @@ impl GrpcInbound for FrameCountHandler {
         Box::pin(async move {
             use futures::StreamExt;
             let count = messages.count().await;
-            let out: GrpcMessageStream = Box::pin(futures::stream::iter(vec![
-                Ok(vec![count as u8]),
-            ]));
+            let out: GrpcMessageStream =
+                Box::pin(futures::stream::iter(vec![Ok(vec![count as u8])]));
             Ok((out, GrpcMetadata::default()))
         })
     }
@@ -90,9 +105,16 @@ impl GrpcInbound for FrameCountHandler {
 struct EchoStreamHandler;
 
 impl GrpcInbound for EchoStreamHandler {
-    fn handle_unary(&self, req: GrpcRequest, _ctx: RequestContext) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(
+        &self,
+        req: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move {
-            Ok(GrpcResponse { body: req.body, metadata: GrpcMetadata::default() })
+            Ok(GrpcResponse {
+                body: req.body,
+                metadata: GrpcMetadata::default(),
+            })
         })
     }
 
@@ -119,11 +141,17 @@ impl GrpcInbound for EchoStreamHandler {
 struct EchoHandler;
 
 impl GrpcInbound for EchoHandler {
-    fn handle_unary(&self, req: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(
+        &self,
+        req: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move {
             Ok(GrpcResponse {
-                body:     req.body,
-                metadata: GrpcMetadata { headers: HashMap::new() },
+                body: req.body,
+                metadata: GrpcMetadata {
+                    headers: HashMap::new(),
+                },
             })
         })
     }
@@ -136,7 +164,11 @@ impl GrpcInbound for EchoHandler {
 struct NotFoundHandler;
 
 impl GrpcInbound for NotFoundHandler {
-    fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(
+        &self,
+        _: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move { Err(GrpcInboundError::NotFound("no such method".into())) })
     }
 
@@ -148,7 +180,11 @@ impl GrpcInbound for NotFoundHandler {
 struct InvalidArgumentHandler;
 
 impl GrpcInbound for InvalidArgumentHandler {
-    fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(
+        &self,
+        _: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move { Err(GrpcInboundError::InvalidArgument("bad field".into())) })
     }
 
@@ -160,7 +196,11 @@ impl GrpcInbound for InvalidArgumentHandler {
 struct DeadlineExceededHandler;
 
 impl GrpcInbound for DeadlineExceededHandler {
-    fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(
+        &self,
+        _: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move { Err(GrpcInboundError::DeadlineExceeded("took too long".into())) })
     }
 
@@ -172,7 +212,11 @@ impl GrpcInbound for DeadlineExceededHandler {
 struct PermissionDeniedHandler;
 
 impl GrpcInbound for PermissionDeniedHandler {
-    fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(
+        &self,
+        _: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move { Err(GrpcInboundError::PermissionDenied("not allowed".into())) })
     }
 
@@ -184,7 +228,11 @@ impl GrpcInbound for PermissionDeniedHandler {
 struct UnimplementedHandler;
 
 impl GrpcInbound for UnimplementedHandler {
-    fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(
+        &self,
+        _: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move { Err(GrpcInboundError::Unimplemented("not built yet".into())) })
     }
 
@@ -197,11 +245,18 @@ impl GrpcInbound for UnimplementedHandler {
 struct MetadataHandler;
 
 impl GrpcInbound for MetadataHandler {
-    fn handle_unary(&self, req: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(
+        &self,
+        req: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move {
             let mut headers = HashMap::new();
             headers.insert("x-response-id".to_string(), "meta-42".to_string());
-            Ok(GrpcResponse { body: req.body, metadata: GrpcMetadata { headers } })
+            Ok(GrpcResponse {
+                body: req.body,
+                metadata: GrpcMetadata { headers },
+            })
         })
     }
 
@@ -214,8 +269,17 @@ impl GrpcInbound for MetadataHandler {
 struct MidStreamErrorHandler;
 
 impl GrpcInbound for MidStreamErrorHandler {
-    fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
-        Box::pin(async move { Ok(GrpcResponse { body: vec![], metadata: GrpcMetadata::default() }) })
+    fn handle_unary(
+        &self,
+        _: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        Box::pin(async move {
+            Ok(GrpcResponse {
+                body: vec![],
+                metadata: GrpcMetadata::default(),
+            })
+        })
     }
 
     fn handle_stream(
@@ -243,16 +307,17 @@ impl GrpcInbound for MidStreamErrorHandler {
 
 async fn start_server<H: GrpcInbound + 'static>(handler: H) -> (SocketAddr, oneshot::Sender<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr     = listener.local_addr().unwrap();
+    let addr = listener.local_addr().unwrap();
     // Phase 3 introduces a default-deny authorisation invariant; these
     // dispatch-level tests exercise the wire path without an authz
     // interceptor, so we explicitly opt out of the gate here.
-    let server   = TonicGrpcServer::new("127.0.0.1:0", Arc::new(handler))
-        .allow_unauthenticated(true);
+    let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(handler)).allow_unauthenticated(true);
     let (tx, rx) = oneshot::channel::<()>();
     tokio::spawn(async move {
         server
-            .serve_with_listener(listener, async move { let _ = rx.await; })
+            .serve_with_listener(listener, async move {
+                let _ = rx.await;
+            })
             .await
             .unwrap();
     });
@@ -294,8 +359,10 @@ fn parse_grpc_frames(data: &Bytes) -> Vec<Bytes> {
             data[offset + 4],
         ]) as usize;
         let start = offset + HEADER;
-        let end   = start + len;
-        if end > data.len() { break; }
+        let end = start + len;
+        if end > data.len() {
+            break;
+        }
         out.push(data.slice(start..end));
         offset = end;
     }
@@ -305,8 +372,8 @@ fn parse_grpc_frames(data: &Bytes) -> Vec<Bytes> {
 /// Open an HTTP/2 prior-knowledge connection, POST a gRPC frame to `path`,
 /// and return `(http-status, grpc-status-trailer, body-data-bytes)`.
 async fn grpc_call(
-    addr:    SocketAddr,
-    path:    &str,
+    addr: SocketAddr,
+    path: &str,
     payload: &[u8],
 ) -> (StatusCode, Option<String>, Bytes) {
     grpc_call_body(addr, path, grpc_frame(payload)).await
@@ -334,8 +401,8 @@ async fn grpc_call_body(
         .body(Full::new(body))
         .unwrap();
 
-    let resp      = sender.send_request(req).await.unwrap();
-    let status    = resp.status();
+    let resp = sender.send_request(req).await.unwrap();
+    let status = resp.status();
     let collected = resp.into_body().collect().await.unwrap();
     let grpc_status = collected
         .trailers()
@@ -349,8 +416,8 @@ async fn grpc_call_body(
 
 /// Like `grpc_call` but also returns all trailer headers for metadata assertions.
 async fn grpc_call_with_trailers(
-    addr:    SocketAddr,
-    path:    &str,
+    addr: SocketAddr,
+    path: &str,
     payload: &[u8],
 ) -> (StatusCode, Option<String>, Bytes, HashMap<String, String>) {
     let stream = tokio::net::TcpStream::connect(addr).await.unwrap();
@@ -369,8 +436,8 @@ async fn grpc_call_with_trailers(
         .body(Full::new(grpc_frame(payload)))
         .unwrap();
 
-    let resp      = sender.send_request(req).await.unwrap();
-    let status    = resp.status();
+    let resp = sender.send_request(req).await.unwrap();
+    let status = resp.status();
     let collected = resp.into_body().collect().await.unwrap();
     let grpc_status = collected
         .trailers()
@@ -398,7 +465,9 @@ async fn test_server_returns_200_with_grpc_content_type_for_successful_request()
     let stream = tokio::net::TcpStream::connect(addr).await.unwrap();
     let io = TokioIo::new(stream);
     let (mut sender, conn) = hyper::client::conn::http2::Builder::new(TokioExecutor::new())
-        .handshake(io).await.unwrap();
+        .handshake(io)
+        .await
+        .unwrap();
     tokio::spawn(conn);
 
     let req = Request::builder()
@@ -459,14 +528,19 @@ async fn test_server_routes_any_path_to_handler() {
 
 #[tokio::test]
 async fn test_server_enforces_message_size_limit_with_resource_exhausted() {
-    let listener  = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr      = listener.local_addr().unwrap();
-    let server    = TonicGrpcServer::new("127.0.0.1:0", Arc::new(EchoHandler))
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(EchoHandler))
         .with_max_message_size(16)
         .allow_unauthenticated(true);
     let (tx, rx) = oneshot::channel::<()>();
     tokio::spawn(async move {
-        server.serve_with_listener(listener, async move { let _ = rx.await; }).await.unwrap();
+        server
+            .serve_with_listener(listener, async move {
+                let _ = rx.await;
+            })
+            .await
+            .unwrap();
     });
     tokio::time::sleep(std::time::Duration::from_millis(10)).await;
 
@@ -494,7 +568,10 @@ async fn test_server_graceful_shutdown_refuses_new_connections() {
 
     // New TCP connections must be refused.
     let result = tokio::net::TcpStream::connect(addr).await;
-    assert!(result.is_err(), "expected connection refused after shutdown");
+    assert!(
+        result.is_err(),
+        "expected connection refused after shutdown"
+    );
 }
 
 // ── Streaming tests ───────────────────────────────────────────────────────────
@@ -506,14 +583,18 @@ async fn test_server_streaming_returns_multiple_response_frames() {
     // three 5-byte-prefixed frames.
     let (addr, _shutdown) = start_server(ThreeFrameServerStreamHandler).await;
 
-    let (status, grpc_status, data) =
-        grpc_call(addr, "/pkg.Svc/Stream", b"trigger").await;
+    let (status, grpc_status, data) = grpc_call(addr, "/pkg.Svc/Stream", b"trigger").await;
 
     assert_eq!(status, StatusCode::OK);
     assert_eq!(grpc_status.as_deref(), Some("0"));
 
     let frames = parse_grpc_frames(&data);
-    assert_eq!(frames.len(), 3, "expected exactly 3 response frames, got {}", frames.len());
+    assert_eq!(
+        frames.len(),
+        3,
+        "expected exactly 3 response frames, got {}",
+        frames.len()
+    );
     assert_eq!(frames[0].as_ref(), &[1u8], "frame 0 payload mismatch");
     assert_eq!(frames[1].as_ref(), &[2u8], "frame 1 payload mismatch");
     assert_eq!(frames[2].as_ref(), &[3u8], "frame 2 payload mismatch");
@@ -526,15 +607,18 @@ async fn test_client_streaming_sends_multiple_request_frames() {
     let (addr, _shutdown) = start_server(FrameCountHandler).await;
 
     let body = grpc_frames_body(&[b"frame-a", b"frame-b"]);
-    let (status, grpc_status, data) =
-        grpc_call_body(addr, "/pkg.Svc/ClientStream", body).await;
+    let (status, grpc_status, data) = grpc_call_body(addr, "/pkg.Svc/ClientStream", body).await;
 
     assert_eq!(status, StatusCode::OK);
     assert_eq!(grpc_status.as_deref(), Some("0"));
 
     let frames = parse_grpc_frames(&data);
     assert_eq!(frames.len(), 1, "expected a single count frame");
-    assert_eq!(frames[0].as_ref(), &[2u8], "handler should have seen 2 input frames");
+    assert_eq!(
+        frames[0].as_ref(),
+        &[2u8],
+        "handler should have seen 2 input frames"
+    );
 }
 
 #[tokio::test]
@@ -545,14 +629,18 @@ async fn test_bidi_streaming_echoes_all_messages() {
 
     let payloads: &[&[u8]] = &[b"alpha", b"beta", b"gamma"];
     let body = grpc_frames_body(payloads);
-    let (status, grpc_status, data) =
-        grpc_call_body(addr, "/pkg.Svc/Bidi", body).await;
+    let (status, grpc_status, data) = grpc_call_body(addr, "/pkg.Svc/Bidi", body).await;
 
     assert_eq!(status, StatusCode::OK);
     assert_eq!(grpc_status.as_deref(), Some("0"));
 
     let frames = parse_grpc_frames(&data);
-    assert_eq!(frames.len(), 3, "expected 3 echoed frames, got {}", frames.len());
+    assert_eq!(
+        frames.len(),
+        3,
+        "expected 3 echoed frames, got {}",
+        frames.len()
+    );
     for (i, expected) in payloads.iter().enumerate() {
         assert_eq!(frames[i].as_ref(), *expected, "frame {i} payload mismatch");
     }
@@ -633,10 +721,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Issue a gRPC call with a custom `grpc-timeout` header and return the status.
 async fn grpc_call_with_timeout(
-    addr:        SocketAddr,
-    path:        &str,
+    addr: SocketAddr,
+    path: &str,
     timeout_hdr: &str,
-    payload:     &[u8],
+    payload: &[u8],
 ) -> (StatusCode, Option<String>, Option<String>) {
     let stream = tokio::net::TcpStream::connect(addr).await.unwrap();
     let io = TokioIo::new(stream);
@@ -655,10 +743,10 @@ async fn grpc_call_with_timeout(
         .body(Full::new(grpc_frame(payload)))
         .unwrap();
 
-    let resp      = sender.send_request(req).await.unwrap();
-    let status    = resp.status();
+    let resp = sender.send_request(req).await.unwrap();
+    let status = resp.status();
     let collected = resp.into_body().collect().await.unwrap();
-    let trailers  = collected.trailers();
+    let trailers = collected.trailers();
     let grpc_status = trailers
         .and_then(|t| t.get("grpc-status"))
         .and_then(|v| v.to_str().ok())
@@ -677,17 +765,24 @@ struct DispatchObserverHandler {
 }
 
 impl GrpcInbound for DispatchObserverHandler {
-    fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(
+        &self,
+        _: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         let inv = self.invoked.clone();
         Box::pin(async move {
             inv.store(true, Ordering::SeqCst);
-            Ok(GrpcResponse { body: vec![], metadata: GrpcMetadata::default() })
+            Ok(GrpcResponse {
+                body: vec![],
+                metadata: GrpcMetadata::default(),
+            })
         })
     }
 
     fn handle_stream(
         &self,
-        _method:   String,
+        _method: String,
         _metadata: GrpcMetadata,
         _messages: GrpcMessageStream,
         _ctx: RequestContext,
@@ -710,12 +805,13 @@ impl GrpcInbound for DispatchObserverHandler {
 #[tokio::test]
 async fn test_server_rejects_past_deadline_request_before_handler_dispatch() {
     let invoked = Arc::new(AtomicBool::new(false));
-    let handler = DispatchObserverHandler { invoked: invoked.clone() };
+    let handler = DispatchObserverHandler {
+        invoked: invoked.clone(),
+    };
     let (addr, _shutdown) = start_server(handler).await;
 
     // 0n means "deadline already elapsed" — server MUST short-circuit.
-    let (status, grpc_status, _) =
-        grpc_call_with_timeout(addr, "/pkg.Svc/Slow", "0n", b"x").await;
+    let (status, grpc_status, _) = grpc_call_with_timeout(addr, "/pkg.Svc/Slow", "0n", b"x").await;
 
     assert_eq!(status, StatusCode::OK);
     // tonic::Code::DeadlineExceeded == 4
@@ -733,19 +829,26 @@ async fn test_server_rejects_past_deadline_request_before_handler_dispatch() {
 /// Handler that runs forever (until cancelled or aborted by drop).
 /// Sets `started` when entered and `finished` only on natural completion.
 struct ForeverHandler {
-    started:  Arc<AtomicBool>,
+    started: Arc<AtomicBool>,
     finished: Arc<AtomicBool>,
 }
 
 impl GrpcInbound for ForeverHandler {
-    fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
-        let started  = self.started.clone();
+    fn handle_unary(
+        &self,
+        _: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        let started = self.started.clone();
         let finished = self.finished.clone();
         Box::pin(async move {
             started.store(true, Ordering::SeqCst);
             tokio::time::sleep(std::time::Duration::from_secs(60)).await;
             finished.store(true, Ordering::SeqCst);
-            Ok(GrpcResponse { body: vec![], metadata: GrpcMetadata::default() })
+            Ok(GrpcResponse {
+                body: vec![],
+                metadata: GrpcMetadata::default(),
+            })
         })
     }
 
@@ -756,7 +859,7 @@ impl GrpcInbound for ForeverHandler {
         _: GrpcMessageStream,
         _ctx: RequestContext,
     ) -> BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
-        let started  = self.started.clone();
+        let started = self.started.clone();
         let finished = self.finished.clone();
         Box::pin(async move {
             started.store(true, Ordering::SeqCst);
@@ -777,10 +880,10 @@ impl GrpcInbound for ForeverHandler {
 /// NOT report natural completion.
 #[tokio::test]
 async fn test_server_returns_deadline_exceeded_when_handler_overruns_deadline() {
-    let started  = Arc::new(AtomicBool::new(false));
+    let started = Arc::new(AtomicBool::new(false));
     let finished = Arc::new(AtomicBool::new(false));
-    let handler  = ForeverHandler {
-        started:  started.clone(),
+    let handler = ForeverHandler {
+        started: started.clone(),
         finished: finished.clone(),
     };
     let (addr, _shutdown) = start_server(handler).await;
@@ -790,8 +893,15 @@ async fn test_server_returns_deadline_exceeded_when_handler_overruns_deadline() 
         grpc_call_with_timeout(addr, "/pkg.Svc/Slow", "100m", b"x").await;
 
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(grpc_status.as_deref(), Some("4"), "expected DeadlineExceeded");
-    assert!(started.load(Ordering::SeqCst), "handler should have started");
+    assert_eq!(
+        grpc_status.as_deref(),
+        Some("4"),
+        "expected DeadlineExceeded"
+    );
+    assert!(
+        started.load(Ordering::SeqCst),
+        "handler should have started"
+    );
     assert!(
         !finished.load(Ordering::SeqCst),
         "handler MUST NOT have completed naturally; the deadline should have aborted it"
@@ -803,10 +913,10 @@ async fn test_server_returns_deadline_exceeded_when_handler_overruns_deadline() 
 /// completion.  Verified by observing `finished` never becomes true.
 #[tokio::test]
 async fn test_server_returns_cancelled_when_client_drops_connection_mid_call() {
-    let started  = Arc::new(AtomicBool::new(false));
+    let started = Arc::new(AtomicBool::new(false));
     let finished = Arc::new(AtomicBool::new(false));
-    let handler  = ForeverHandler {
-        started:  started.clone(),
+    let handler = ForeverHandler {
+        started: started.clone(),
         finished: finished.clone(),
     };
     let (addr, _shutdown) = start_server(handler).await;
@@ -816,7 +926,7 @@ async fn test_server_returns_cancelled_when_client_drops_connection_mid_call() {
     // ever awaiting completion.
     let client_task = tokio::spawn(async move {
         let stream = tokio::net::TcpStream::connect(addr).await.unwrap();
-        let io     = TokioIo::new(stream);
+        let io = TokioIo::new(stream);
         let (mut sender, conn) = hyper::client::conn::http2::Builder::new(TokioExecutor::new())
             .handshake(io)
             .await
@@ -827,7 +937,7 @@ async fn test_server_returns_cancelled_when_client_drops_connection_mid_call() {
             .method("POST")
             .uri(format!("http://{addr}/pkg.Svc/Forever"))
             .header("content-type", "application/grpc")
-            .header("te",           "trailers")
+            .header("te", "trailers")
             // Long deadline so the deadline doesn't fire — cancellation must.
             .header("grpc-timeout", "60S")
             .body(Full::new(grpc_frame(b"x")))
@@ -837,11 +947,7 @@ async fn test_server_returns_cancelled_when_client_drops_connection_mid_call() {
         // handler to have entered its sleep on the server side, then return
         // (which drops `sender` + the response future, closing the stream).
         let send_fut = sender.send_request(req);
-        let _ = tokio::time::timeout(
-            std::time::Duration::from_millis(200),
-            send_fut,
-        )
-        .await;
+        let _ = tokio::time::timeout(std::time::Duration::from_millis(200), send_fut).await;
         conn_handle.abort();
     });
 
@@ -884,7 +990,11 @@ async fn test_server_sanitizes_internal_error_message_on_wire() {
 
     struct LeakyHandler;
     impl GrpcInbound for LeakyHandler {
-        fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        fn handle_unary(
+            &self,
+            _: GrpcRequest,
+            _ctx: RequestContext,
+        ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
             Box::pin(async move { Err(GrpcInboundError::Internal(RAW_INTERNAL.into())) })
         }
         fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
@@ -897,7 +1007,11 @@ async fn test_server_sanitizes_internal_error_message_on_wire() {
         grpc_call_with_timeout(addr, "/pkg.Svc/Internal", "5S", b"x").await;
 
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(grpc_status.as_deref(), Some("13"), "expected Internal grpc-status");
+    assert_eq!(
+        grpc_status.as_deref(),
+        Some("13"),
+        "expected Internal grpc-status"
+    );
 
     let msg = grpc_message.unwrap_or_default();
     assert!(

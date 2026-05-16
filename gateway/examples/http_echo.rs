@@ -42,9 +42,7 @@ impl HttpInbound for EchoHandler {
         })
     }
 
-    fn health_check(
-        &self,
-    ) -> futures::future::BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+    fn health_check(&self) -> futures::future::BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
         Box::pin(async { Ok(HttpHealthCheck::healthy()) })
     }
 }

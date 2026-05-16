@@ -31,13 +31,14 @@ impl GrpcInbound for GuardedHandler {
         let hit = self.hit.clone();
         Box::pin(async move {
             hit.store(true, Ordering::SeqCst);
-            Ok(GrpcResponse { body: req.body, metadata: GrpcMetadata::default() })
+            Ok(GrpcResponse {
+                body: req.body,
+                metadata: GrpcMetadata::default(),
+            })
         })
     }
 
-    fn health_check(
-        &self,
-    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
         Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
     }
 }
@@ -55,20 +56,22 @@ fn grpc_frame(payload: &[u8]) -> Bytes {
 #[tokio::test]
 async fn server_returns_resource_exhausted_for_oversized_message_int_test() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr     = listener.local_addr().unwrap();
-    let hit      = Arc::new(AtomicBool::new(false));
+    let addr = listener.local_addr().unwrap();
+    let hit = Arc::new(AtomicBool::new(false));
 
     // 1 KiB cap — sized to make the test fast while still exceeding the
     // handler envelope.  4 MiB is the production default.
     let max_bytes = 1024;
-    let server   = TonicGrpcServer::new("127.0.0.1:0", Arc::new(GuardedHandler { hit: hit.clone() }))
+    let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(GuardedHandler { hit: hit.clone() }))
         .with_max_message_size(max_bytes)
         .allow_unauthenticated(true);
 
     let (tx, rx) = oneshot::channel::<()>();
     tokio::spawn(async move {
         server
-            .serve_with_listener(listener, async move { let _ = rx.await; })
+            .serve_with_listener(listener, async move {
+                let _ = rx.await;
+            })
             .await
             .unwrap();
     });
@@ -77,7 +80,7 @@ async fn server_returns_resource_exhausted_for_oversized_message_int_test() {
     // Send a payload that's clearly over the cap.
     let oversized = vec![0xAB_u8; max_bytes * 4];
     let stream = tokio::net::TcpStream::connect(addr).await.unwrap();
-    let io     = TokioIo::new(stream);
+    let io = TokioIo::new(stream);
     let (mut sender, conn) = hyper::client::conn::http2::Builder::new(TokioExecutor::new())
         .handshake(io)
         .await
@@ -119,26 +122,28 @@ async fn server_returns_resource_exhausted_for_oversized_message_int_test() {
 #[tokio::test]
 async fn server_accepts_message_within_cap_int_test() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr     = listener.local_addr().unwrap();
-    let hit      = Arc::new(AtomicBool::new(false));
+    let addr = listener.local_addr().unwrap();
+    let hit = Arc::new(AtomicBool::new(false));
 
     let max_bytes = 1024;
-    let server   = TonicGrpcServer::new("127.0.0.1:0", Arc::new(GuardedHandler { hit: hit.clone() }))
+    let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(GuardedHandler { hit: hit.clone() }))
         .with_max_message_size(max_bytes)
         .allow_unauthenticated(true);
 
     let (tx, rx) = oneshot::channel::<()>();
     tokio::spawn(async move {
         server
-            .serve_with_listener(listener, async move { let _ = rx.await; })
+            .serve_with_listener(listener, async move {
+                let _ = rx.await;
+            })
             .await
             .unwrap();
     });
     tokio::time::sleep(Duration::from_millis(20)).await;
 
     let payload = vec![0xCD_u8; 200];
-    let stream  = tokio::net::TcpStream::connect(addr).await.unwrap();
-    let io      = TokioIo::new(stream);
+    let stream = tokio::net::TcpStream::connect(addr).await.unwrap();
+    let io = TokioIo::new(stream);
     let (mut sender, conn) = hyper::client::conn::http2::Builder::new(TokioExecutor::new())
         .handshake(io)
         .await
@@ -161,7 +166,10 @@ async fn server_accepts_message_within_cap_int_test() {
         .and_then(|v| v.to_str().ok())
         .map(str::to_owned);
     assert_eq!(grpc_status.as_deref(), Some("0"));
-    assert!(hit.load(Ordering::SeqCst), "handler should execute for in-cap message");
+    assert!(
+        hit.load(Ordering::SeqCst),
+        "handler should execute for in-cap message"
+    );
 
     let _ = tx.send(());
 }

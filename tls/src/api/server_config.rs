@@ -21,21 +21,24 @@ pub fn build_acceptor(
 
 fn build_server_config(config: &IngressTlsConfig) -> Result<Arc<ServerConfig>, IngressTlsError> {
     let cert_chain = load_certs(&config.cert_pem_path)?;
-    let key        = load_key(&config.key_pem_path)?;
-    let provider   = Arc::new(rustls::crypto::ring::default_provider());
-    let builder    = ServerConfig::builder_with_provider(provider.clone())
+    let key = load_key(&config.key_pem_path)?;
+    let provider = Arc::new(rustls::crypto::ring::default_provider());
+    let builder = ServerConfig::builder_with_provider(provider.clone())
         .with_safe_default_protocol_versions()
         .map_err(|e| IngressTlsError::Config(e.to_string()))?;
     let mut cfg = if let Some(ca_path) = &config.client_ca_pem_path {
-        let roots    = load_client_ca(ca_path)?;
-        let verifier = rustls::server::WebPkiClientVerifier::builder_with_provider(
-            Arc::new(roots), provider,
-        ).build().map_err(|e| IngressTlsError::Config(e.to_string()))?;
-        builder.with_client_cert_verifier(verifier)
+        let roots = load_client_ca(ca_path)?;
+        let verifier =
+            rustls::server::WebPkiClientVerifier::builder_with_provider(Arc::new(roots), provider)
+                .build()
+                .map_err(|e| IngressTlsError::Config(e.to_string()))?;
+        builder
+            .with_client_cert_verifier(verifier)
             .with_single_cert(cert_chain, key)
             .map_err(|e| IngressTlsError::Config(e.to_string()))?
     } else {
-        builder.with_no_client_auth()
+        builder
+            .with_no_client_auth()
             .with_single_cert(cert_chain, key)
             .map_err(|e| IngressTlsError::Config(e.to_string()))?
     };
@@ -44,11 +47,13 @@ fn build_server_config(config: &IngressTlsConfig) -> Result<Arc<ServerConfig>, I
 }
 
 fn load_certs(path: &str) -> Result<Vec<CertificateDer<'static>>, IngressTlsError> {
-    let file  = fs::File::open(path).map_err(|e| IngressTlsError::CertLoad(path.to_string(), e))?;
+    let file = fs::File::open(path).map_err(|e| IngressTlsError::CertLoad(path.to_string(), e))?;
     let chain: Result<Vec<_>, _> = certs(&mut BufReader::new(file)).collect();
     let chain = chain.map_err(|e| IngressTlsError::CertParse(e.to_string()))?;
     if chain.is_empty() {
-        return Err(IngressTlsError::CertParse(format!("no certificates found in {path}")));
+        return Err(IngressTlsError::CertParse(format!(
+            "no certificates found in {path}"
+        )));
     }
     Ok(chain)
 }
@@ -61,14 +66,18 @@ fn load_key(path: &str) -> Result<PrivateKeyDer<'static>, IngressTlsError> {
 }
 
 fn load_client_ca(path: &str) -> Result<rustls::RootCertStore, IngressTlsError> {
-    let file  = fs::File::open(path).map_err(|e| IngressTlsError::CertLoad(path.to_string(), e))?;
+    let file = fs::File::open(path).map_err(|e| IngressTlsError::CertLoad(path.to_string(), e))?;
     let mut store = rustls::RootCertStore::empty();
     for cert in certs(&mut BufReader::new(file)) {
         let cert = cert.map_err(|e| IngressTlsError::CertParse(e.to_string()))?;
-        store.add(cert).map_err(|e| IngressTlsError::CertParse(e.to_string()))?;
+        store
+            .add(cert)
+            .map_err(|e| IngressTlsError::CertParse(e.to_string()))?;
     }
     if store.is_empty() {
-        return Err(IngressTlsError::CertParse(format!("no CA certificates found in {path}")));
+        return Err(IngressTlsError::CertParse(format!(
+            "no CA certificates found in {path}"
+        )));
     }
     Ok(store)
 }
@@ -94,8 +103,11 @@ mod tests {
     fn test_build_acceptor_with_valid_tls_config_succeeds() {
         let (cert_pem, key_pem) = self_signed();
         let cert_f = write_temp(&cert_pem);
-        let key_f  = write_temp(&key_pem);
-        let cfg = IngressTlsConfig::tls(cert_f.path().to_str().unwrap(), key_f.path().to_str().unwrap());
+        let key_f = write_temp(&key_pem);
+        let cfg = IngressTlsConfig::tls(
+            cert_f.path().to_str().unwrap(),
+            key_f.path().to_str().unwrap(),
+        );
         assert!(build_acceptor(&cfg).is_ok());
     }
 
@@ -103,7 +115,9 @@ mod tests {
     #[test]
     fn test_build_acceptor_with_missing_cert_file_returns_cert_load_error() {
         let cfg = IngressTlsConfig::tls("/nonexistent/cert.pem", "/nonexistent/key.pem");
-        let Err(err) = build_acceptor(&cfg) else { panic!("expected error"); };
+        let Err(err) = build_acceptor(&cfg) else {
+            panic!("expected error");
+        };
         assert!(matches!(err, IngressTlsError::CertLoad(_, _)));
     }
 }

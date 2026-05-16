@@ -13,25 +13,25 @@ use crate::api::port::grpc_inbound::GrpcInbound;
 #[repr(i32)]
 pub enum ServingStatus {
     /// Service status is unknown.
-    Unknown        = 0,
+    Unknown = 0,
     /// Service is serving requests.
-    Serving        = 1,
+    Serving = 1,
     /// Service is not serving requests.
-    NotServing     = 2,
+    NotServing = 2,
     /// Named service is unknown to the health reporter.
     ServiceUnknown = 3,
 }
 
 /// gRPC method path for health-check unary calls.
-pub const HEALTH_CHECK_METHOD:    &str  = "/grpc.health.v1.Health/Check";
+pub const HEALTH_CHECK_METHOD: &str = "/grpc.health.v1.Health/Check";
 /// gRPC method path for health-watch streaming calls.
-pub const HEALTH_WATCH_METHOD:    &str  = "/grpc.health.v1.Health/Watch";
+pub const HEALTH_WATCH_METHOD: &str = "/grpc.health.v1.Health/Watch";
 /// Broadcast channel capacity for status-change notifications.
 pub const WATCH_CHANNEL_CAPACITY: usize = 16;
 
 /// Implementation of the standard `grpc.health.v1.Health` service.
 pub struct HealthService {
-    pub(crate) statuses:    RwLock<HashMap<String, ServingStatus>>,
+    pub(crate) statuses: RwLock<HashMap<String, ServingStatus>>,
     pub(crate) broadcaster: broadcast::Sender<(String, ServingStatus)>,
 }
 
@@ -39,7 +39,7 @@ pub struct HealthService {
 /// dispatcher so the overall service-name reflects the health of every
 /// registered handler.
 pub struct HealthAggregate {
-    pub(crate) service:    Arc<HealthService>,
+    pub(crate) service: Arc<HealthService>,
     pub(crate) dispatcher: Arc<dyn GrpcInbound>,
 }
 
@@ -49,13 +49,19 @@ impl HealthService {
         let (tx, _rx) = broadcast::channel(WATCH_CHANNEL_CAPACITY);
         let mut statuses = HashMap::new();
         statuses.insert(String::new(), ServingStatus::Serving);
-        Self { statuses: RwLock::new(statuses), broadcaster: tx }
+        Self {
+            statuses: RwLock::new(statuses),
+            broadcaster: tx,
+        }
     }
 
     /// Set the status for a named service.
     pub fn set_status(&self, service: impl Into<String>, status: ServingStatus) {
         let service = service.into();
-        { let mut guard = self.statuses.write(); guard.insert(service.clone(), status); }
+        {
+            let mut guard = self.statuses.write();
+            guard.insert(service.clone(), status);
+        }
         let _ = self.broadcaster.send((service, status));
     }
 
@@ -90,13 +96,18 @@ impl HealthService {
 }
 
 impl Default for HealthService {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl HealthAggregate {
     /// Bind a [`HealthService`] to a dispatcher.
     pub fn new(service: Arc<HealthService>, dispatcher: Arc<dyn GrpcInbound>) -> Self {
-        Self { service, dispatcher }
+        Self {
+            service,
+            dispatcher,
+        }
     }
 
     /// Re-poll the dispatcher and update the overall service status.
@@ -104,7 +115,7 @@ impl HealthAggregate {
         let h = self.dispatcher.health_check().await;
         let status = match h {
             Ok(c) if c.healthy => ServingStatus::Serving,
-            _                  => ServingStatus::NotServing,
+            _ => ServingStatus::NotServing,
         };
         self.service.set_overall_status(status);
     }
@@ -117,9 +128,9 @@ mod tests {
     /// @covers: ServingStatus — wire values are stable.
     #[test]
     fn test_serving_status_wire_values_are_correct() {
-        assert_eq!(ServingStatus::Unknown        as i32, 0);
-        assert_eq!(ServingStatus::Serving        as i32, 1);
-        assert_eq!(ServingStatus::NotServing     as i32, 2);
+        assert_eq!(ServingStatus::Unknown as i32, 0);
+        assert_eq!(ServingStatus::Serving as i32, 1);
+        assert_eq!(ServingStatus::NotServing as i32, 2);
         assert_eq!(ServingStatus::ServiceUnknown as i32, 3);
     }
 
