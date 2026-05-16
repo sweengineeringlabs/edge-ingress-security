@@ -45,6 +45,23 @@ only `api/` traits; factory functions in `saf/` supply the concrete instances.
 | `IngressTlsConfig` | Certificate + key paths |
 | `build_tls_acceptor(config)` | Returns a `TlsAcceptor` for use with Axum or Tonic |
 
+## HTTP inbound error types (`ingress/http/`)
+
+`HttpInboundError` maps to HTTP status codes via Axum's `error_response`:
+
+| Variant | HTTP status | Meaning |
+|---------|-------------|---------|
+| `InvalidInput` | 400 | Malformed request |
+| `Unauthorized` | 401 | Caller not authenticated |
+| `PermissionDenied` | 403 | Caller lacks permission |
+| `NotFound` | 404 | Resource not found |
+| `MethodNotAllowed` | 405 | Operation not supported by handler |
+| `Conflict` | 409 | Duplicate or constraint violation |
+| `UnprocessableEntity` | 422 | Valid request rejected by business rule |
+| `Timeout` | 504 | Handler timed out |
+| `Unavailable` | 503 | Handler unhealthy or upstream unavailable |
+| `Internal` | 500 | Unexpected server-side error |
+
 ## Token verification (`ingress/verifier/`)
 
 | Export | Purpose |
@@ -54,6 +71,7 @@ only `api/` traits; factory functions in `saf/` supply the concrete instances.
 | `ApiKeyVerifier` | Static API-key lookup |
 | `JwtConfig` / `JwtKey` | Config value objects |
 | `Claims` | Decoded JWT payload |
+| `From<VerifierError> for HandlerError` | Bridge — auth errors propagate via `?` in handlers |
 
 ## Gateway facade (`ingress/gateway/`)
 
