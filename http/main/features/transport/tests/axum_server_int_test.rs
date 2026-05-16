@@ -7,8 +7,8 @@ use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
 use swe_edge_ingress_http::{
-    AxumHttpServer, HttpHealthCheck, HttpInbound, HttpInboundError,
-    HttpInboundResult, HttpRequest, HttpResponse, RequestContext,
+    AxumHttpServer, HttpHealthCheck, HttpInbound, HttpInboundError, HttpInboundResult, HttpRequest,
+    HttpResponse, RequestContext,
 };
 
 // ── Stub handlers ─────────────────────────────────────────────────────────────
@@ -16,7 +16,11 @@ use swe_edge_ingress_http::{
 struct EchoHandler;
 
 impl HttpInbound for EchoHandler {
-    fn handle(&self, req: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    fn handle(
+        &self,
+        req: HttpRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
         Box::pin(async move {
             let body = format!("{} {}", req.method, req.url).into_bytes();
             Ok(HttpResponse::new(200, body))
@@ -30,7 +34,11 @@ impl HttpInbound for EchoHandler {
 struct NotFoundHandler;
 
 impl HttpInbound for NotFoundHandler {
-    fn handle(&self, _: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    fn handle(
+        &self,
+        _: HttpRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
         Box::pin(async { Err(HttpInboundError::NotFound("gone".into())) })
     }
     fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
@@ -41,14 +49,19 @@ impl HttpInbound for NotFoundHandler {
 struct JsonEchoHandler;
 
 impl HttpInbound for JsonEchoHandler {
-    fn handle(&self, req: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    fn handle(
+        &self,
+        req: HttpRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
         Box::pin(async move {
             let body = serde_json::to_vec(&serde_json::json!({
                 "received": req.body.is_some()
             }))
             .unwrap_or_default();
             let mut resp = HttpResponse::new(200, body);
-            resp.headers.insert("content-type".into(), "application/json".into());
+            resp.headers
+                .insert("content-type".into(), "application/json".into());
             Ok(resp)
         })
     }
@@ -69,14 +82,16 @@ async fn start_server_with_limit(
     body_limit: usize,
 ) -> (String, oneshot::Sender<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr     = listener.local_addr().unwrap();
+    let addr = listener.local_addr().unwrap();
     let base_url = format!("http://{addr}");
 
     let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
     let server = AxumHttpServer::new(addr.to_string(), handler).with_body_limit(body_limit);
 
     tokio::spawn(async move {
-        let signal = async move { let _ = shutdown_rx.await; };
+        let signal = async move {
+            let _ = shutdown_rx.await;
+        };
         let _ = server.serve_with_listener(listener, signal).await;
     });
 
@@ -92,7 +107,10 @@ async fn test_server_routes_get_request_to_handler_and_returns_200() {
     let resp = reqwest::get(format!("{base}/hello")).await.unwrap();
     assert_eq!(resp.status(), 200);
     let text = resp.text().await.unwrap();
-    assert!(text.contains("GET"), "expected GET in echo body, got: {text}");
+    assert!(
+        text.contains("GET"),
+        "expected GET in echo body, got: {text}"
+    );
 }
 
 /// @covers: serve — handler NotFound error maps to HTTP 404
@@ -159,5 +177,8 @@ async fn test_server_stops_after_shutdown_signal() {
 
     // New connections should now be refused.
     let result = reqwest::get(format!("{base}/ping")).await;
-    assert!(result.is_err(), "expected connection refused after shutdown");
+    assert!(
+        result.is_err(),
+        "expected connection refused after shutdown"
+    );
 }

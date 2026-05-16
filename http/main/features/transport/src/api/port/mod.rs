@@ -2,4 +2,4 @@
 pub(crate) mod http_inbound;
 
 #[allow(unused_imports)]
-pub use http_inbound::{HttpInbound, HttpInboundError, HttpInboundResult, HttpHealthCheck};
+pub use http_inbound::{HttpHealthCheck, HttpInbound, HttpInboundError, HttpInboundResult};

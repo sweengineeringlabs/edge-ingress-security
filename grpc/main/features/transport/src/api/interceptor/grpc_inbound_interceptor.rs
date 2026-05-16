@@ -27,7 +27,9 @@ pub trait GrpcInboundInterceptor: Send + Sync {
     /// this to return `true` so the server-startup default-deny check
     /// can detect them.  The default `false` keeps non-authz
     /// interceptors out of the gate-discovery path.
-    fn is_authorization(&self) -> bool { false }
+    fn is_authorization(&self) -> bool {
+        false
+    }
 }
 
 /// Marker trait for an inbound interceptor that gates dispatch on
@@ -56,7 +58,11 @@ pub struct GrpcInboundInterceptorChain {
 
 impl GrpcInboundInterceptorChain {
     /// Construct an empty chain.
-    pub fn new() -> Self { Self { interceptors: Vec::new() } }
+    pub fn new() -> Self {
+        Self {
+            interceptors: Vec::new(),
+        }
+    }
 
     /// Register `interceptor` at the end of the chain.
     pub fn push(mut self, interceptor: Arc<dyn GrpcInboundInterceptor>) -> Self {
@@ -65,10 +71,14 @@ impl GrpcInboundInterceptorChain {
     }
 
     /// Number of registered interceptors.
-    pub fn len(&self) -> usize { self.interceptors.len() }
+    pub fn len(&self) -> usize {
+        self.interceptors.len()
+    }
 
     /// `true` when no interceptors are registered.
-    pub fn is_empty(&self) -> bool { self.interceptors.is_empty() }
+    pub fn is_empty(&self) -> bool {
+        self.interceptors.is_empty()
+    }
 
     /// `true` when at least one registered interceptor declares itself
     /// an [`AuthorizationInterceptor`] via
@@ -126,7 +136,9 @@ mod tests {
                     "no creds".into(),
                 ))
             }
-            fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> { Ok(()) }
+            fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+                Ok(())
+            }
         }
 
         struct CountAfter(Arc<AtomicUsize>);
@@ -135,7 +147,9 @@ mod tests {
                 self.0.fetch_add(1, Ordering::SeqCst);
                 Ok(())
             }
-            fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> { Ok(()) }
+            fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+                Ok(())
+            }
         }
 
         let counter = Arc::new(AtomicUsize::new(0));
@@ -156,7 +170,9 @@ mod tests {
     fn test_run_after_invokes_every_after_hook() {
         struct Count(Arc<AtomicUsize>);
         impl GrpcInboundInterceptor for Count {
-            fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> { Ok(()) }
+            fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> {
+                Ok(())
+            }
             fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
                 self.0.fetch_add(1, Ordering::SeqCst);
                 Ok(())
@@ -185,8 +201,12 @@ mod tests {
     fn test_is_authorization_defaults_to_false_for_plain_interceptors() {
         struct Plain;
         impl GrpcInboundInterceptor for Plain {
-            fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> { Ok(()) }
-            fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> { Ok(()) }
+            fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> {
+                Ok(())
+            }
+            fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+                Ok(())
+            }
         }
         assert!(!Plain.is_authorization());
     }
@@ -203,8 +223,12 @@ mod tests {
     fn test_contains_authorization_returns_false_when_chain_has_no_authz_gates() {
         struct Plain;
         impl GrpcInboundInterceptor for Plain {
-            fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> { Ok(()) }
-            fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> { Ok(()) }
+            fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> {
+                Ok(())
+            }
+            fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+                Ok(())
+            }
         }
         let chain = GrpcInboundInterceptorChain::new()
             .push(Arc::new(Plain))
@@ -217,14 +241,24 @@ mod tests {
     fn test_contains_authorization_returns_true_when_at_least_one_authz_gate_is_present() {
         struct Plain;
         impl GrpcInboundInterceptor for Plain {
-            fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> { Ok(()) }
-            fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> { Ok(()) }
+            fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> {
+                Ok(())
+            }
+            fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+                Ok(())
+            }
         }
         struct Authz;
         impl GrpcInboundInterceptor for Authz {
-            fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> { Ok(()) }
-            fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> { Ok(()) }
-            fn is_authorization(&self) -> bool { true }
+            fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> {
+                Ok(())
+            }
+            fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+                Ok(())
+            }
+            fn is_authorization(&self) -> bool {
+                true
+            }
         }
         impl AuthorizationInterceptor for Authz {}
         let chain = GrpcInboundInterceptorChain::new()

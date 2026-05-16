@@ -2,8 +2,8 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::api::ingress_error::IngressError;
 use crate::api::inbound_source::InboundSource;
+use crate::api::ingress_error::IngressError;
 
 /// Reads files from the local filesystem.
 pub(crate) struct LocalFileSource;

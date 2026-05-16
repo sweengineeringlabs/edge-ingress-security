@@ -16,18 +16,24 @@ use tokio::sync::oneshot;
 
 use swe_edge_ingress_grpc_transport::{
     AuditEvent, AuditSink, AuthorizationInterceptor, GrpcHealthCheck, GrpcInbound,
-    GrpcInboundError, GrpcInboundInterceptor, GrpcInboundInterceptorChain,
-    GrpcInboundResult, GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode,
-    RequestContext, TonicGrpcServer,
+    GrpcInboundError, GrpcInboundInterceptor, GrpcInboundInterceptorChain, GrpcInboundResult,
+    GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode, RequestContext, TonicGrpcServer,
 };
 
 // ── Test fixtures ─────────────────────────────────────────────────────────────
 
 struct EchoHandler;
 impl GrpcInbound for EchoHandler {
-    fn handle_unary(&self, req: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    fn handle_unary(
+        &self,
+        req: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
         Box::pin(async move {
-            Ok(GrpcResponse { body: req.body, metadata: GrpcMetadata::default() })
+            Ok(GrpcResponse {
+                body: req.body,
+                metadata: GrpcMetadata::default(),
+            })
         })
     }
     fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
@@ -43,20 +49,31 @@ impl GrpcInboundInterceptor for DetailedDenyInterceptor {
         Err(GrpcInboundError::Status(
             GrpcStatusCode::PermissionDenied,
             "policy decision: subject=mallory@evil.example role=anonymous \
-             rejected by ROLE_ADMIN (rule_id=42)".into(),
+             rejected by ROLE_ADMIN (rule_id=42)"
+                .into(),
         ))
     }
-    fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> { Ok(()) }
-    fn is_authorization(&self) -> bool { true }
+    fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+        Ok(())
+    }
+    fn is_authorization(&self) -> bool {
+        true
+    }
 }
 impl AuthorizationInterceptor for DetailedDenyInterceptor {}
 
 /// Authz interceptor that always allows.
 struct AllowAllInterceptor;
 impl GrpcInboundInterceptor for AllowAllInterceptor {
-    fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> { Ok(()) }
-    fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> { Ok(()) }
-    fn is_authorization(&self) -> bool { true }
+    fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> {
+        Ok(())
+    }
+    fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+        Ok(())
+    }
+    fn is_authorization(&self) -> bool {
+        true
+    }
 }
 impl AuthorizationInterceptor for AllowAllInterceptor {}
 
@@ -79,20 +96,22 @@ fn grpc_frame(payload: &[u8]) -> Bytes {
 
 async fn start_server(
     handler: Arc<dyn GrpcInbound>,
-    chain:   GrpcInboundInterceptorChain,
-    sink:    Arc<dyn AuditSink>,
+    chain: GrpcInboundInterceptorChain,
+    sink: Arc<dyn AuditSink>,
     allow_unauthenticated: bool,
 ) -> (SocketAddr, oneshot::Sender<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr     = listener.local_addr().unwrap();
-    let server   = TonicGrpcServer::new("127.0.0.1:0", handler)
+    let addr = listener.local_addr().unwrap();
+    let server = TonicGrpcServer::new("127.0.0.1:0", handler)
         .with_interceptors(chain)
         .with_audit_sink(sink)
         .allow_unauthenticated(allow_unauthenticated);
     let (tx, rx) = oneshot::channel::<()>();
     tokio::spawn(async move {
         server
-            .serve_with_listener(listener, async move { let _ = rx.await; })
+            .serve_with_listener(listener, async move {
+                let _ = rx.await;
+            })
             .await
             .unwrap();
     });
@@ -121,7 +140,7 @@ async fn grpc_call(
         .body(Full::new(grpc_frame(payload)))
         .unwrap();
 
-    let resp      = sender.send_request(req).await.unwrap();
+    let resp = sender.send_request(req).await.unwrap();
     let collected = resp.into_body().collect().await.unwrap();
     let trailers = collected.trailers();
     let grpc_status = trailers
@@ -144,7 +163,7 @@ async fn grpc_call(
 #[should_panic(expected = "AuthorizationInterceptor")]
 async fn test_server_panics_at_startup_when_no_authz_and_fail_closed_default() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let server   = TonicGrpcServer::new("127.0.0.1:0", Arc::new(EchoHandler));
+    let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(EchoHandler));
     // Default allow_unauthenticated = false; no authz interceptor in the
     // empty chain → must panic before bind.
     let _ = server
@@ -161,7 +180,8 @@ async fn test_server_starts_when_allow_unauthenticated_is_true_and_no_authz() {
         GrpcInboundInterceptorChain::new(),
         Arc::new(swe_edge_ingress_grpc_transport::NoopAuditSink),
         true, // allow_unauthenticated
-    ).await;
+    )
+    .await;
     // Reaching this point means the server bound successfully — the
     // panic in `enforce_authorization_invariant` was suppressed by
     // the WARN-and-proceed branch.
@@ -175,14 +195,14 @@ async fn test_server_starts_when_allow_unauthenticated_is_true_and_no_authz() {
 /// Issue #6 acceptance gate.
 #[tokio::test]
 async fn test_authz_permission_denied_sanitizes_policy_rationale_on_the_wire() {
-    let chain = GrpcInboundInterceptorChain::new()
-        .push(Arc::new(DetailedDenyInterceptor));
+    let chain = GrpcInboundInterceptorChain::new().push(Arc::new(DetailedDenyInterceptor));
     let (addr, _shutdown) = start_server(
         Arc::new(EchoHandler),
         chain,
         Arc::new(swe_edge_ingress_grpc_transport::NoopAuditSink),
         false, // authz IS present
-    ).await;
+    )
+    .await;
 
     let (grpc_status, grpc_message) = grpc_call(addr, "/pkg.Svc/M", b"x").await;
     // tonic::Code::PermissionDenied == 7
@@ -210,15 +230,12 @@ async fn test_authz_permission_denied_sanitizes_policy_rationale_on_the_wire() {
 #[tokio::test]
 async fn test_audit_sink_records_one_event_per_authenticated_dispatch() {
     let events = Arc::new(Mutex::new(Vec::<AuditEvent>::new()));
-    let sink: Arc<dyn AuditSink> = Arc::new(CapturingAuditSink { events: events.clone() });
+    let sink: Arc<dyn AuditSink> = Arc::new(CapturingAuditSink {
+        events: events.clone(),
+    });
     let chain = GrpcInboundInterceptorChain::new().push(Arc::new(AllowAllInterceptor));
 
-    let (addr, _shutdown) = start_server(
-        Arc::new(EchoHandler),
-        chain,
-        sink,
-        false,
-    ).await;
+    let (addr, _shutdown) = start_server(Arc::new(EchoHandler), chain, sink, false).await;
 
     let _ = grpc_call(addr, "/pkg.Svc/Echo", b"first").await;
     let _ = grpc_call(addr, "/pkg.Svc/Echo", b"second").await;
@@ -229,7 +246,8 @@ async fn test_audit_sink_records_one_event_per_authenticated_dispatch() {
 
     let captured = events.lock().unwrap().clone();
     assert_eq!(
-        captured.len(), 3,
+        captured.len(),
+        3,
         "expected exactly 3 audit events, got {}",
         captured.len(),
     );
@@ -244,15 +262,12 @@ async fn test_audit_sink_records_one_event_per_authenticated_dispatch() {
 #[tokio::test]
 async fn test_audit_sink_records_event_for_authz_rejected_dispatch() {
     let events = Arc::new(Mutex::new(Vec::<AuditEvent>::new()));
-    let sink: Arc<dyn AuditSink> = Arc::new(CapturingAuditSink { events: events.clone() });
+    let sink: Arc<dyn AuditSink> = Arc::new(CapturingAuditSink {
+        events: events.clone(),
+    });
     let chain = GrpcInboundInterceptorChain::new().push(Arc::new(DetailedDenyInterceptor));
 
-    let (addr, _shutdown) = start_server(
-        Arc::new(EchoHandler),
-        chain,
-        sink,
-        false,
-    ).await;
+    let (addr, _shutdown) = start_server(Arc::new(EchoHandler), chain, sink, false).await;
 
     let (grpc_status, _) = grpc_call(addr, "/pkg.Svc/Drop", b"x").await;
     assert_eq!(grpc_status.as_deref(), Some("7"));

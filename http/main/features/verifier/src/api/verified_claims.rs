@@ -11,7 +11,9 @@ pub struct VerifiedClaims(pub Claims);
 
 impl VerifiedClaims {
     /// Access the inner [`Claims`].
-    pub fn claims(&self) -> &Claims { &self.0 }
+    pub fn claims(&self) -> &Claims {
+        &self.0
+    }
 }
 
 #[cfg(test)]
