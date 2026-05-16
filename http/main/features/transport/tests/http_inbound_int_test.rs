@@ -2,8 +2,8 @@
 
 use futures::future::BoxFuture;
 use swe_edge_ingress_http::{
-    HttpAuth, HttpConfig, HttpHealthCheck, HttpInbound, HttpInboundError,
-    HttpInboundResult, HttpMethod, HttpRequest, HttpResponse, RequestContext,
+    HttpAuth, HttpConfig, HttpHealthCheck, HttpInbound, HttpInboundError, HttpInboundResult,
+    HttpMethod, HttpRequest, HttpResponse, RequestContext,
 };
 
 /// Minimal stub that echoes back a 200 response.

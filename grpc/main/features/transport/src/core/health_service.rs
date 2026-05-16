@@ -210,9 +210,7 @@ mod tests {
     use crate::api::health_service::{
         HealthAggregate, HealthService, ServingStatus, HEALTH_CHECK_METHOD,
     };
-    use crate::api::port::grpc_inbound::{
-        GrpcHealthCheck, GrpcInbound, GrpcInboundResult,
-    };
+    use crate::api::port::grpc_inbound::{GrpcHealthCheck, GrpcInbound, GrpcInboundResult};
     use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
     /// @covers: decode_health_check_request — empty body decodes to "".
