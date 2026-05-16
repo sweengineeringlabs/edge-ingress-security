@@ -155,20 +155,30 @@ impl IngressError {
     pub fn with_details(self, details: impl Into<String>) -> Self {
         let d = details.into();
         match self {
-            IngressError::ConnectionFailed(m) => IngressError::ConnectionFailed(format!("{m} [{d}]")),
-            IngressError::AuthenticationFailed(m) => IngressError::AuthenticationFailed(format!("{m} [{d}]")),
+            IngressError::ConnectionFailed(m) => {
+                IngressError::ConnectionFailed(format!("{m} [{d}]"))
+            }
+            IngressError::AuthenticationFailed(m) => {
+                IngressError::AuthenticationFailed(format!("{m} [{d}]"))
+            }
             IngressError::NotFound(m) => IngressError::NotFound(format!("{m} [{d}]")),
             IngressError::Conflict(m) => IngressError::Conflict(format!("{m} [{d}]")),
             IngressError::ValidationError(m) => IngressError::ValidationError(format!("{m} [{d}]")),
-            IngressError::RateLimitExceeded(m) => IngressError::RateLimitExceeded(format!("{m} [{d}]")),
+            IngressError::RateLimitExceeded(m) => {
+                IngressError::RateLimitExceeded(format!("{m} [{d}]"))
+            }
             IngressError::Timeout(m) => IngressError::Timeout(format!("{m} [{d}]")),
             IngressError::NotSupported(m) => IngressError::NotSupported(format!("{m} [{d}]")),
             IngressError::IoError(e) => IngressError::InternalError(format!("io error: {e} [{d}]")),
-            IngressError::SerializationError(m) => IngressError::SerializationError(format!("{m} [{d}]")),
+            IngressError::SerializationError(m) => {
+                IngressError::SerializationError(format!("{m} [{d}]"))
+            }
             IngressError::BackendError(m) => IngressError::BackendError(format!("{m} [{d}]")),
             IngressError::InternalError(m) => IngressError::InternalError(format!("{m} [{d}]")),
             IngressError::AlreadyExists(m) => IngressError::AlreadyExists(format!("{m} [{d}]")),
-            IngressError::PermissionDenied(m) => IngressError::PermissionDenied(format!("{m} [{d}]")),
+            IngressError::PermissionDenied(m) => {
+                IngressError::PermissionDenied(format!("{m} [{d}]"))
+            }
             IngressError::Unavailable(m) => IngressError::Unavailable(format!("{m} [{d}]")),
             IngressError::Configuration(m) => IngressError::Configuration(format!("{m} [{d}]")),
         }
@@ -177,14 +187,26 @@ impl IngressError {
     /// Return the canonical [`IngressErrorCode`] for this error.
     pub fn code(&self) -> IngressErrorCode {
         match self {
-            IngressError::InternalError(_) | IngressError::BackendError(_) | IngressError::IoError(_) => IngressErrorCode::Internal,
-            IngressError::ValidationError(_) | IngressError::SerializationError(_) => IngressErrorCode::InvalidInput,
+            IngressError::InternalError(_)
+            | IngressError::BackendError(_)
+            | IngressError::IoError(_) => IngressErrorCode::Internal,
+            IngressError::ValidationError(_) | IngressError::SerializationError(_) => {
+                IngressErrorCode::InvalidInput
+            }
             IngressError::NotFound(_) => IngressErrorCode::NotFound,
-            IngressError::AlreadyExists(_) | IngressError::Conflict(_) => IngressErrorCode::AlreadyExists,
-            IngressError::PermissionDenied(_) | IngressError::AuthenticationFailed(_) => IngressErrorCode::PermissionDenied,
+            IngressError::AlreadyExists(_) | IngressError::Conflict(_) => {
+                IngressErrorCode::AlreadyExists
+            }
+            IngressError::PermissionDenied(_) | IngressError::AuthenticationFailed(_) => {
+                IngressErrorCode::PermissionDenied
+            }
             IngressError::Timeout(_) => IngressErrorCode::Timeout,
-            IngressError::Unavailable(_) | IngressError::ConnectionFailed(_) | IngressError::RateLimitExceeded(_) => IngressErrorCode::Unavailable,
-            IngressError::Configuration(_) | IngressError::NotSupported(_) => IngressErrorCode::Configuration,
+            IngressError::Unavailable(_)
+            | IngressError::ConnectionFailed(_)
+            | IngressError::RateLimitExceeded(_) => IngressErrorCode::Unavailable,
+            IngressError::Configuration(_) | IngressError::NotSupported(_) => {
+                IngressErrorCode::Configuration
+            }
         }
     }
 
@@ -291,11 +313,26 @@ mod tests {
     /// @covers: code
     #[test]
     fn test_code_returns_correct_error_code_for_each_variant() {
-        assert_eq!(IngressError::InternalError("x".into()).code(), IngressErrorCode::Internal);
-        assert_eq!(IngressError::NotFound("x".into()).code(), IngressErrorCode::NotFound);
-        assert_eq!(IngressError::Conflict("x".into()).code(), IngressErrorCode::AlreadyExists);
-        assert_eq!(IngressError::ConnectionFailed("x".into()).code(), IngressErrorCode::Unavailable);
-        assert_eq!(IngressError::NotSupported("x".into()).code(), IngressErrorCode::Configuration);
+        assert_eq!(
+            IngressError::InternalError("x".into()).code(),
+            IngressErrorCode::Internal
+        );
+        assert_eq!(
+            IngressError::NotFound("x".into()).code(),
+            IngressErrorCode::NotFound
+        );
+        assert_eq!(
+            IngressError::Conflict("x".into()).code(),
+            IngressErrorCode::AlreadyExists
+        );
+        assert_eq!(
+            IngressError::ConnectionFailed("x".into()).code(),
+            IngressErrorCode::Unavailable
+        );
+        assert_eq!(
+            IngressError::NotSupported("x".into()).code(),
+            IngressErrorCode::Configuration
+        );
     }
 
     /// @covers: already_exists

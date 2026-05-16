@@ -12,7 +12,9 @@ mod tests {
 
     struct AlwaysValid;
     impl Validator for AlwaysValid {
-        fn is_valid(&self, _input: &str) -> bool { true }
+        fn is_valid(&self, _input: &str) -> bool {
+            true
+        }
     }
 
     #[test]

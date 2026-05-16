@@ -17,7 +17,9 @@ pub struct ApiKeyVerifier {
 impl ApiKeyVerifier {
     /// Construct from a list of valid key bytes.
     pub fn new(valid_keys: impl IntoIterator<Item = Vec<u8>>) -> Self {
-        Self { valid_keys: valid_keys.into_iter().collect() }
+        Self {
+            valid_keys: valid_keys.into_iter().collect(),
+        }
     }
 
     /// Verify `key` against the configured set.
@@ -34,10 +36,14 @@ impl ApiKeyVerifier {
     }
 
     /// Number of registered keys.
-    pub fn len(&self) -> usize { self.valid_keys.len() }
+    pub fn len(&self) -> usize {
+        self.valid_keys.len()
+    }
 
     /// Whether the verifier has no registered keys.
-    pub fn is_empty(&self) -> bool { self.valid_keys.is_empty() }
+    pub fn is_empty(&self) -> bool {
+        self.valid_keys.is_empty()
+    }
 }
 
 #[cfg(test)]

@@ -1,16 +1,20 @@
 //! Integration tests for the HTTP inbound domain.
 
-use swe_edge_ingress_http::{
-    HttpAuth, HttpBody, HttpConfig, HttpMethod, HttpRequest, HttpResponse,
-    HttpInbound, HttpInboundError, HttpInboundResult, HttpHealthCheck, RequestContext,
-};
 use futures::future::BoxFuture;
+use swe_edge_ingress_http::{
+    HttpAuth, HttpConfig, HttpHealthCheck, HttpInbound, HttpInboundError, HttpInboundResult,
+    HttpMethod, HttpRequest, HttpResponse, RequestContext,
+};
 
 /// Minimal stub that echoes back a 200 response.
 struct EchoHandler;
 
 impl HttpInbound for EchoHandler {
-    fn handle(&self, _request: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    fn handle(
+        &self,
+        _request: HttpRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
         Box::pin(async { Ok(HttpResponse::new(200, b"ok".to_vec())) })
     }
 
@@ -23,7 +27,11 @@ impl HttpInbound for EchoHandler {
 struct FailingHandler;
 
 impl HttpInbound for FailingHandler {
-    fn handle(&self, _request: HttpRequest, _ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    fn handle(
+        &self,
+        _request: HttpRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
         Box::pin(async { Err(HttpInboundError::Unavailable("service down".into())) })
     }
 
@@ -36,7 +44,10 @@ impl HttpInbound for FailingHandler {
 async fn test_http_inbound_handle_get_request_returns_200() {
     let handler = EchoHandler;
     let req = HttpRequest::get("https://example.com/api");
-    let resp = handler.handle(req, RequestContext::unauthenticated()).await.unwrap();
+    let resp = handler
+        .handle(req, RequestContext::unauthenticated())
+        .await
+        .unwrap();
     assert_eq!(resp.status, 200);
     assert!(resp.is_success());
 }
@@ -47,7 +58,10 @@ async fn test_http_inbound_handle_post_with_json_body_returns_200() {
     let req = HttpRequest::post("/submit")
         .with_json(&serde_json::json!({"key": "value"}))
         .unwrap();
-    let resp = handler.handle(req, RequestContext::unauthenticated()).await.unwrap();
+    let resp = handler
+        .handle(req, RequestContext::unauthenticated())
+        .await
+        .unwrap();
     assert_eq!(resp.status, 200);
 }
 
@@ -64,7 +78,10 @@ async fn test_http_inbound_unavailable_returns_error() {
     let req = HttpRequest::get("/");
     let result = handler.handle(req, RequestContext::unauthenticated()).await;
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), HttpInboundError::Unavailable(_)));
+    assert!(matches!(
+        result.unwrap_err(),
+        HttpInboundError::Unavailable(_)
+    ));
 }
 
 #[tokio::test]

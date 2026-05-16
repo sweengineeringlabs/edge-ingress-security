@@ -20,8 +20,8 @@ use std::io::Write as _;
 use std::sync::Arc;
 
 use swe_edge_ingress::{
-    AxumHttpServer, HttpHealthCheck, HttpInbound, HttpInboundError, HttpInboundResult,
-    HttpRequest, HttpResponse, IngressTlsConfig, RequestContext,
+    AxumHttpServer, HttpHealthCheck, HttpInbound, HttpInboundError, HttpInboundResult, HttpRequest,
+    HttpResponse, IngressTlsConfig, RequestContext,
 };
 
 struct EchoHandler;
@@ -42,15 +42,15 @@ impl HttpInbound for EchoHandler {
             let bytes = serde_json::to_vec_pretty(&body)
                 .map_err(|e| HttpInboundError::Internal(e.to_string()))?;
             let mut resp = HttpResponse::new(200, bytes);
-            resp.headers
-                .insert("content-type".into(), "application/json; charset=utf-8".into());
+            resp.headers.insert(
+                "content-type".into(),
+                "application/json; charset=utf-8".into(),
+            );
             Ok(resp)
         })
     }
 
-    fn health_check(
-        &self,
-    ) -> futures::future::BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+    fn health_check(&self) -> futures::future::BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
         Box::pin(async { Ok(HttpHealthCheck::healthy()) })
     }
 }
@@ -66,7 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Generate a fresh self-signed cert for localhost.
     let cert = rcgen::generate_simple_self_signed(vec!["localhost".to_string()])?;
     let cert_f = write_temp(&cert.cert.pem());
-    let key_f  = write_temp(&cert.key_pair.serialize_pem());
+    let key_f = write_temp(&cert.key_pair.serialize_pem());
 
     let tls = IngressTlsConfig::tls(
         cert_f.path().to_str().unwrap(),
