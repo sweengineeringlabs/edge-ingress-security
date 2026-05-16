@@ -329,7 +329,9 @@ fn error_response(e: HttpInboundError) -> axum::response::Response {
     let status = match &e {
         HttpInboundError::NotFound(_)         => axum::http::StatusCode::NOT_FOUND,
         HttpInboundError::InvalidInput(_)     => axum::http::StatusCode::BAD_REQUEST,
+        HttpInboundError::Unauthorized(_)     => axum::http::StatusCode::UNAUTHORIZED,
         HttpInboundError::PermissionDenied(_) => axum::http::StatusCode::FORBIDDEN,
+        HttpInboundError::Conflict(_)         => axum::http::StatusCode::CONFLICT,
         HttpInboundError::Timeout(_)          => axum::http::StatusCode::GATEWAY_TIMEOUT,
         HttpInboundError::Unavailable(_)      => axum::http::StatusCode::SERVICE_UNAVAILABLE,
         HttpInboundError::Internal(_)         => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
