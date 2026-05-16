@@ -87,13 +87,13 @@ fn path_from_url(url: &str) -> String {
 
 fn map_handler_error(err: HandlerError) -> HttpInboundError {
     match err {
-        HandlerError::Unsupported(m)        => HttpInboundError::NotFound(m),
+        HandlerError::Unsupported(m)        => HttpInboundError::MethodNotAllowed(m),
         HandlerError::InvalidRequest(m)     => HttpInboundError::InvalidInput(m),
         HandlerError::NotFound(m)           => HttpInboundError::NotFound(m),
         HandlerError::Conflict(m)           => HttpInboundError::Conflict(m),
         HandlerError::ExecutionFailed(m)    => HttpInboundError::Internal(m),
         HandlerError::Unhealthy             => HttpInboundError::Unavailable("handler unhealthy".into()),
-        HandlerError::FailedPrecondition(m) => HttpInboundError::InvalidInput(m),
+        HandlerError::FailedPrecondition(m) => HttpInboundError::UnprocessableEntity(m),
         HandlerError::Unauthorized(m)       => HttpInboundError::Unauthorized(m),
         HandlerError::PermissionDenied(m)   => HttpInboundError::PermissionDenied(m),
     }
@@ -163,10 +163,16 @@ mod tests {
         assert!(matches!(err, HttpInboundError::NotFound(_)));
     }
 
-    /// @covers: map_handler_error — Unsupported maps to NotFound.
+    /// @covers: map_handler_error — Unsupported maps to MethodNotAllowed.
     #[test]
-    fn test_map_handler_error_unsupported_maps_to_not_found() {
-        assert!(matches!(map_handler_error(HandlerError::Unsupported("x".into())), HttpInboundError::NotFound(_)));
+    fn test_map_handler_error_unsupported_maps_to_method_not_allowed() {
+        assert!(matches!(map_handler_error(HandlerError::Unsupported("x".into())), HttpInboundError::MethodNotAllowed(_)));
+    }
+
+    /// @covers: map_handler_error — FailedPrecondition maps to UnprocessableEntity.
+    #[test]
+    fn test_map_handler_error_failed_precondition_maps_to_unprocessable_entity() {
+        assert!(matches!(map_handler_error(HandlerError::FailedPrecondition("x".into())), HttpInboundError::UnprocessableEntity(_)));
     }
 
     /// @covers: with_metrics — records edge_handler_requests_total on success.

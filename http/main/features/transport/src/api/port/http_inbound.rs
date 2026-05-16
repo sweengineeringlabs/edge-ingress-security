@@ -35,6 +35,12 @@ pub enum HttpInboundError {
     /// The operation conflicts with existing state.
     #[error("conflict: {0}")]
     Conflict(String),
+    /// The handler does not support the requested operation. Maps to HTTP 405.
+    #[error("method not allowed: {0}")]
+    MethodNotAllowed(String),
+    /// The request is valid but rejected by a business rule or precondition. Maps to HTTP 422.
+    #[error("unprocessable entity: {0}")]
+    UnprocessableEntity(String),
 }
 
 /// Minimal health-check result for the HTTP domain.

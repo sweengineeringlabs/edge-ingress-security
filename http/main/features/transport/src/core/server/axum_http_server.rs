@@ -331,10 +331,12 @@ fn error_response(e: HttpInboundError) -> axum::response::Response {
         HttpInboundError::InvalidInput(_)     => axum::http::StatusCode::BAD_REQUEST,
         HttpInboundError::Unauthorized(_)     => axum::http::StatusCode::UNAUTHORIZED,
         HttpInboundError::PermissionDenied(_) => axum::http::StatusCode::FORBIDDEN,
-        HttpInboundError::Conflict(_)         => axum::http::StatusCode::CONFLICT,
-        HttpInboundError::Timeout(_)          => axum::http::StatusCode::GATEWAY_TIMEOUT,
-        HttpInboundError::Unavailable(_)      => axum::http::StatusCode::SERVICE_UNAVAILABLE,
-        HttpInboundError::Internal(_)         => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+        HttpInboundError::Conflict(_)            => axum::http::StatusCode::CONFLICT,
+        HttpInboundError::MethodNotAllowed(_)    => axum::http::StatusCode::METHOD_NOT_ALLOWED,
+        HttpInboundError::UnprocessableEntity(_) => axum::http::StatusCode::UNPROCESSABLE_ENTITY,
+        HttpInboundError::Timeout(_)             => axum::http::StatusCode::GATEWAY_TIMEOUT,
+        HttpInboundError::Unavailable(_)         => axum::http::StatusCode::SERVICE_UNAVAILABLE,
+        HttpInboundError::Internal(_)            => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
     };
     axum::response::Response::builder()
         .status(status)
