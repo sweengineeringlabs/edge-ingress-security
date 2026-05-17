@@ -38,10 +38,10 @@ toml         = "0.8"
 swe_justobserv_context = { git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 swe-observ-processes   = { package = "swe_justobserv_processes", git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 
-swe-edge-ingress-http = { package = "swe-edge-ingress-http-transport", git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
-swe-edge-ingress-grpc = { package = "swe-edge-ingress-grpc-transport", git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+swe-edge-ingress-http = { package = "swe-edge-ingress-http-transport", git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.3.4" }
+swe-edge-ingress-grpc = { package = "swe-edge-ingress-grpc-transport", git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.3.4" }
 swe-edge-ingress-tls  = { path = "../tls" }
-edge-domain           = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+edge-domain           = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.3.4" }
 
 [dev-dependencies]
 tokio    = { version = "1.0", features = ["rt-multi-thread", "macros", "net", "io-util", "time", "signal"] }
