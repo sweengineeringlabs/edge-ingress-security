@@ -36,7 +36,13 @@ fn mint(secret: &[u8], iss: &str, aud: &str, sub: &str, exp_offset_secs: i64) ->
     };
     encode(
         &Header::new(Algorithm::HS256),
-        &Claims { iss: iss.into(), aud: aud.into(), sub: sub.into(), iat: now, exp },
+        &Claims {
+            iss: iss.into(),
+            aud: aud.into(),
+            sub: sub.into(),
+            iat: now,
+            exp,
+        },
         &EncodingKey::from_secret(secret),
     )
     .unwrap()
@@ -44,7 +50,9 @@ fn mint(secret: &[u8], iss: &str, aud: &str, sub: &str, exp_offset_secs: i64) ->
 
 fn config(secret: &[u8]) -> BearerInboundConfig {
     BearerInboundConfig {
-        secret: BearerSecret::Hs256 { secret: secret.to_vec() },
+        secret: BearerSecret::Hs256 {
+            secret: secret.to_vec(),
+        },
         expected_issuer: "svc-a".into(),
         expected_audience: "svc-b".into(),
         leeway_seconds: 0,
@@ -67,7 +75,10 @@ fn bearer_struct_inbound_valid_token_republishes_subject_int_test() {
     let mut req = req_with_bearer(&format!("Bearer {token}"));
     interceptor.before_dispatch(&mut req).expect("valid token");
     assert_eq!(
-        req.metadata.headers.get(EXTRACTED_BEARER_SUBJECT).map(String::as_str),
+        req.metadata
+            .headers
+            .get(EXTRACTED_BEARER_SUBJECT)
+            .map(String::as_str),
         Some("alice"),
     );
 }
@@ -120,7 +131,10 @@ fn bearer_struct_inbound_strips_spoofed_subject_before_setting_verified_one_int_
         .insert(EXTRACTED_BEARER_SUBJECT.to_string(), "spoofed-admin".into());
     interceptor.before_dispatch(&mut req).expect("valid token");
     assert_eq!(
-        req.metadata.headers.get(EXTRACTED_BEARER_SUBJECT).map(String::as_str),
+        req.metadata
+            .headers
+            .get(EXTRACTED_BEARER_SUBJECT)
+            .map(String::as_str),
         Some("alice"),
         "verified subject must replace spoofed one",
     );
