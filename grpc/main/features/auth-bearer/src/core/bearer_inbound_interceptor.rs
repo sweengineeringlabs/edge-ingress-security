@@ -125,7 +125,9 @@ mod tests {
 
     fn config(secret: &[u8]) -> BearerInboundConfig {
         BearerInboundConfig {
-            secret: BearerSecret::Hs256 { secret: secret.to_vec() },
+            secret: BearerSecret::Hs256 {
+                secret: secret.to_vec(),
+            },
             expected_issuer: "iss".into(),
             expected_audience: "aud".into(),
             leeway_seconds: 0,
@@ -148,7 +150,10 @@ mod tests {
         let mut req = req_with_auth(&format!("Bearer {token}"));
         interceptor.before_dispatch(&mut req).expect("valid token");
         assert_eq!(
-            req.metadata.headers.get(EXTRACTED_BEARER_SUBJECT).map(String::as_str),
+            req.metadata
+                .headers
+                .get(EXTRACTED_BEARER_SUBJECT)
+                .map(String::as_str),
             Some("alice"),
         );
     }
@@ -214,7 +219,10 @@ mod tests {
             .insert(EXTRACTED_BEARER_SUBJECT.to_string(), "spoofed-admin".into());
         interceptor.before_dispatch(&mut req).expect("valid token");
         assert_eq!(
-            req.metadata.headers.get(EXTRACTED_BEARER_SUBJECT).map(String::as_str),
+            req.metadata
+                .headers
+                .get(EXTRACTED_BEARER_SUBJECT)
+                .map(String::as_str),
             Some("alice"),
         );
     }

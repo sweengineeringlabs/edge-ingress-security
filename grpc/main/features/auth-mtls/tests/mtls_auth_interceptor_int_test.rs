@@ -4,11 +4,11 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
-use swe_edge_ingress_grpc_auth_mtls::{MtlsAuthConfig, MtlsAuthInterceptor};
 use swe_edge_ingress_grpc::{
     GrpcInboundError, GrpcInboundInterceptor, GrpcMetadata, GrpcRequest, GrpcStatusCode,
     PEER_CERT_FINGERPRINT_SHA256, PEER_CN,
 };
+use swe_edge_ingress_grpc_auth_mtls::{MtlsAuthConfig, MtlsAuthInterceptor};
 
 fn req_with_fingerprint_and_cn(cn: Option<&str>) -> GrpcRequest {
     let mut headers = HashMap::new();

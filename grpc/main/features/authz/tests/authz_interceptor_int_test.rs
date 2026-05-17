@@ -3,10 +3,12 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use swe_edge_ingress_grpc_authz::{AuthzInterceptor, AuthzPolicy, MethodAclConfig, MethodAclPolicy};
 use swe_edge_ingress_grpc::{
     GrpcInboundError, GrpcInboundInterceptor, GrpcMetadata, GrpcRequest, GrpcStatusCode,
     PeerIdentity, PEER_CN,
+};
+use swe_edge_ingress_grpc_authz::{
+    AuthzInterceptor, AuthzPolicy, MethodAclConfig, MethodAclPolicy,
 };
 
 fn req_with_cn(cn: &str, method: &str) -> GrpcRequest {
