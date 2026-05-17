@@ -5,6 +5,9 @@ workspaces = [
     "transport",
     "reflection",
     "verifier",
+    "auth-bearer",
+    "auth-mtls",
+    "authz",
 ]
 
 [workspace.transport]
@@ -18,3 +21,15 @@ crate = "swe-edge-ingress-grpc-reflection"
 [workspace.verifier]
 path = "main/features/verifier"
 crate = "swe-edge-ingress-grpc-verifier"
+
+[workspace.auth-bearer]
+path = "main/features/auth-bearer"
+crate = "swe-edge-ingress-grpc-auth-bearer"
+
+[workspace.auth-mtls]
+path = "main/features/auth-mtls"
+crate = "swe-edge-ingress-grpc-auth-mtls"
+
+[workspace.authz]
+path = "main/features/authz"
+crate = "swe-edge-ingress-grpc-authz"
