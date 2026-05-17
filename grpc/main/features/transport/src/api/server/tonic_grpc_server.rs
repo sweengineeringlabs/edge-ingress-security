@@ -12,7 +12,7 @@ use crate::api::value_object::{CompressionMode, GrpcServerConfig};
 /// Panic message when no `AuthorizationInterceptor` is registered and `allow_unauthenticated` is false.
 pub const MISSING_AUTHORIZATION_INTERCEPTOR_MSG: &str =
     "gRPC server requires an AuthorizationInterceptor in the chain \
-     (e.g. swe-edge-egress-grpc-authz::AuthzInterceptor). To explicitly run \
+     (e.g. swe-edge-ingress-grpc-authz::AuthzInterceptor). To explicitly run \
      without authz, set `allow_unauthenticated = true` in \
      GrpcServerConfig (logged at startup as a warning).";
 
