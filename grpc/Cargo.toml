@@ -36,7 +36,7 @@ subtle         = "2"
 # Workspace-internal path deps
 swe-edge-ingress-tls      = { path = "../tls" }
 swe-edge-ingress-verifier = { path = "../verifier" }
-edge-domain            = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+edge-domain            = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.3.4" }
 swe-observ-metrics     = { package = "swe_justobserv_metrics", git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 swe_justobserv_context = { git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 
