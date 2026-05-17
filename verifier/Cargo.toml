@@ -23,7 +23,7 @@ thiserror    = "2"
 tracing      = "0.1"
 jsonwebtoken = "9"
 subtle       = "2"
-edge-domain  = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+edge-domain  = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.3.4" }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros", "rt"] }
