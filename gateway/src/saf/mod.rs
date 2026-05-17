@@ -6,6 +6,7 @@ pub use crate::api::builder::{build_file_input, ApplicationConfigBuilder};
 pub use crate::api::daemon::{DaemonContext, DaemonRunner};
 pub use crate::api::health_check::{HealthCheck, HealthStatus};
 pub use crate::api::inbound_source::InboundSource;
+pub use crate::api::traits::Validator;
 pub use crate::api::ingress_error::{
     IngressError, IngressErrorCode, IngressResult, ResultIngressExt,
 };
