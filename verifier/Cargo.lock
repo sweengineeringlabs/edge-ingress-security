@@ -65,7 +65,7 @@ dependencies = [
 [[package]]
 name = "edge-domain"
 version = "0.1.0"
-source = "git+ssh://git@github.com/sweengineeringlabs/edge.git?branch=dev#c3ebe4ddee6c628ca641ea1d6800797f885d4f4d"
+source = "git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=v0.3.4#f3e15c347b057212dcd9126ed6f6aa66f121a01f"
 dependencies = [
  "async-trait",
  "parking_lot",
