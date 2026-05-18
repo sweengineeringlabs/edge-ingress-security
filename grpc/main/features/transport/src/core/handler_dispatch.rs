@@ -80,7 +80,7 @@ impl GrpcInbound for GrpcHandlerRegistryDispatcher {
 }
 
 fn map_handler_error(err: HandlerError) -> GrpcInboundError {
-    use crate::saf::GrpcStatusCode;
+    use crate::api::value_object::GrpcStatusCode;
     match err {
         HandlerError::Unsupported(m) => GrpcInboundError::Unimplemented(m),
         HandlerError::InvalidRequest(m) => GrpcInboundError::InvalidArgument(m),

@@ -12,6 +12,7 @@ categories   = ["network-programming"]
 
 [package.metadata.struct-engine]
 application_type = "lib"
+service_type     = "transport"
 
 [lib]
 path = "src/lib.rs"

@@ -133,6 +133,67 @@ pub trait GrpcInbound: Send + Sync {
         })
     }
 
+    /// Handle a server-streaming request — single request, streaming response.
+    ///
+    /// The default implementation delegates to [`handle_unary`] and wraps the
+    /// response in a single-item stream.
+    ///
+    /// [`handle_unary`]: GrpcInbound::handle_unary
+    fn handle_server_stream(
+        &self,
+        request: GrpcRequest,
+        ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcMessageStream>> {
+        Box::pin(async move {
+            let resp = self.handle_unary(request, ctx).await?;
+            let out: GrpcMessageStream =
+                Box::pin(futures::stream::once(futures::future::ready(Ok(resp.body))));
+            Ok(out)
+        })
+    }
+
+    /// Handle a client-streaming request — streaming request messages, single response.
+    ///
+    /// The default implementation reads the first message from the stream and
+    /// delegates to [`handle_unary`].
+    ///
+    /// [`handle_unary`]: GrpcInbound::handle_unary
+    fn handle_client_stream(
+        &self,
+        method: String,
+        metadata: GrpcMetadata,
+        messages: GrpcMessageStream,
+        ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        Box::pin(async move {
+            use futures::StreamExt;
+            let mut messages = messages;
+            let body = match messages.next().await {
+                Some(Ok(b)) => b,
+                Some(Err(e)) => return Err(e),
+                None => vec![],
+            };
+            let req = GrpcRequest::new(method, body, std::time::Duration::from_secs(30))
+                .with_metadata(metadata);
+            self.handle_unary(req, ctx).await
+        })
+    }
+
+    /// Handle a bidirectional-streaming request — streaming in both directions.
+    ///
+    /// The default implementation delegates to [`handle_stream`].
+    ///
+    /// [`handle_stream`]: GrpcInbound::handle_stream
+    fn handle_bidi_stream(
+        &self,
+        method: String,
+        metadata: GrpcMetadata,
+        messages: GrpcMessageStream,
+        ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
+        self.handle_stream(method, metadata, messages, ctx)
+    }
+
     /// Perform a health check.
     fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>>;
 }
@@ -172,5 +233,81 @@ mod tests {
         let h = GrpcHealthCheck::unhealthy("down");
         assert!(!h.healthy);
         assert_eq!(h.message.as_deref(), Some("down"));
+    }
+
+    struct UnaryOnlyHandler;
+    impl GrpcInbound for UnaryOnlyHandler {
+        fn handle_unary(
+            &self,
+            _request: GrpcRequest,
+            _ctx: RequestContext,
+        ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+            Box::pin(futures::future::ready(Ok(GrpcResponse {
+                body: b"pong".to_vec(),
+                metadata: GrpcMetadata::default(),
+            })))
+        }
+        fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+            Box::pin(futures::future::ready(Ok(GrpcHealthCheck::healthy())))
+        }
+    }
+
+    /// @covers: handle_server_stream
+    #[tokio::test]
+    async fn test_handle_server_stream_default_wraps_unary_response_in_single_item_stream() {
+        use futures::StreamExt;
+        let h = UnaryOnlyHandler;
+        let req = GrpcRequest::new(
+            "svc/M".to_string(),
+            vec![],
+            std::time::Duration::from_secs(1),
+        );
+        let mut stream = h
+            .handle_server_stream(req, RequestContext::default())
+            .await
+            .expect("should succeed");
+        let frame = stream.next().await.expect("stream must yield one item");
+        assert_eq!(frame.unwrap(), b"pong");
+        assert!(stream.next().await.is_none());
+    }
+
+    /// @covers: handle_client_stream
+    #[tokio::test]
+    async fn test_handle_client_stream_default_reads_first_message_and_calls_unary() {
+        use futures::stream;
+        let h = UnaryOnlyHandler;
+        let messages: GrpcMessageStream =
+            Box::pin(stream::once(futures::future::ready(Ok(b"ping".to_vec()))));
+        let resp = h
+            .handle_client_stream(
+                "svc/M".into(),
+                GrpcMetadata::default(),
+                messages,
+                RequestContext::default(),
+            )
+            .await
+            .expect("should succeed");
+        assert_eq!(resp.body, b"pong");
+    }
+
+    /// @covers: handle_bidi_stream
+    #[tokio::test]
+    async fn test_handle_bidi_stream_default_delegates_to_handle_stream() {
+        use futures::stream;
+        let h = UnaryOnlyHandler;
+        let messages: GrpcMessageStream =
+            Box::pin(stream::once(futures::future::ready(Ok(b"ping".to_vec()))));
+        let (mut out, _meta) = h
+            .handle_bidi_stream(
+                "svc/M".into(),
+                GrpcMetadata::default(),
+                messages,
+                RequestContext::default(),
+            )
+            .await
+            .expect("should succeed");
+        use futures::StreamExt;
+        let frame = out.next().await.expect("must yield one item").unwrap();
+        assert_eq!(frame, b"pong");
     }
 }

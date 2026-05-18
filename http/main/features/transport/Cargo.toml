@@ -12,6 +12,7 @@ categories   = ["web-programming", "network-programming"]
 
 [package.metadata.struct-engine]
 application_type = "lib"
+service_type     = "transport"
 
 [lib]
 name = "swe_edge_ingress_http"
@@ -23,7 +24,6 @@ serde_json.workspace  = true
 thiserror.workspace   = true
 async-trait.workspace = true
 futures.workspace     = true
-chrono.workspace      = true
 tokio.workspace       = true
 axum.workspace        = true
 bytes.workspace       = true
