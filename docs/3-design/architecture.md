@@ -263,3 +263,13 @@ http, grpc, file
 ```
 
 Domain crates are vertically independent of each other. `main` aggregates them into a single re-export surface. There are no middleware crates in ingress — inbound servers have no pluggable layer chain.
+
+---
+
+## See Also
+
+- [Architecture Overview](../../docs/3-architecture/architecture.md)
+- [Egress Architecture](../../egress/docs/3-design/architecture.md)
+- [Domain Architecture](../../domain/docs/architecture.md)
+- [Runtime Architecture](../../runtime/docs/architecture.md)
+- [Developer Guide](../../docs/4-development/developer_guide.md)
