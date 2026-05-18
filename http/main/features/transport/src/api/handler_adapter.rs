@@ -110,7 +110,7 @@ mod tests {
     }
 
     struct EchoUserHandler;
-    #[async_trait]
+    #[async_trait::async_trait]
     impl Handler<GetUserReq, GetUserResp> for EchoUserHandler {
         fn id(&self) -> &str {
             "get-user"
@@ -126,7 +126,7 @@ mod tests {
     }
 
     struct FailingHandler;
-    #[async_trait]
+    #[async_trait::async_trait]
     impl Handler<GetUserReq, GetUserResp> for FailingHandler {
         fn id(&self) -> &str {
             "fail"

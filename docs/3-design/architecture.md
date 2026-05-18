@@ -45,7 +45,7 @@ src/
 ```rust
 pub trait HttpInbound: Send + Sync {
     // Dispatch one inbound HTTP request; return the response.
-    fn handle(&self, request: HttpRequest) -> BoxFuture<'_, HttpInboundResult<HttpResponse>>;
+    fn handle(&self, request: HttpRequest, ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>>;
 
     // Respond with a liveness signal.
     fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>>;
@@ -57,7 +57,11 @@ pub enum HttpInboundError {
     InvalidInput(String),
     Unavailable(String),
     Timeout(String),
+    Unauthorized(String),
     PermissionDenied(String),
+    Conflict(String),
+    MethodNotAllowed(String),
+    UnprocessableEntity(String),
 }
 ```
 
@@ -75,7 +79,7 @@ pub async fn serve_with_listener<F: Future<Output=()> + Send + 'static>(
 
 Axum performs a graceful drain on shutdown: in-flight requests complete before the listener closes.
 
-Error variants map to HTTP status codes: `NotFound → 404`, `InvalidInput → 400`, `PermissionDenied → 403`, `Timeout → 504`, `Unavailable → 503`, `Internal → 500`.
+Error variants map to HTTP status codes: `NotFound → 404`, `InvalidInput → 400`, `Unauthorized → 401`, `PermissionDenied → 403`, `Conflict → 409`, `MethodNotAllowed → 405`, `UnprocessableEntity → 422`, `Timeout → 504`, `Unavailable → 503`, `Internal → 500`.
 
 ---
 
@@ -84,7 +88,7 @@ Error variants map to HTTP status codes: `NotFound → 404`, `InvalidInput → 4
 ```rust
 pub trait GrpcInbound: Send + Sync {
     // Handle a single unary request.
-    fn handle_unary(&self, request: GrpcRequest) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>>;
+    fn handle_unary(&self, request: GrpcRequest, ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>>;
 
     // Handle a streaming request (client-streaming, server-streaming, or bidi).
     // Returns (response_stream, response_metadata).
@@ -263,3 +267,13 @@ http, grpc, file
 ```
 
 Domain crates are vertically independent of each other. `main` aggregates them into a single re-export surface. There are no middleware crates in ingress — inbound servers have no pluggable layer chain.
+
+---
+
+## See Also
+
+- [Architecture Overview](../../docs/3-architecture/architecture.md)
+- [Egress Architecture](../../egress/docs/3-design/architecture.md)
+- [Domain Architecture](../../domain/docs/architecture.md)
+- [Runtime Architecture](../../runtime/docs/architecture.md)
+- [Developer Guide](../../docs/4-development/developer_guide.md)

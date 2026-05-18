@@ -20,7 +20,6 @@ path = "src/lib.rs"
 [dependencies]
 serde.workspace          = true
 thiserror.workspace      = true
-async-trait.workspace    = true
 futures.workspace        = true
 tokio.workspace          = true
 parking_lot.workspace    = true
@@ -31,8 +30,8 @@ swe-edge-ingress-grpc.workspace = true
 edge-domain.workspace           = true
 
 [dev-dependencies]
+async-trait.workspace = true
 tokio          = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
-async-trait.workspace    = true
 bytes.workspace          = true
 tracing.workspace        = true
 http                     = "1"
