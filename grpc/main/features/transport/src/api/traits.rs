@@ -11,7 +11,6 @@ mod tests {
     use super::*;
     use crate::api::port::grpc_inbound::GrpcInbound;
 
-    /// @covers: Validator
     #[test]
     fn test_validator_is_object_safe() {
         fn _assert(_: &dyn Validator) {}

@@ -24,7 +24,6 @@ mod tests {
 
     use super::*;
 
-    /// @covers: WsChannel
     #[test]
     fn test_ws_channel_can_be_constructed() {
         let (tx, _rx) = mpsc::unbounded_channel();

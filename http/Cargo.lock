@@ -1235,7 +1235,6 @@ dependencies = [
  "async-trait",
  "axum",
  "bytes",
- "chrono",
  "edge-domain",
  "futures",
  "http",

@@ -4,7 +4,7 @@ use std::pin::Pin;
 
 use futures::Stream;
 
-use crate::api::port::http_inbound::HttpInboundError;
+use crate::api::port::http_inbound_error::HttpInboundError;
 use crate::api::value_object::ws::ws_message::WsMessage;
 
 /// The receive half of a [`WsChannel`](super::ws_channel::WsChannel).
@@ -19,7 +19,6 @@ mod tests {
 
     use super::*;
 
-    /// @covers: WsReceiver
     #[test]
     fn test_ws_receiver_empty_stream_is_valid() {
         let _r: WsReceiver = Box::pin(stream::empty());

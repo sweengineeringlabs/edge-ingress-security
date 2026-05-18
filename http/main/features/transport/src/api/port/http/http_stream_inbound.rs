@@ -3,7 +3,7 @@
 use edge_domain::RequestContext;
 use futures::future::BoxFuture;
 
-use crate::api::port::http_inbound::HttpInboundResult;
+use crate::api::port::http_inbound_result::HttpInboundResult;
 use crate::api::value_object::sse::SseStream;
 use crate::api::value_object::ws::WsChannel;
 use crate::api::value_object::HttpRequest;
@@ -45,7 +45,6 @@ pub trait HttpStreamInbound: Send + Sync {
 mod tests {
     use super::*;
 
-    /// @covers: HttpStreamInbound
     #[test]
     fn test_http_stream_inbound_is_object_safe() {
         fn _assert_object_safe(_: &dyn HttpStreamInbound) {}

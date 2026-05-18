@@ -1,15 +1,25 @@
 //! SAF layer — HTTP inbound public facade.
+pub(crate) mod edge_ingress_http_transport_svc;
 
-pub use crate::api::handler_adapter::{HttpDecodeFn, HttpEncodeFn, HttpHandlerAdapter};
-pub use crate::api::handler_dispatch::{HttpDispatcherError, HttpHandlerRegistryDispatcher};
+pub use crate::api::application_config_builder::ApplicationConfigBuilder;
+pub use crate::api::handler::http::http_decode_fn::HttpDecodeFn;
+pub use crate::api::handler::http::http_dispatcher_error::HttpDispatcherError;
+pub use crate::api::handler::http::http_encode_fn::HttpEncodeFn;
+pub use crate::api::handler::http::http_handler_adapter::HttpHandlerAdapter;
+pub use crate::api::handler::http::http_handler_registry_dispatcher::HttpHandlerRegistryDispatcher;
 pub use crate::api::port::http::HttpStreamInbound;
-pub use crate::api::port::http_inbound::{
-    HttpHealthCheck, HttpInbound, HttpInboundError, HttpInboundResult,
-};
-pub use crate::api::server::axum_http_server::{AxumHttpServer, AxumServerError, MAX_BODY_BYTES};
+pub use crate::api::port::http_health_check::HttpHealthCheck;
+pub use crate::api::port::http_inbound::HttpInbound;
+pub use crate::api::port::http_inbound_error::HttpInboundError;
+pub use crate::api::port::http_inbound_result::HttpInboundResult;
+pub use crate::api::server::axum::axum_http_server::{AxumHttpServer, MAX_BODY_BYTES};
+pub use crate::api::server::axum::axum_http_server_builder::AxumHttpServerBuilder;
+pub use crate::api::server::axum::axum_server_error::AxumServerError;
 pub use crate::api::value_object::{
-    FormPart, HttpAuth, HttpBody, HttpConfig, HttpMethod, HttpRequest, HttpResponse, SseEvent,
-    SseStream, WsChannel, WsMessage, WsReceiver, WsSender,
+    FormPart, HttpAuth, HttpBody, HttpConfig, HttpConfigBuilder, HttpMethod, HttpRequest,
+    HttpRequestBuilder, HttpResponse, SseEvent, SseStream, WsChannel, WsMessage, WsReceiver,
+    WsSender,
 };
 pub use edge_domain::RequestContext;
+pub use edge_ingress_http_transport_svc::validate;
 pub use swe_edge_ingress_tls::{IngressTlsConfig, IngressTlsError};

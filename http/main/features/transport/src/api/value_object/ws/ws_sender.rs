@@ -14,7 +14,6 @@ pub type WsSender = mpsc::UnboundedSender<WsMessage>;
 mod tests {
     use super::*;
 
-    /// @covers: WsSender
     #[test]
     fn test_ws_sender_can_be_constructed_from_mpsc_channel() {
         let (tx, _rx) = mpsc::unbounded_channel::<WsMessage>();

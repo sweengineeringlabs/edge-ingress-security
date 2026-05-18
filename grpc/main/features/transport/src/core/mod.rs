@@ -3,3 +3,4 @@ pub(crate) mod handler_dispatch;
 pub(crate) mod health_service;
 pub(crate) mod interceptor;
 pub(crate) mod server;
+pub(crate) mod validator;

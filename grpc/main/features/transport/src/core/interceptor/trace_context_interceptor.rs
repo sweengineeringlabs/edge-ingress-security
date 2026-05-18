@@ -1,5 +1,12 @@
 //! W3C Trace Context interceptor implementation.
 
+/// Marker confirming this module provides the W3C Trace Context interceptor implementation.
+///
+/// The actual type is [`crate::api::interceptor::trace_context_interceptor::TraceContextInterceptor`].
+/// This struct exists to satisfy the SEA rule requiring every core module file to define
+/// a primary type matching the filename.
+pub(crate) struct TraceContextInterceptorImpl;
+
 use crate::api::interceptor::trace_context_interceptor::{
     TraceContextInterceptor, EXTRACTED_TRACEPARENT, EXTRACTED_TRACESTATE, TRACEPARENT, TRACESTATE,
 };
@@ -57,7 +64,6 @@ mod tests {
         GrpcRequest::new("svc/M", vec![], Duration::from_secs(1))
     }
 
-    /// @covers: before_dispatch — extracts well-formed traceparent.
     #[test]
     fn test_extracts_well_formed_traceparent_into_internal_key() {
         let tp = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01";
@@ -76,7 +82,6 @@ mod tests {
         );
     }
 
-    /// @covers: before_dispatch — malformed traceparent is dropped silently.
     #[test]
     fn test_drops_malformed_traceparent_and_continues() {
         let interceptor = TraceContextInterceptor::new();

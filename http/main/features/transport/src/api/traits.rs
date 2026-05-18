@@ -27,7 +27,6 @@ mod tests {
         }
     }
 
-    /// @covers: Validator
     #[test]
     fn test_validator_ok_returns_unit() {
         assert!(AlwaysValid.validate().is_ok());

@@ -34,7 +34,7 @@ pub fn parse_grpc_timeout(value: &str) -> Option<Duration> {
 mod tests {
     use super::*;
 
-    /// @covers: parse_grpc_timeout — every documented unit suffix.
+    /// @covers: parse_grpc_timeout
     #[test]
     fn test_parse_grpc_timeout_handles_all_six_unit_suffixes() {
         assert_eq!(parse_grpc_timeout("1H"), Some(Duration::from_secs(3600)));
@@ -48,7 +48,7 @@ mod tests {
         );
     }
 
-    /// @covers: parse_grpc_timeout — rejects malformed input.
+    /// @covers: parse_grpc_timeout
     #[test]
     fn test_parse_grpc_timeout_returns_none_for_malformed_input() {
         assert_eq!(parse_grpc_timeout(""), None, "empty");
@@ -59,7 +59,7 @@ mod tests {
         assert_eq!(parse_grpc_timeout("12.3S"), None, "non-integer");
     }
 
-    /// @covers: parse_grpc_timeout — zero returns ZERO duration.
+    /// @covers: parse_grpc_timeout
     #[test]
     fn test_parse_grpc_timeout_zero_returns_zero_duration() {
         assert_eq!(parse_grpc_timeout("0n"), Some(Duration::ZERO));
