@@ -23,7 +23,6 @@ use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 
 use bytes::{BufMut, Bytes, BytesMut};
-use futures::future::BoxFuture;
 use http::Request;
 use http_body_util::{BodyExt, Full};
 use hyper_util::rt::{TokioExecutor, TokioIo};

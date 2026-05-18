@@ -104,7 +104,6 @@ mod tests {
     use std::time::Duration;
 
     use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
-    use futures::future::BoxFuture;
 
     use crate::api::handler_adapter::GrpcHandlerAdapter;
     use crate::api::handler_dispatch::GrpcHandlerRegistryDispatcher;

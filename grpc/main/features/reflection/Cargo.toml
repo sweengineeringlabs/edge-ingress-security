@@ -30,6 +30,7 @@ swe-edge-ingress-grpc.workspace = true
 edge-domain.workspace           = true
 
 [dev-dependencies]
+async-trait.workspace = true
 tokio          = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
 bytes.workspace          = true
 tracing.workspace        = true
