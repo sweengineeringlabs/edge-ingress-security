@@ -12,7 +12,6 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use async_trait::async_trait;
 use bytes::{BufMut, Bytes, BytesMut};
 use http::Request;
 use http_body_util::{BodyExt, Full};
@@ -20,16 +19,20 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
-use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
+use edge_domain::{Handler, HandlerError, HandlerRegistry};
 use swe_edge_ingress_grpc_transport::{
-    GrpcHandlerAdapter, GrpcInboundError, GrpcHandlerRegistryDispatcher, TonicGrpcServer,
+    GrpcHandlerAdapter, GrpcHandlerRegistryDispatcher, GrpcInboundError, TonicGrpcServer,
 };
 
 #[derive(Debug, PartialEq, Eq)]
-struct TripleReq { value: u32 }
+struct TripleReq {
+    value: u32,
+}
 
 #[derive(Debug, PartialEq, Eq)]
-struct TripleResp { value: u32 }
+struct TripleResp {
+    value: u32,
+}
 
 fn decode_triple_req(bytes: &[u8]) -> Result<TripleReq, GrpcInboundError> {
     if bytes.len() != 4 {
@@ -38,19 +41,29 @@ fn decode_triple_req(bytes: &[u8]) -> Result<TripleReq, GrpcInboundError> {
             bytes.len()
         )));
     }
-    Ok(TripleReq { value: u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) })
+    Ok(TripleReq {
+        value: u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+    })
 }
 
-fn encode_triple_resp(resp: &TripleResp) -> Vec<u8> { resp.value.to_be_bytes().to_vec() }
+fn encode_triple_resp(resp: &TripleResp) -> Vec<u8> {
+    resp.value.to_be_bytes().to_vec()
+}
 
 struct TripleHandler;
 
-#[async_trait]
+#[async_trait::async_trait]
 impl Handler<TripleReq, TripleResp> for TripleHandler {
-    fn id(&self) -> &str { "/pkg.Math/Triple" }
-    fn pattern(&self) -> &str { "Math" }
+    fn id(&self) -> &str {
+        "/pkg.Math/Triple"
+    }
+    fn pattern(&self) -> &str {
+        "Math"
+    }
     async fn execute(&self, req: TripleReq) -> Result<TripleResp, HandlerError> {
-        Ok(TripleResp { value: req.value.wrapping_mul(3) })
+        Ok(TripleResp {
+            value: req.value.wrapping_mul(3),
+        })
     }
 }
 
@@ -66,13 +79,15 @@ async fn start_server_with_dispatcher(
     dispatcher: GrpcHandlerRegistryDispatcher,
 ) -> (SocketAddr, oneshot::Sender<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr     = listener.local_addr().unwrap();
-    let server   = TonicGrpcServer::new("127.0.0.1:0", Arc::new(dispatcher))
-        .allow_unauthenticated(true);
+    let addr = listener.local_addr().unwrap();
+    let server =
+        TonicGrpcServer::new("127.0.0.1:0", Arc::new(dispatcher)).allow_unauthenticated(true);
     let (tx, rx) = oneshot::channel::<()>();
     tokio::spawn(async move {
         server
-            .serve_with_listener(listener, async move { let _ = rx.await; })
+            .serve_with_listener(listener, async move {
+                let _ = rx.await;
+            })
             .await
             .unwrap();
     });
@@ -80,11 +95,7 @@ async fn start_server_with_dispatcher(
     (addr, tx)
 }
 
-async fn grpc_call(
-    addr:    SocketAddr,
-    path:    &str,
-    payload: &[u8],
-) -> (Option<String>, Bytes) {
+async fn grpc_call(addr: SocketAddr, path: &str, payload: &[u8]) -> (Option<String>, Bytes) {
     let stream = tokio::net::TcpStream::connect(addr).await.unwrap();
     let io = TokioIo::new(stream);
     let (mut sender, conn) = hyper::client::conn::http2::Builder::new(TokioExecutor::new())
@@ -101,7 +112,7 @@ async fn grpc_call(
         .body(Full::new(grpc_frame(payload)))
         .unwrap();
 
-    let resp      = sender.send_request(req).await.unwrap();
+    let resp = sender.send_request(req).await.unwrap();
     let collected = resp.into_body().collect().await.unwrap();
     let grpc_status = collected
         .trailers()

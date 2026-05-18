@@ -1,3 +1,5 @@
+//! Integration tests for the ingress gateway validator surface.
+
 use swe_edge_ingress::passthrough_validator;
 
 #[test]

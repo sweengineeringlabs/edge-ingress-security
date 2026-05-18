@@ -40,8 +40,8 @@ impl IngressTlsConfig {
     /// are not required.
     pub fn tls(cert_pem_path: impl Into<String>, key_pem_path: impl Into<String>) -> Self {
         Self {
-            cert_pem_path:     cert_pem_path.into(),
-            key_pem_path:      key_pem_path.into(),
+            cert_pem_path: cert_pem_path.into(),
+            key_pem_path: key_pem_path.into(),
             client_ca_pem_path: None,
         }
     }
@@ -49,13 +49,13 @@ impl IngressTlsConfig {
     /// mTLS: server authenticates with `cert`/`key`; clients must present a
     /// certificate signed by `client_ca`.
     pub fn mtls(
-        cert_pem_path:     impl Into<String>,
-        key_pem_path:      impl Into<String>,
+        cert_pem_path: impl Into<String>,
+        key_pem_path: impl Into<String>,
         client_ca_pem_path: impl Into<String>,
     ) -> Self {
         Self {
-            cert_pem_path:     cert_pem_path.into(),
-            key_pem_path:      key_pem_path.into(),
+            cert_pem_path: cert_pem_path.into(),
+            key_pem_path: key_pem_path.into(),
             client_ca_pem_path: Some(client_ca_pem_path.into()),
         }
     }

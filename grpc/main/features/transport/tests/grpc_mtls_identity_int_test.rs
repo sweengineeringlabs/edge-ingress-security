@@ -21,7 +21,8 @@ use tokio::sync::oneshot;
 
 use swe_edge_ingress_grpc_transport::{
     GrpcHealthCheck, GrpcInbound, GrpcInboundResult, GrpcMetadata, GrpcRequest, GrpcResponse,
-    IngressTlsConfig, RequestContext, TonicGrpcServer, PEER_CERT_FINGERPRINT_SHA256, PEER_CN, PEER_SAN_DNS,
+    IngressTlsConfig, RequestContext, TonicGrpcServer, PEER_CERT_FINGERPRINT_SHA256, PEER_CN,
+    PEER_SAN_DNS,
 };
 
 // ── Capturing handler ───────────────────────────────────────────────────────
@@ -39,13 +40,14 @@ impl GrpcInbound for CapturingHandler {
         let captured = self.captured.clone();
         Box::pin(async move {
             *captured.lock().unwrap() = Some(req.metadata.clone());
-            Ok(GrpcResponse { body: req.body, metadata: GrpcMetadata::default() })
+            Ok(GrpcResponse {
+                body: req.body,
+                metadata: GrpcMetadata::default(),
+            })
         })
     }
 
-    fn health_check(
-        &self,
-    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
         Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
     }
 }
@@ -60,22 +62,22 @@ fn write_temp(content: &str) -> tempfile::NamedTempFile {
 
 struct MtlsMaterial {
     server_cert_pem: String,
-    server_key_pem:  String,
-    client_ca_pem:   String,
+    server_key_pem: String,
+    client_ca_pem: String,
     client_cert_pem: String,
-    client_key_pem:  String,
+    client_key_pem: String,
 }
 
 fn build_mtls_material() -> MtlsMaterial {
-    use rcgen::{CertificateParams, DistinguishedName, DnType, KeyPair, IsCa, BasicConstraints};
+    use rcgen::{BasicConstraints, CertificateParams, DistinguishedName, DnType, IsCa, KeyPair};
 
     // Root CA used to sign both the server and client leaves.
     let mut ca_params = CertificateParams::new(Vec::new()).unwrap();
-    ca_params.is_ca   = IsCa::Ca(BasicConstraints::Unconstrained);
+    ca_params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
     let mut ca_dn = DistinguishedName::new();
     ca_dn.push(DnType::CommonName, "swe-edge-test-root");
     ca_params.distinguished_name = ca_dn;
-    let ca_key  = KeyPair::generate().unwrap();
+    let ca_key = KeyPair::generate().unwrap();
     let ca_cert = ca_params.self_signed(&ca_key).unwrap();
 
     // Server leaf (CN=localhost, DNS=localhost).
@@ -83,23 +85,27 @@ fn build_mtls_material() -> MtlsMaterial {
     let mut server_dn = DistinguishedName::new();
     server_dn.push(DnType::CommonName, "localhost");
     server_params.distinguished_name = server_dn;
-    let server_key  = KeyPair::generate().unwrap();
-    let server_cert = server_params.signed_by(&server_key, &ca_cert, &ca_key).unwrap();
+    let server_key = KeyPair::generate().unwrap();
+    let server_cert = server_params
+        .signed_by(&server_key, &ca_cert, &ca_key)
+        .unwrap();
 
     // Client leaf — CN + DNS SAN we will assert on later.
     let mut client_params = CertificateParams::new(vec!["client.svc.local".to_string()]).unwrap();
     let mut client_dn = DistinguishedName::new();
     client_dn.push(DnType::CommonName, "edge-test-client");
     client_params.distinguished_name = client_dn;
-    let client_key  = KeyPair::generate().unwrap();
-    let client_cert = client_params.signed_by(&client_key, &ca_cert, &ca_key).unwrap();
+    let client_key = KeyPair::generate().unwrap();
+    let client_cert = client_params
+        .signed_by(&client_key, &ca_cert, &ca_key)
+        .unwrap();
 
     MtlsMaterial {
         server_cert_pem: server_cert.pem(),
-        server_key_pem:  server_key.serialize_pem(),
-        client_ca_pem:   ca_cert.pem(),
+        server_key_pem: server_key.serialize_pem(),
+        client_ca_pem: ca_cert.pem(),
         client_cert_pem: client_cert.pem(),
-        client_key_pem:  client_key.serialize_pem(),
+        client_key_pem: client_key.serialize_pem(),
     }
 }
 
@@ -145,7 +151,10 @@ impl rustls::client::danger::ServerCertVerifier for AcceptAnyServerCert {
     }
 }
 
-fn mtls_client_connector(client_cert_pem: &str, client_key_pem: &str) -> tokio_rustls::TlsConnector {
+fn mtls_client_connector(
+    client_cert_pem: &str,
+    client_key_pem: &str,
+) -> tokio_rustls::TlsConnector {
     let _ = rustls::crypto::ring::default_provider().install_default();
 
     use rustls::pki_types::{pem::PemObject, CertificateDer, PrivateKeyDer};
@@ -154,8 +163,7 @@ fn mtls_client_connector(client_cert_pem: &str, client_key_pem: &str) -> tokio_r
         rustls_pemfile::certs(&mut client_cert_pem.as_bytes())
             .filter_map(Result::ok)
             .collect();
-    let key = PrivateKeyDer::from_pem_slice(client_key_pem.as_bytes())
-        .expect("client key parses");
+    let key = PrivateKeyDer::from_pem_slice(client_key_pem.as_bytes()).expect("client key parses");
 
     let cfg = rustls::ClientConfig::builder_with_provider(Arc::new(
         rustls::crypto::ring::default_provider(),
@@ -182,17 +190,20 @@ fn grpc_frame(payload: &[u8]) -> Bytes {
 }
 
 async fn mtls_call(
-    addr:        SocketAddr,
-    path:        &str,
-    payload:     &[u8],
+    addr: SocketAddr,
+    path: &str,
+    payload: &[u8],
     client_cert: &str,
-    client_key:  &str,
+    client_key: &str,
 ) {
     let tcp = tokio::net::TcpStream::connect(addr).await.unwrap();
     let server_name = rustls::pki_types::ServerName::try_from("localhost").unwrap();
-    let connector   = mtls_client_connector(client_cert, client_key);
-    let tls = connector.connect(server_name, tcp).await.expect("TLS handshake");
-    let io  = TokioIo::new(tls);
+    let connector = mtls_client_connector(client_cert, client_key);
+    let tls = connector
+        .connect(server_name, tcp)
+        .await
+        .expect("TLS handshake");
+    let io = TokioIo::new(tls);
     let (mut sender, conn) = hyper::client::conn::http2::Builder::new(TokioExecutor::new())
         .handshake(io)
         .await
@@ -206,7 +217,7 @@ async fn mtls_call(
         .header("te", "trailers")
         .body(Full::new(grpc_frame(payload)))
         .unwrap();
-    let resp      = sender.send_request(req).await.expect("response");
+    let resp = sender.send_request(req).await.expect("response");
     let _collected = resp.into_body().collect().await.unwrap();
 }
 
@@ -217,8 +228,8 @@ async fn mtls_call(
 async fn mtls_peer_identity_flows_through_to_handler_metadata_int_test() {
     let m = build_mtls_material();
     let server_cert_f = write_temp(&m.server_cert_pem);
-    let server_key_f  = write_temp(&m.server_key_pem);
-    let client_ca_f   = write_temp(&m.client_ca_pem);
+    let server_key_f = write_temp(&m.server_key_pem);
+    let client_ca_f = write_temp(&m.client_ca_pem);
 
     let tls_cfg = IngressTlsConfig::mtls(
         server_cert_f.path().to_str().unwrap(),
@@ -226,28 +237,43 @@ async fn mtls_peer_identity_flows_through_to_handler_metadata_int_test() {
         client_ca_f.path().to_str().unwrap(),
     );
     let captured: Arc<Mutex<Option<GrpcMetadata>>> = Arc::new(Mutex::new(None));
-    let handler = Arc::new(CapturingHandler { captured: captured.clone() });
+    let handler = Arc::new(CapturingHandler {
+        captured: captured.clone(),
+    });
 
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr     = listener.local_addr().unwrap();
-    let server   = TonicGrpcServer::new("127.0.0.1:0", handler)
+    let addr = listener.local_addr().unwrap();
+    let server = TonicGrpcServer::new("127.0.0.1:0", handler)
         .with_tls(tls_cfg)
         .allow_unauthenticated(true);
     let (tx, rx) = oneshot::channel::<()>();
     tokio::spawn(async move {
         server
-            .serve_with_listener(listener, async move { let _ = rx.await; })
+            .serve_with_listener(listener, async move {
+                let _ = rx.await;
+            })
             .await
             .unwrap();
     });
     tokio::time::sleep(Duration::from_millis(50)).await;
 
-    mtls_call(addr, "/pkg.Svc/Echo", b"identity-probe", &m.client_cert_pem, &m.client_key_pem).await;
+    mtls_call(
+        addr,
+        "/pkg.Svc/Echo",
+        b"identity-probe",
+        &m.client_cert_pem,
+        &m.client_key_pem,
+    )
+    .await;
 
-    let snapshot = captured.lock().unwrap().clone().expect("handler should have captured metadata");
-    let cn   = snapshot.headers.get(PEER_CN).cloned();
-    let dns  = snapshot.headers.get(PEER_SAN_DNS).cloned();
-    let fp   = snapshot.headers.get(PEER_CERT_FINGERPRINT_SHA256).cloned();
+    let snapshot = captured
+        .lock()
+        .unwrap()
+        .clone()
+        .expect("handler should have captured metadata");
+    let cn = snapshot.headers.get(PEER_CN).cloned();
+    let dns = snapshot.headers.get(PEER_SAN_DNS).cloned();
+    let fp = snapshot.headers.get(PEER_CERT_FINGERPRINT_SHA256).cloned();
 
     assert_eq!(
         cn.as_deref(),
@@ -255,13 +281,18 @@ async fn mtls_peer_identity_flows_through_to_handler_metadata_int_test() {
         "peer CN should reach the handler under the documented key",
     );
     assert!(
-        dns.as_deref().map(|s| s.contains("client.svc.local")).unwrap_or(false),
+        dns.as_deref()
+            .map(|s| s.contains("client.svc.local"))
+            .unwrap_or(false),
         "peer DNS SAN should reach the handler (got {dns:?})",
     );
     let fp = fp.expect("fingerprint must always be set under documented key");
     assert_eq!(fp.len(), 64, "fingerprint must be 64 hex chars (SHA-256)");
-    assert!(fp.chars().all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase()),
-        "fingerprint must be lower-hex (got {fp})");
+    assert!(
+        fp.chars()
+            .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase()),
+        "fingerprint must be lower-hex (got {fp})"
+    );
 
     let _ = tx.send(());
 }
@@ -273,8 +304,8 @@ async fn mtls_peer_identity_flows_through_to_handler_metadata_int_test() {
 async fn mtls_server_strips_spoofed_peer_headers_int_test() {
     let m = build_mtls_material();
     let server_cert_f = write_temp(&m.server_cert_pem);
-    let server_key_f  = write_temp(&m.server_key_pem);
-    let client_ca_f   = write_temp(&m.client_ca_pem);
+    let server_key_f = write_temp(&m.server_key_pem);
+    let client_ca_f = write_temp(&m.client_ca_pem);
 
     let tls_cfg = IngressTlsConfig::mtls(
         server_cert_f.path().to_str().unwrap(),
@@ -282,17 +313,21 @@ async fn mtls_server_strips_spoofed_peer_headers_int_test() {
         client_ca_f.path().to_str().unwrap(),
     );
     let captured: Arc<Mutex<Option<GrpcMetadata>>> = Arc::new(Mutex::new(None));
-    let handler = Arc::new(CapturingHandler { captured: captured.clone() });
+    let handler = Arc::new(CapturingHandler {
+        captured: captured.clone(),
+    });
 
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr     = listener.local_addr().unwrap();
-    let server   = TonicGrpcServer::new("127.0.0.1:0", handler)
+    let addr = listener.local_addr().unwrap();
+    let server = TonicGrpcServer::new("127.0.0.1:0", handler)
         .with_tls(tls_cfg)
         .allow_unauthenticated(true);
     let (tx, rx) = oneshot::channel::<()>();
     tokio::spawn(async move {
         server
-            .serve_with_listener(listener, async move { let _ = rx.await; })
+            .serve_with_listener(listener, async move {
+                let _ = rx.await;
+            })
             .await
             .unwrap();
     });
@@ -300,9 +335,12 @@ async fn mtls_server_strips_spoofed_peer_headers_int_test() {
 
     let tcp = tokio::net::TcpStream::connect(addr).await.unwrap();
     let server_name = rustls::pki_types::ServerName::try_from("localhost").unwrap();
-    let connector   = mtls_client_connector(&m.client_cert_pem, &m.client_key_pem);
-    let tls = connector.connect(server_name, tcp).await.expect("TLS handshake");
-    let io  = TokioIo::new(tls);
+    let connector = mtls_client_connector(&m.client_cert_pem, &m.client_key_pem);
+    let tls = connector
+        .connect(server_name, tcp)
+        .await
+        .expect("TLS handshake");
+    let io = TokioIo::new(tls);
     let (mut sender, conn) = hyper::client::conn::http2::Builder::new(TokioExecutor::new())
         .handshake(io)
         .await
@@ -321,10 +359,10 @@ async fn mtls_server_strips_spoofed_peer_headers_int_test() {
         .body(Full::new(grpc_frame(b"spoof-attempt")))
         .unwrap();
     let resp = sender.send_request(req).await.unwrap();
-    let _    = resp.into_body().collect().await.unwrap();
+    let _ = resp.into_body().collect().await.unwrap();
 
     let snapshot = captured.lock().unwrap().clone().expect("metadata captured");
-    let cn   = snapshot.headers.get(PEER_CN).cloned();
+    let cn = snapshot.headers.get(PEER_CN).cloned();
 
     assert_eq!(
         cn.as_deref(),

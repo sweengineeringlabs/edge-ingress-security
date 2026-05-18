@@ -27,14 +27,18 @@ pub enum HttpDispatcherError {
 /// matching.
 pub struct HttpHandlerRegistryDispatcher {
     pub(crate) registry: Arc<HandlerRegistry<HttpRequest, HttpResponse>>,
-    pub(crate) router:   RwLock<matchit::Router<String>>,
-    pub(crate) metrics:  Option<Arc<dyn MetricsProvider>>,
+    pub(crate) router: RwLock<matchit::Router<String>>,
+    pub(crate) metrics: Option<Arc<dyn MetricsProvider>>,
 }
 
 impl HttpHandlerRegistryDispatcher {
     /// Construct a dispatcher backed by `registry`.
     pub fn new(registry: Arc<HandlerRegistry<HttpRequest, HttpResponse>>) -> Self {
-        Self { registry, router: RwLock::new(matchit::Router::new()), metrics: None }
+        Self {
+            registry,
+            router: RwLock::new(matchit::Router::new()),
+            metrics: None,
+        }
     }
 
     /// Attach a metrics provider; per-handler counters and latency histograms
@@ -50,15 +54,19 @@ impl HttpHandlerRegistryDispatcher {
         adapter: HttpHandlerAdapter<Req, Resp>,
     ) -> Result<(), HttpDispatcherError>
     where
-        Req:  Send + 'static,
+        Req: Send + 'static,
         Resp: Send + 'static,
     {
-        let id      = adapter.id().to_string();
+        let id = adapter.id().to_string();
         let pattern = adapter.pattern().to_string();
         self.registry.register(Arc::new(adapter));
-        self.router.write().insert(pattern.clone(), id).map_err(|e| {
-            HttpDispatcherError::RegistrationFailed { pattern, reason: e.to_string() }
-        })
+        self.router
+            .write()
+            .insert(pattern.clone(), id)
+            .map_err(|e| HttpDispatcherError::RegistrationFailed {
+                pattern,
+                reason: e.to_string(),
+            })
     }
 
     /// Borrow the inner registry.
@@ -69,9 +77,9 @@ impl HttpHandlerRegistryDispatcher {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-    use edge_domain::HandlerRegistry;
     use super::*;
+    use edge_domain::HandlerRegistry;
+    use std::sync::Arc;
 
     fn fresh_dispatcher() -> HttpHandlerRegistryDispatcher {
         HttpHandlerRegistryDispatcher::new(Arc::new(HandlerRegistry::new()))
@@ -97,7 +105,7 @@ mod tests {
     fn test_http_dispatcher_error_formats_with_pattern_and_reason() {
         let e = HttpDispatcherError::RegistrationFailed {
             pattern: "/api/v1".into(),
-            reason:  "conflict".into(),
+            reason: "conflict".into(),
         };
         let msg = e.to_string();
         assert!(msg.contains("/api/v1"), "{msg}");

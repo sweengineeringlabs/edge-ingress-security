@@ -25,16 +25,16 @@ use crate::api::value_object::GrpcStatusCode;
 #[derive(Debug, Clone)]
 pub struct AuditEvent {
     /// Timestamp captured at dispatch time.
-    pub timestamp:   SystemTime,
+    pub timestamp: SystemTime,
     /// Fully-qualified gRPC method path
     /// (e.g. `"/pkg.Service/Method"`).
-    pub method:      String,
+    pub method: String,
     /// Caller identity — `None` when the request was accepted under
     /// `allow_unauthenticated = true`.  Otherwise carries the
     /// fully-qualified principal name set by the authn / authz chain.
-    pub identity:    Option<String>,
+    pub identity: Option<String>,
     /// Final gRPC status code returned to the wire.
-    pub status:      GrpcStatusCode,
+    pub status: GrpcStatusCode,
     /// Wall-clock duration of the dispatch in milliseconds.
     pub duration_ms: u64,
 }
@@ -62,7 +62,9 @@ impl AuditSink for NoopAuditSink {
 }
 
 impl Default for NoopAuditSink {
-    fn default() -> Self { Self }
+    fn default() -> Self {
+        Self
+    }
 }
 
 #[cfg(test)]
@@ -94,10 +96,10 @@ mod tests {
     fn test_noop_audit_sink_record_drops_events_silently() {
         let sink = NoopAuditSink;
         sink.record(AuditEvent {
-            timestamp:   SystemTime::now(),
-            method:      "/svc/M".into(),
-            identity:    Some("alice".into()),
-            status:      GrpcStatusCode::Ok,
+            timestamp: SystemTime::now(),
+            method: "/svc/M".into(),
+            identity: Some("alice".into()),
+            status: GrpcStatusCode::Ok,
             duration_ms: 1,
         });
     }
@@ -106,19 +108,21 @@ mod tests {
     #[test]
     fn test_capturing_sink_record_receives_every_event() {
         let events = Arc::new(Mutex::new(Vec::new()));
-        let sink = CapturingAuditSink { events: events.clone() };
+        let sink = CapturingAuditSink {
+            events: events.clone(),
+        };
         sink.record(AuditEvent {
-            timestamp:   SystemTime::UNIX_EPOCH,
-            method:      "/svc/A".into(),
-            identity:    Some("alice".into()),
-            status:      GrpcStatusCode::Ok,
+            timestamp: SystemTime::UNIX_EPOCH,
+            method: "/svc/A".into(),
+            identity: Some("alice".into()),
+            status: GrpcStatusCode::Ok,
             duration_ms: 5,
         });
         sink.record(AuditEvent {
-            timestamp:   SystemTime::UNIX_EPOCH,
-            method:      "/svc/B".into(),
-            identity:    None,
-            status:      GrpcStatusCode::PermissionDenied,
+            timestamp: SystemTime::UNIX_EPOCH,
+            method: "/svc/B".into(),
+            identity: None,
+            status: GrpcStatusCode::PermissionDenied,
             duration_ms: 7,
         });
         let captured = events.lock().unwrap().clone();

@@ -20,7 +20,9 @@ pub struct TraceContextInterceptor {}
 
 impl TraceContextInterceptor {
     /// Construct a default extractor.
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 
 #[cfg(test)]
@@ -37,6 +39,6 @@ mod tests {
     #[test]
     fn test_header_constants_are_lowercase() {
         assert_eq!(TRACEPARENT, TRACEPARENT.to_lowercase());
-        assert_eq!(TRACESTATE,  TRACESTATE.to_lowercase());
+        assert_eq!(TRACESTATE, TRACESTATE.to_lowercase());
     }
 }

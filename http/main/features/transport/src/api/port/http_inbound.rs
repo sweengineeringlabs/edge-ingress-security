@@ -26,9 +26,21 @@ pub enum HttpInboundError {
     /// Operation timed out.
     #[error("timeout: {0}")]
     Timeout(String),
+    /// Caller is not authenticated.
+    #[error("unauthorized: {0}")]
+    Unauthorized(String),
     /// Caller lacks permission.
     #[error("permission denied: {0}")]
     PermissionDenied(String),
+    /// The operation conflicts with existing state.
+    #[error("conflict: {0}")]
+    Conflict(String),
+    /// The handler does not support the requested operation. Maps to HTTP 405.
+    #[error("method not allowed: {0}")]
+    MethodNotAllowed(String),
+    /// The request is valid but rejected by a business rule or precondition. Maps to HTTP 422.
+    #[error("unprocessable entity: {0}")]
+    UnprocessableEntity(String),
 }
 
 /// Minimal health-check result for the HTTP domain.
@@ -42,9 +54,19 @@ pub struct HttpHealthCheck {
 
 impl HttpHealthCheck {
     /// Create a healthy result.
-    pub fn healthy() -> Self { Self { healthy: true, message: None } }
+    pub fn healthy() -> Self {
+        Self {
+            healthy: true,
+            message: None,
+        }
+    }
     /// Create an unhealthy result with a message.
-    pub fn unhealthy(msg: impl Into<String>) -> Self { Self { healthy: false, message: Some(msg.into()) } }
+    pub fn unhealthy(msg: impl Into<String>) -> Self {
+        Self {
+            healthy: false,
+            message: Some(msg.into()),
+        }
+    }
 }
 
 /// Receives and handles inbound HTTP requests.
@@ -53,7 +75,11 @@ pub trait HttpInbound: Send + Sync {
     ///
     /// `ctx` carries the authenticated identity, tenant, and trace metadata
     /// extracted by the ingress middleware stack before dispatch.
-    fn handle(&self, request: HttpRequest, ctx: RequestContext) -> BoxFuture<'_, HttpInboundResult<HttpResponse>>;
+    fn handle(
+        &self,
+        request: HttpRequest,
+        ctx: RequestContext,
+    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>>;
     /// Perform a health check of this handler.
     fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>>;
 }

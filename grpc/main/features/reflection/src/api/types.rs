@@ -102,7 +102,10 @@ mod tests {
             error_message: "not found".into(),
         };
         match err {
-            ReflectionResponse::Error { error_code, error_message } => {
+            ReflectionResponse::Error {
+                error_code,
+                error_message,
+            } => {
                 assert_eq!(error_code, 5);
                 assert_eq!(error_message, "not found");
             }

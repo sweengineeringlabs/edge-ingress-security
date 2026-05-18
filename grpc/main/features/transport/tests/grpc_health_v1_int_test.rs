@@ -75,17 +75,16 @@ fn decode_status(payload: &[u8]) -> i32 {
     -1
 }
 
-async fn start_health_server(
-    health: Arc<HealthService>,
-) -> (SocketAddr, oneshot::Sender<()>) {
+async fn start_health_server(health: Arc<HealthService>) -> (SocketAddr, oneshot::Sender<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr     = listener.local_addr().unwrap();
-    let server   = TonicGrpcServer::new("127.0.0.1:0", health)
-        .allow_unauthenticated(true);
+    let addr = listener.local_addr().unwrap();
+    let server = TonicGrpcServer::new("127.0.0.1:0", health).allow_unauthenticated(true);
     let (tx, rx) = oneshot::channel::<()>();
     tokio::spawn(async move {
         server
-            .serve_with_listener(listener, async move { let _ = rx.await; })
+            .serve_with_listener(listener, async move {
+                let _ = rx.await;
+            })
             .await
             .unwrap();
     });
@@ -93,11 +92,7 @@ async fn start_health_server(
     (addr, tx)
 }
 
-async fn grpc_call(
-    addr: SocketAddr,
-    path: &str,
-    payload: &[u8],
-) -> (Option<String>, Bytes) {
+async fn grpc_call(addr: SocketAddr, path: &str, payload: &[u8]) -> (Option<String>, Bytes) {
     let stream = tokio::net::TcpStream::connect(addr).await.unwrap();
     let io = TokioIo::new(stream);
     let (mut sender, conn) = hyper::client::conn::http2::Builder::new(TokioExecutor::new())
@@ -114,7 +109,7 @@ async fn grpc_call(
         .body(Full::new(grpc_frame(payload)))
         .unwrap();
 
-    let resp      = sender.send_request(req).await.unwrap();
+    let resp = sender.send_request(req).await.unwrap();
     let collected = resp.into_body().collect().await.unwrap();
     let grpc_status = collected
         .trailers()
@@ -160,8 +155,7 @@ async fn test_health_check_empty_service_returns_overall_status_over_grpc_wire()
     health.set_overall_status(ServingStatus::Serving);
     let (addr, _shutdown) = start_health_server(health).await;
 
-    let (grpc_status, body) =
-        grpc_call(addr, HEALTH_CHECK_METHOD, &encode_check_request("")).await;
+    let (grpc_status, body) = grpc_call(addr, HEALTH_CHECK_METHOD, &encode_check_request("")).await;
     assert_eq!(grpc_status.as_deref(), Some("0"));
     let payload = parse_first_grpc_frame(&body).expect("response frame present");
     assert_eq!(decode_status(&payload), 1, "SERVING == 1");
@@ -172,8 +166,12 @@ async fn test_health_check_empty_service_returns_overall_status_over_grpc_wire()
 async fn test_health_check_returns_not_found_for_unregistered_service_over_grpc_wire() {
     let health = Arc::new(HealthService::new());
     let (addr, _shutdown) = start_health_server(health).await;
-    let (grpc_status, _) =
-        grpc_call(addr, HEALTH_CHECK_METHOD, &encode_check_request("never.registered")).await;
+    let (grpc_status, _) = grpc_call(
+        addr,
+        HEALTH_CHECK_METHOD,
+        &encode_check_request("never.registered"),
+    )
+    .await;
     // tonic::Code::NotFound == 5
     assert_eq!(grpc_status.as_deref(), Some("5"));
 }
@@ -192,23 +190,33 @@ async fn test_health_check_returns_not_found_for_unregistered_service_over_grpc_
 #[tokio::test]
 async fn test_health_watch_streams_initial_snapshot_then_status_change() {
     use futures::StreamExt;
-    use swe_edge_ingress_grpc_transport::{GrpcInbound, GrpcMessageStream, GrpcMetadata, RequestContext};
+    use swe_edge_ingress_grpc_transport::{
+        GrpcInbound, GrpcMessageStream, GrpcMetadata, RequestContext,
+    };
 
     let health = Arc::new(HealthService::new());
     health.set_status("pkg.A", ServingStatus::Serving);
 
     // Feed a single Watch request frame to handle_stream directly.
     let request_body = encode_check_request("pkg.A");
-    let messages: GrpcMessageStream =
-        Box::pin(futures::stream::once(futures::future::ready(Ok(request_body))));
+    let messages: GrpcMessageStream = Box::pin(futures::stream::once(futures::future::ready(Ok(
+        request_body,
+    ))));
 
     let (mut stream, _meta) = health
-        .handle_stream(HEALTH_WATCH_METHOD.to_string(), GrpcMetadata::default(), messages, RequestContext::unauthenticated())
+        .handle_stream(
+            HEALTH_WATCH_METHOD.to_string(),
+            GrpcMetadata::default(),
+            messages,
+            RequestContext::unauthenticated(),
+        )
         .await
         .expect("handle_stream must not fail");
 
     // First frame: initial snapshot (SERVING = 1).
-    let first = stream.next().await
+    let first = stream
+        .next()
+        .await
         .expect("stream must yield initial snapshot")
         .expect("initial frame must be Ok");
     assert_eq!(decode_status(&first), 1, "initial snapshot must be SERVING");
@@ -220,13 +228,14 @@ async fn test_health_watch_streams_initial_snapshot_then_status_change() {
     });
 
     // Second frame: status-change notification (NOT_SERVING = 2).
-    let second = tokio::time::timeout(
-        std::time::Duration::from_secs(5),
-        stream.next(),
-    )
-    .await
-    .expect("status-change frame must arrive within 5 s")
-    .expect("stream must yield status-change frame")
-    .expect("status-change frame must be Ok");
-    assert_eq!(decode_status(&second), 2, "status-change must be NOT_SERVING");
+    let second = tokio::time::timeout(std::time::Duration::from_secs(5), stream.next())
+        .await
+        .expect("status-change frame must arrive within 5 s")
+        .expect("stream must yield status-change frame")
+        .expect("status-change frame must be Ok");
+    assert_eq!(
+        decode_status(&second),
+        2,
+        "status-change must be NOT_SERVING"
+    );
 }

@@ -2,8 +2,8 @@
 name         = "swe-edge-ingress-verifier"
 version      = "0.1.0"
 edition      = "2021"
-license      = "MIT"
-rust-version = "1.75"
+license      = "MIT OR Apache-2.0"
+rust-version = "1.95"
 authors      = ["SWE Engineering Labs"]
 repository   = "https://github.com/sweengineeringlabs/edge"
 description  = "Protocol-agnostic inbound credential verification — JWT, API key, client cert."
@@ -23,6 +23,7 @@ thiserror    = "2"
 tracing      = "0.1"
 jsonwebtoken = "9"
 subtle       = "2"
+edge-domain  = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.3.4" }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros", "rt"] }

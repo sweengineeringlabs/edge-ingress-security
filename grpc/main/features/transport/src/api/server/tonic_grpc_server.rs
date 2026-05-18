@@ -12,7 +12,7 @@ use crate::api::value_object::{CompressionMode, GrpcServerConfig};
 /// Panic message when no `AuthorizationInterceptor` is registered and `allow_unauthenticated` is false.
 pub const MISSING_AUTHORIZATION_INTERCEPTOR_MSG: &str =
     "gRPC server requires an AuthorizationInterceptor in the chain \
-     (e.g. swe-edge-egress-grpc-authz::AuthzInterceptor). To explicitly run \
+     (e.g. swe-edge-ingress-grpc-authz::AuthzInterceptor). To explicitly run \
      without authz, set `allow_unauthenticated = true` in \
      GrpcServerConfig (logged at startup as a warning).";
 
@@ -52,54 +52,54 @@ pub enum GrpcServerConfigError {
 
 /// gRPC server that routes all unary requests through a [`GrpcInbound`] port.
 pub struct TonicGrpcServer {
-    pub(crate) bind:                   String,
-    pub(crate) handler:                Arc<dyn GrpcInbound>,
-    pub(crate) max_bytes:              usize,
+    pub(crate) bind: String,
+    pub(crate) handler: Arc<dyn GrpcInbound>,
+    pub(crate) max_bytes: usize,
     pub(crate) max_concurrent_streams: u32,
-    pub(crate) tls:                    Option<IngressTlsConfig>,
-    pub(crate) interceptors:           GrpcInboundInterceptorChain,
-    pub(crate) compression:            CompressionMode,
-    pub(crate) allow_unauthenticated:  bool,
-    pub(crate) audit_sink:             Arc<dyn AuditSink>,
-    pub(crate) enable_reflection:      bool,
+    pub(crate) tls: Option<IngressTlsConfig>,
+    pub(crate) interceptors: GrpcInboundInterceptorChain,
+    pub(crate) compression: CompressionMode,
+    pub(crate) allow_unauthenticated: bool,
+    pub(crate) audit_sink: Arc<dyn AuditSink>,
+    pub(crate) enable_reflection: bool,
 }
 
 impl TonicGrpcServer {
     /// Create a server that will bind to `bind` and delegate to `handler`.
     pub fn new(bind: impl Into<String>, handler: Arc<dyn GrpcInbound>) -> Self {
         Self {
-            bind:                   bind.into(),
+            bind: bind.into(),
             handler,
-            max_bytes:              MAX_MESSAGE_BYTES,
+            max_bytes: MAX_MESSAGE_BYTES,
             max_concurrent_streams: 100,
-            tls:                    None,
-            interceptors:           GrpcInboundInterceptorChain::new(),
-            compression:            CompressionMode::None,
-            allow_unauthenticated:  false,
-            audit_sink:             Arc::new(NoopAuditSink),
-            enable_reflection:      false,
+            tls: None,
+            interceptors: GrpcInboundInterceptorChain::new(),
+            compression: CompressionMode::None,
+            allow_unauthenticated: false,
+            audit_sink: Arc::new(NoopAuditSink),
+            enable_reflection: false,
         }
     }
 
     /// Construct a server from a [`GrpcServerConfig`].
     pub fn from_config(
-        config:  &GrpcServerConfig,
+        config: &GrpcServerConfig,
         handler: Arc<dyn GrpcInbound>,
     ) -> Result<Self, GrpcServerConfigError> {
         if config.tls_required && config.tls.is_none() {
             return Err(GrpcServerConfigError::TlsRequiredButMissing);
         }
         Ok(Self {
-            bind:                   config.bind.to_string(),
+            bind: config.bind.to_string(),
             handler,
-            max_bytes:              config.max_message_bytes,
+            max_bytes: config.max_message_bytes,
             max_concurrent_streams: config.max_concurrent_streams,
-            tls:                    config.tls.clone(),
-            interceptors:           GrpcInboundInterceptorChain::new(),
-            compression:            config.compression,
-            allow_unauthenticated:  config.allow_unauthenticated,
-            audit_sink:             Arc::new(NoopAuditSink),
-            enable_reflection:      config.enable_reflection,
+            tls: config.tls.clone(),
+            interceptors: GrpcInboundInterceptorChain::new(),
+            compression: config.compression,
+            allow_unauthenticated: config.allow_unauthenticated,
+            audit_sink: Arc::new(NoopAuditSink),
+            enable_reflection: config.enable_reflection,
         })
     }
 
@@ -110,7 +110,9 @@ impl TonicGrpcServer {
     }
 
     /// Returns `true` if gRPC reflection is enabled.
-    pub fn is_reflection_enabled(&self) -> bool { self.enable_reflection }
+    pub fn is_reflection_enabled(&self) -> bool {
+        self.enable_reflection
+    }
 
     /// Replace the default no-op audit sink with a custom implementation.
     pub fn with_audit_sink(mut self, sink: Arc<dyn AuditSink>) -> Self {
@@ -157,17 +159,26 @@ impl TonicGrpcServer {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use super::*;
+    use crate::api::port::grpc_inbound::{GrpcHealthCheck, GrpcInbound, GrpcInboundResult};
+    use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
     use edge_domain::RequestContext;
-    use crate::api::port::grpc_inbound::{GrpcInbound, GrpcHealthCheck, GrpcInboundResult};
-    use crate::api::value_object::{GrpcRequest, GrpcResponse, GrpcMetadata};
     use futures::future::BoxFuture;
+    use std::sync::Arc;
 
     struct DummyHandler;
     impl GrpcInbound for DummyHandler {
-        fn handle_unary(&self, _: GrpcRequest, _ctx: RequestContext) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
-            Box::pin(async { Ok(GrpcResponse { body: vec![], metadata: GrpcMetadata::default() }) })
+        fn handle_unary(
+            &self,
+            _: GrpcRequest,
+            _ctx: RequestContext,
+        ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+            Box::pin(async {
+                Ok(GrpcResponse {
+                    body: vec![],
+                    metadata: GrpcMetadata::default(),
+                })
+            })
         }
         fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
             Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
@@ -186,7 +197,10 @@ mod tests {
     #[test]
     fn test_from_config_returns_err_when_tls_required_but_no_tls_config() {
         use crate::api::value_object::GrpcServerConfig;
-        let cfg = GrpcServerConfig { tls_required: true, ..Default::default() };
+        let cfg = GrpcServerConfig {
+            tls_required: true,
+            ..Default::default()
+        };
         let res = TonicGrpcServer::from_config(&cfg, Arc::new(DummyHandler));
         assert!(res.is_err());
     }
@@ -194,16 +208,15 @@ mod tests {
     /// @covers: allow_unauthenticated — sets flag.
     #[test]
     fn test_allow_unauthenticated_sets_the_flag() {
-        let s = TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler))
-            .allow_unauthenticated(true);
+        let s =
+            TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler)).allow_unauthenticated(true);
         assert!(s.allow_unauthenticated);
     }
 
     /// @covers: enable_reflection, is_reflection_enabled.
     #[test]
     fn test_enable_reflection_sets_and_reads_the_flag() {
-        let s = TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler))
-            .enable_reflection(true);
+        let s = TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler)).enable_reflection(true);
         assert!(s.is_reflection_enabled());
     }
 

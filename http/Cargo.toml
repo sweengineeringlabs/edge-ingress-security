@@ -8,8 +8,8 @@ members = [
 [workspace.package]
 version      = "0.1.0"
 edition      = "2021"
-license      = "MIT"
-rust-version = "1.75"
+license      = "MIT OR Apache-2.0"
+rust-version = "1.95"
 authors      = ["SWE Engineering Labs"]
 repository   = "https://github.com/sweengineeringlabs/edge"
 
@@ -30,7 +30,7 @@ reqwest     = { version = "0.12", features = ["json"], default-features = false 
 # Path deps (tls + verifier are members of ingress/grpc workspace)
 swe-edge-ingress-tls      = { path = "../tls" }
 swe-edge-ingress-verifier = { path = "../verifier" }
-edge-domain               = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+edge-domain               = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.3.4" }
 swe-observ-metrics        = { package = "swe_justobserv_metrics",  git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 swe_justobserv_context    = { git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 
