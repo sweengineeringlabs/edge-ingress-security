@@ -12,8 +12,8 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use async_trait::async_trait;
 use bytes::{BufMut, Bytes, BytesMut};
+use futures::future::BoxFuture;
 use http::Request;
 use http_body_util::{BodyExt, Full};
 use hyper_util::rt::{TokioExecutor, TokioIo};
@@ -53,7 +53,7 @@ fn encode_triple_resp(resp: &TripleResp) -> Vec<u8> {
 
 struct TripleHandler;
 
-#[async_trait]
+#[async_trait::async_trait]
 impl Handler<TripleReq, TripleResp> for TripleHandler {
     fn id(&self) -> &str {
         "/pkg.Math/Triple"

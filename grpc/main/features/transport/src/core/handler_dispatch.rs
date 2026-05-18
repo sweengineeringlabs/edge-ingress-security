@@ -103,8 +103,8 @@ mod tests {
     use std::sync::Arc;
     use std::time::Duration;
 
-    use async_trait::async_trait;
     use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
+    use futures::future::BoxFuture;
 
     use crate::api::handler_adapter::GrpcHandlerAdapter;
     use crate::api::handler_dispatch::GrpcHandlerRegistryDispatcher;
@@ -136,7 +136,7 @@ mod tests {
     }
 
     struct DoublingHandler;
-    #[async_trait]
+    #[async_trait::async_trait]
     impl Handler<TestReq, TestResp> for DoublingHandler {
         fn id(&self) -> &str {
             "/pkg.Service/Double"
@@ -234,7 +234,7 @@ mod tests {
         use std::sync::Arc;
         use swe_observ_metrics::{create_local_metrics_backend, MetricsProvider};
         struct BoomHandler;
-        #[async_trait]
+        #[async_trait::async_trait]
         impl Handler<TestReq, TestResp> for BoomHandler {
             fn id(&self) -> &str {
                 "/pkg.Service/Boom"

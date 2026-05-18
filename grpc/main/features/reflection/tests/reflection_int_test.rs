@@ -22,8 +22,8 @@
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 
-use async_trait::async_trait;
 use bytes::{BufMut, Bytes, BytesMut};
+use futures::future::BoxFuture;
 use http::Request;
 use http_body_util::{BodyExt, Full};
 use hyper_util::rt::{TokioExecutor, TokioIo};
@@ -57,7 +57,7 @@ fn encode_echo(resp: &EchoResp) -> Vec<u8> {
 
 struct EchoHandler;
 
-#[async_trait]
+#[async_trait::async_trait]
 impl Handler<EchoReq, EchoResp> for EchoHandler {
     fn id(&self) -> &str {
         "/pkg.Demo/Echo"
@@ -81,7 +81,7 @@ struct ReflectionHandlerWrapper {
     service: Arc<ReflectionService>,
 }
 
-#[async_trait]
+#[async_trait::async_trait]
 impl Handler<Vec<u8>, Vec<u8>> for ReflectionHandlerWrapper {
     fn id(&self) -> &str {
         REFLECTION_INFO_METHOD

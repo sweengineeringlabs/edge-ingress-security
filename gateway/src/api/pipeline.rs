@@ -1,10 +1,9 @@
 //! Pipeline and Router traits.
 
 use crate::api::ingress_error::IngressError;
-use async_trait::async_trait;
+use futures::future::BoxFuture;
 
 /// Router — dispatches a request to produce a response.
-#[async_trait]
 pub trait Router<
     Req: Send + Sync + 'static = serde_json::Value,
     Resp: Send + Sync + 'static = serde_json::Value,
@@ -12,11 +11,10 @@ pub trait Router<
 >: Send + Sync
 {
     /// Dispatch the request and return a response or error.
-    async fn dispatch(&self, request: &Req) -> Result<Resp, Err>;
+    fn dispatch<'a>(&'a self, request: &'a Req) -> BoxFuture<'a, Result<Resp, Err>>;
 }
 
 /// Pipeline — executes a request through an ordered chain of stages.
-#[async_trait]
 pub trait Pipeline<
     Req: Send + Sync + 'static = serde_json::Value,
     Resp: Send + Sync + 'static = serde_json::Value,
@@ -24,7 +22,7 @@ pub trait Pipeline<
 >: Send + Sync
 {
     /// Execute the request through all pipeline stages.
-    async fn execute(&self, request: Req) -> Result<Resp, Err>;
+    fn execute(&self, request: Req) -> BoxFuture<'_, Result<Resp, Err>>;
 }
 
 #[cfg(test)]
