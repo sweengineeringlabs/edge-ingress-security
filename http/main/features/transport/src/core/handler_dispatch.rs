@@ -113,7 +113,6 @@ fn map_handler_error(err: HandlerError) -> HttpInboundError {
 mod tests {
     use std::sync::Arc;
 
-    use async_trait::async_trait;
     use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
 
     use super::*;
@@ -122,7 +121,7 @@ mod tests {
     use crate::api::value_object::HttpRequest;
 
     struct PingHandler;
-    #[async_trait]
+    #[async_trait::async_trait]
     impl Handler<HttpRequest, HttpResponse> for PingHandler {
         fn id(&self) -> &str {
             "ping"
@@ -248,7 +247,7 @@ mod tests {
         use std::sync::Arc;
         use swe_observ_metrics::{create_local_metrics_backend, MetricsProvider};
         struct FailHandler;
-        #[async_trait]
+        #[async_trait::async_trait]
         impl Handler<HttpRequest, HttpResponse> for FailHandler {
             fn id(&self) -> &str {
                 "fail"

@@ -151,7 +151,7 @@ mod tests {
 
     struct DoublingHandler;
 
-    #[async_trait]
+    #[async_trait::async_trait]
     impl Handler<TestReq, TestResp> for DoublingHandler {
         fn id(&self) -> &str {
             "/pkg.Service/Double"
@@ -168,7 +168,7 @@ mod tests {
 
     struct UnhealthyHandler;
 
-    #[async_trait]
+    #[async_trait::async_trait]
     impl Handler<TestReq, TestResp> for UnhealthyHandler {
         fn id(&self) -> &str {
             "/pkg.Service/Sick"
