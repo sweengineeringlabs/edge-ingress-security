@@ -1,6 +1,6 @@
 //! Middleware traits for request/response pipeline processing.
 
-use async_trait::async_trait;
+use futures::future::BoxFuture;
 use crate::api::ingress_error::IngressError;
 
 /// Action returned by request middleware.
@@ -10,26 +10,31 @@ pub enum MiddlewareAction<Req, Resp> {
 }
 
 /// Middleware that intercepts inbound requests.
-#[async_trait]
 pub trait RequestMiddleware<
     Req: Send + Sync + 'static = serde_json::Value,
     Err: Send + Sync + 'static = IngressError,
     Resp: Send + Sync + 'static = serde_json::Value,
 >: Send + Sync {
-    async fn process_request(&self, request: Req) -> Result<Req, Err>;
+    fn process_request(&self, request: Req) -> BoxFuture<'_, Result<Req, Err>>;
 
-    async fn process_request_action(&self, request: Req) -> Result<MiddlewareAction<Req, Resp>, Err> {
-        self.process_request(request).await.map(MiddlewareAction::Continue)
+    fn process_request_action(
+        &self,
+        request: Req,
+    ) -> BoxFuture<'_, Result<MiddlewareAction<Req, Resp>, Err>> {
+        Box::pin(async move {
+            self.process_request(request)
+                .await
+                .map(MiddlewareAction::Continue)
+        })
     }
 }
 
 /// Middleware that intercepts outbound responses.
-#[async_trait]
 pub trait ResponseMiddleware<
     Resp: Send + Sync + 'static = serde_json::Value,
     Err: Send + Sync + 'static = IngressError,
 >: Send + Sync {
-    async fn process_response(&self, response: Resp) -> Result<Resp, Err>;
+    fn process_response(&self, response: Resp) -> BoxFuture<'_, Result<Resp, Err>>;
 }
 
 #[cfg(test)]
