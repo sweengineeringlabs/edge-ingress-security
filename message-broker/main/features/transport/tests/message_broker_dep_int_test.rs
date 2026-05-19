@@ -1,8 +1,8 @@
-//! Integration test — exercises `swe-edge-message-broker` dep directly.
+//! Integration test — exercises `swe-edge-runtime-message-broker` dep directly.
 
 #[cfg(feature = "in-memory")]
 mod tests {
-    use swe_edge_message_broker::{in_memory_broker, Message, MessageBroker};
+    use swe_edge_runtime_message_broker::{in_memory_broker, Message, MessageBroker};
 
     #[tokio::test]
     async fn test_message_broker_dep_health_check_returns_ok() {

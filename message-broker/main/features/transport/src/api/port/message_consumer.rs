@@ -1,7 +1,7 @@
 //! `MessageConsumer` — ingress port for inbound message consumption.
 
 use futures::future::BoxFuture;
-use swe_edge_message_broker::MessageStream;
+use swe_edge_runtime_message_broker::MessageStream;
 
 use crate::api::port::consumer::consumer_result::ConsumerResult;
 

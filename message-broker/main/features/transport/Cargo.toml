@@ -21,16 +21,16 @@ path = "src/lib.rs"
 [features]
 default   = []
 # In-memory broadcast consumer — for testing and single-process deployments.
-in-memory = ["swe-edge-message-broker/tokio-rt"]
+in-memory = ["swe-edge-runtime-message-broker/tokio-rt"]
 # NATS-backed consumer.
-nats      = ["swe-edge-message-broker/nats"]
+nats      = ["swe-edge-runtime-message-broker/nats"]
 
 [dependencies]
-thiserror.workspace             = true
-futures.workspace               = true
-tokio.workspace                 = true
-tracing.workspace               = true
-swe-edge-message-broker.workspace = true
+thiserror.workspace                     = true
+futures.workspace                       = true
+tokio.workspace                         = true
+tracing.workspace                       = true
+swe-edge-runtime-message-broker.workspace = true
 
 [dev-dependencies]
 tokio   = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }

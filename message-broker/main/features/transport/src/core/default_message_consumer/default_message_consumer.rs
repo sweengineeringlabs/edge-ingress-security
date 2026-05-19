@@ -1,9 +1,9 @@
-//! In-memory `MessageConsumer` backed by `swe_edge_message_broker::in_memory_broker()`.
+//! In-memory `MessageConsumer` backed by `swe_edge_runtime_message_broker::in_memory_broker()`.
 
 use std::sync::Arc;
 
 use futures::future::BoxFuture;
-use swe_edge_message_broker::{in_memory_broker, MessageBroker, MessageStream};
+use swe_edge_runtime_message_broker::{in_memory_broker, MessageBroker, MessageStream};
 
 use crate::api::port::consumer::consumer_error::ConsumerError;
 use crate::api::port::consumer::consumer_result::ConsumerResult;

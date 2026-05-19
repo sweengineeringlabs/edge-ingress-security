@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use futures::future::BoxFuture;
-use swe_edge_message_broker::{BrokerError, MessageBroker, MessageStream};
+use swe_edge_runtime_message_broker::{BrokerError, MessageBroker, MessageStream};
 
 use crate::api::port::consumer::consumer_error::ConsumerError;
 use crate::api::port::consumer::consumer_result::ConsumerResult;
@@ -56,7 +56,7 @@ mod tests {
         fn publish<'a>(
             &'a self,
             _: &'a str,
-            _: swe_edge_message_broker::Message,
+            _: swe_edge_runtime_message_broker::Message,
         ) -> futures::future::BoxFuture<'a, Result<(), BrokerError>> {
             Box::pin(futures::future::ready(Ok(())))
         }
