@@ -1,6 +1,7 @@
 //! Health service declarations.
 
 pub(crate) mod health;
+#[allow(clippy::module_inception)]
 pub(crate) mod health_service;
 pub(crate) mod serving_status;
 

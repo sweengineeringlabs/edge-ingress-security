@@ -22,7 +22,9 @@ use crate::api::audit_sink::{AuditEvent, AuditSink};
 use crate::api::grpc_timeout::{parse_grpc_timeout, DEFAULT_DEADLINE};
 use crate::api::interceptor::GrpcInboundInterceptorChain;
 use crate::api::peer_identity::extract_peer_identity;
-use crate::api::port::grpc_inbound::{GrpcInbound, GrpcInboundError, GrpcMessageStream};
+use crate::api::port::grpc_inbound::{
+    GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcMessageStream,
+};
 use crate::api::server::{
     TonicGrpcServer, TonicServerError, MISSING_AUTHORIZATION_INTERCEPTOR_MSG,
     REFLECTION_ENABLED_WARN_MSG,
@@ -365,16 +367,22 @@ async fn dispatch(
         RequestContext::unauthenticated()
     };
 
-    // Race the handler future against the deadline — past-deadline
-    // mid-handler is a server-side `DeadlineExceeded` and must NOT
-    // propagate handler partial output.
-    let handler_fut = handler.handle_stream(
+    // Route to the named streaming variant indicated by the client,
+    // falling back to `handle_stream` for backward compatibility.
+    let stream_type = merged_headers
+        .get("x-grpc-stream-type")
+        .cloned()
+        .unwrap_or_default();
+    let handler_fut = route_dispatch(
+        handler.clone(),
+        stream_type.as_str(),
         method.clone(),
         GrpcMetadata {
             headers: merged_headers,
         },
         message_stream,
         ctx,
+        deadline,
     );
     let cancel_fut = cancel.cancelled();
 
@@ -467,6 +475,57 @@ async fn dispatch(
             let (code, msg) = map_inbound_error(e);
             emit(code, grpc_error(code, msg))
         }
+    }
+}
+
+/// Route a request to the correct [`GrpcInbound`] streaming variant.
+///
+/// `x-grpc-stream-type` header values and their targets:
+/// - `"server-stream"` → [`GrpcInbound::handle_server_stream`] (unary request, streaming response)
+/// - `"client-stream"` → [`GrpcInbound::handle_client_stream`] (streaming request, single response)
+/// - `"bidi-stream"`   → [`GrpcInbound::handle_bidi_stream`]   (streaming both directions)
+/// - absent / any other value → [`GrpcInbound::handle_stream`] (backward-compatible default)
+///
+/// All branches normalise to `(GrpcMessageStream, GrpcMetadata)` so the rest of the
+/// dispatch pipeline (drain → interceptors → wire encoding) is unchanged.
+async fn route_dispatch(
+    handler: Arc<dyn GrpcInbound>,
+    stream_type: &str,
+    method: String,
+    metadata: GrpcMetadata,
+    messages: GrpcMessageStream,
+    ctx: RequestContext,
+    deadline: Duration,
+) -> GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)> {
+    use futures::StreamExt;
+    match stream_type {
+        "server-stream" => {
+            // Single request frame → streaming response.
+            let mut s = messages;
+            let body = match s.next().await {
+                Some(Ok(b)) => b,
+                Some(Err(e)) => return Err(e),
+                None => vec![],
+            };
+            let req = GrpcRequest::new(method, body, deadline).with_metadata(metadata);
+            let out = handler.handle_server_stream(req, ctx).await?;
+            Ok((out, GrpcMetadata::default()))
+        }
+        "client-stream" => {
+            // Streaming request → single response wrapped in a one-item stream.
+            let resp = handler
+                .handle_client_stream(method, metadata, messages, ctx)
+                .await?;
+            let out: GrpcMessageStream =
+                Box::pin(futures::stream::once(futures::future::ready(Ok(resp.body))));
+            Ok((out, resp.metadata))
+        }
+        "bidi-stream" => {
+            handler
+                .handle_bidi_stream(method, metadata, messages, ctx)
+                .await
+        }
+        _ => handler.handle_stream(method, metadata, messages, ctx).await,
     }
 }
 
