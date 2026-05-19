@@ -1,0 +1,56 @@
+[package]
+name         = "swe-edge-ingress-message-broker"
+version.workspace     = true
+edition.workspace     = true
+license.workspace     = true
+rust-version.workspace = true
+authors.workspace     = true
+repository.workspace  = true
+description  = "edge — ingress message consumer: opt-in MessageConsumer port with in-memory and NATS backends."
+keywords     = ["message-broker", "pubsub", "ingress", "nats", "swe"]
+categories   = ["network-programming", "asynchronous"]
+
+[package.metadata.struct-engine]
+application_type = "lib"
+service_type     = "transport"
+
+[lib]
+name = "swe_edge_ingress_message_broker"
+path = "src/lib.rs"
+
+[features]
+default   = []
+# In-memory broadcast consumer — for testing and single-process deployments.
+in-memory = ["swe-edge-message-broker/tokio-rt"]
+# NATS-backed consumer.
+nats      = ["swe-edge-message-broker/nats"]
+
+[dependencies]
+thiserror.workspace             = true
+futures.workspace               = true
+tokio.workspace                 = true
+tracing.workspace               = true
+swe-edge-message-broker.workspace = true
+
+[dev-dependencies]
+tokio   = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+futures = { workspace = true }
+
+[[test]]
+name = "consumer_int_test"
+path = "tests/consumer_int_test.rs"
+
+[[test]]
+name = "validator_int_test"
+path = "tests/validator_int_test.rs"
+
+[[test]]
+name = "message_broker_dep_int_test"
+path = "tests/message_broker_dep_int_test.rs"
+
+[[test]]
+name = "saf_consumer_int_test"
+path = "tests/saf_consumer_int_test.rs"
+
+[lints]
+workspace = true
