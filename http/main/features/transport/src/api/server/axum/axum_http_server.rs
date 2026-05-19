@@ -5,6 +5,7 @@ use std::sync::Arc;
 use swe_edge_ingress_tls::IngressTlsConfig;
 use swe_edge_ingress_verifier::TokenVerifier;
 
+use crate::api::port::http::http_stream_inbound::HttpStreamInbound;
 use crate::api::port::http_inbound::HttpInbound;
 
 /// Default maximum inbound request body size (4 MiB).
@@ -18,6 +19,7 @@ pub struct AxumHttpServer {
     pub(crate) body_limit: usize,
     pub(crate) tls: Option<IngressTlsConfig>,
     pub(crate) bearer_verifier: Option<Arc<dyn TokenVerifier>>,
+    pub(crate) stream_handler: Option<Arc<dyn HttpStreamInbound>>,
 }
 
 impl AxumHttpServer {
@@ -29,7 +31,18 @@ impl AxumHttpServer {
             body_limit: MAX_BODY_BYTES,
             tls: None,
             bearer_verifier: None,
+            stream_handler: None,
         }
+    }
+
+    /// Attach an [`HttpStreamInbound`] handler for SSE and WebSocket requests.
+    ///
+    /// When set, `Accept: text/event-stream` requests route to
+    /// [`HttpStreamInbound::handle_sse`] and `Upgrade: websocket` requests
+    /// route to [`HttpStreamInbound::handle_websocket`].
+    pub fn with_stream_handler(mut self, handler: Arc<dyn HttpStreamInbound>) -> Self {
+        self.stream_handler = Some(handler);
+        self
     }
 
     /// Override the maximum request body size (default: [`MAX_BODY_BYTES`]).
@@ -109,6 +122,38 @@ mod tests {
         let cfg = IngressTlsConfig::tls("cert.pem", "key.pem");
         let s = AxumHttpServer::new("127.0.0.1:0", Arc::new(DummyHandler)).with_tls(cfg);
         assert!(s.tls.is_some());
+    }
+
+    /// @covers: with_stream_handler
+    #[test]
+    fn test_with_stream_handler_sets_stream_handler() {
+        use crate::api::port::http::http_stream_inbound::HttpStreamInbound;
+        use crate::api::port::http_inbound_result::HttpInboundResult;
+        use crate::api::value_object::sse::SseStream;
+        use crate::api::value_object::ws::WsChannel;
+
+        struct AxumHttpServerStreamStub;
+        impl HttpStreamInbound for AxumHttpServerStreamStub {
+            fn handle_sse(
+                &self,
+                _: crate::api::value_object::HttpRequest,
+                _: edge_domain::RequestContext,
+            ) -> futures::future::BoxFuture<'_, HttpInboundResult<SseStream>> {
+                Box::pin(async { Ok(Box::pin(futures::stream::empty()) as SseStream) })
+            }
+            fn handle_websocket(
+                &self,
+                _: crate::api::value_object::HttpRequest,
+                _: edge_domain::RequestContext,
+                _: WsChannel,
+            ) -> futures::future::BoxFuture<'_, HttpInboundResult<()>> {
+                Box::pin(async { Ok(()) })
+            }
+        }
+
+        let s = AxumHttpServer::new("127.0.0.1:0", Arc::new(DummyHandler))
+            .with_stream_handler(Arc::new(AxumHttpServerStreamStub));
+        assert!(s.stream_handler.is_some());
     }
 
     /// @covers: with_bearer_auth

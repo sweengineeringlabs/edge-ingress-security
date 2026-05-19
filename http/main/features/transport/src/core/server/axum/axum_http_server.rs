@@ -5,11 +5,15 @@ use std::convert::Infallible;
 use std::sync::Arc;
 
 use axum::http::StatusCode;
+use axum::response::IntoResponse as _;
 use axum::Router;
+use futures::StreamExt as _;
 use tokio::net::TcpListener;
 
+use crate::api::port::http::http_stream_inbound::HttpStreamInbound;
 use crate::api::port::http_inbound::HttpInbound;
 use crate::api::port::http_inbound_error::HttpInboundError;
+use crate::api::value_object::ws::{WsChannel, WsMessage};
 use edge_domain::RequestContext;
 use swe_edge_ingress_verifier::TokenVerifier;
 
@@ -68,15 +72,33 @@ impl AxumHttpServer {
             let handler = self.handler.clone();
             let body_limit = self.body_limit;
             let verifier = self.bearer_verifier.clone();
+            let stream_handler = self.stream_handler.clone();
 
             let app = Router::new().fallback(move |req: axum::extract::Request| {
                 let handler = handler.clone();
+                let stream_handler = stream_handler.clone();
                 let verifier = verifier.clone();
                 async move {
                     let req = match verify_auth(req, verifier.as_deref()) {
                         Ok(r) => r,
                         Err(rsp) => return rsp,
                     };
+
+                    // Streaming: WebSocket upgrade
+                    if is_websocket_upgrade(req.headers()) {
+                        if let Some(sh) = stream_handler {
+                            return dispatch_websocket(req, sh).await;
+                        }
+                    }
+
+                    // Streaming: SSE
+                    if is_sse_request(req.headers()) {
+                        if let Some(sh) = stream_handler {
+                            return dispatch_sse(req, body_limit, sh).await;
+                        }
+                    }
+
+                    // Regular HTTP
                     match extract_request(req, body_limit).await {
                         Ok((http_req, ctx)) => match handler.handle(http_req, ctx).await {
                             Ok(resp) => build_response(resp),
@@ -93,6 +115,148 @@ impl AxumHttpServer {
                 .map_err(AxumServerError::Serve)
         }
     }
+}
+
+// ── Streaming dispatch ────────────────────────────────────────────────────────
+
+fn is_websocket_upgrade(headers: &axum::http::HeaderMap) -> bool {
+    headers
+        .get(axum::http::header::UPGRADE)
+        .and_then(|v| v.to_str().ok())
+        .map(|v| v.eq_ignore_ascii_case("websocket"))
+        .unwrap_or(false)
+}
+
+fn is_sse_request(headers: &axum::http::HeaderMap) -> bool {
+    headers
+        .get(axum::http::header::ACCEPT)
+        .and_then(|v| v.to_str().ok())
+        .map(|v| v.contains("text/event-stream"))
+        .unwrap_or(false)
+}
+
+async fn dispatch_sse(
+    req: axum::extract::Request,
+    body_limit: usize,
+    handler: Arc<dyn HttpStreamInbound>,
+) -> axum::response::Response {
+    let (http_req, ctx) = match extract_request(req, body_limit).await {
+        Ok(r) => r,
+        Err(resp) => return resp,
+    };
+    match handler.handle_sse(http_req, ctx).await {
+        Ok(stream) => {
+            use axum::response::sse::{Event, KeepAlive, Sse};
+            let axum_stream = stream.map(|item| {
+                item.map(|ev| {
+                    let mut event = Event::default().data(ev.data);
+                    if let Some(name) = ev.event {
+                        event = event.event(name);
+                    }
+                    if let Some(id) = ev.id {
+                        event = event.id(id);
+                    }
+                    event
+                })
+                .map_err(|e| e.to_string())
+            });
+            Sse::new(axum_stream)
+                .keep_alive(KeepAlive::default())
+                .into_response()
+        }
+        Err(e) => error_response(e),
+    }
+}
+
+async fn dispatch_websocket(
+    req: axum::extract::Request,
+    handler: Arc<dyn HttpStreamInbound>,
+) -> axum::response::Response {
+    use axum::extract::ws::{Message, WebSocketUpgrade};
+    use axum::extract::FromRequestParts;
+
+    let (mut parts, _body) = req.into_parts();
+
+    let ctx = parts
+        .extensions
+        .get::<RequestContext>()
+        .cloned()
+        .unwrap_or_default();
+
+    let http_req = HttpRequest {
+        method: map_method(&parts.method),
+        url: parts.uri.to_string(),
+        headers: collect_headers(&parts.headers),
+        query: parse_query(parts.uri.query()),
+        body: None,
+        timeout: None,
+    };
+
+    let ws_upgrade = match WebSocketUpgrade::from_request_parts(&mut parts, &()).await {
+        Ok(u) => u,
+        Err(e) => {
+            return axum::response::Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .body(axum::body::Body::from(format!(
+                    "invalid websocket upgrade: {e}"
+                )))
+                .unwrap()
+        }
+    };
+
+    ws_upgrade
+        .on_upgrade(move |socket| async move {
+            use tokio::sync::mpsc;
+
+            let (out_tx, mut out_rx) = mpsc::unbounded_channel::<WsMessage>();
+
+            let (mut socket_send, socket_recv) = futures::StreamExt::split(socket);
+
+            let incoming = Box::pin(socket_recv.filter_map(|item| async move {
+                match item {
+                    Ok(Message::Text(t)) => Some(Ok(WsMessage::text(t.as_str()))),
+                    Ok(Message::Binary(b)) => Some(Ok(WsMessage::binary(bytes::Bytes::from(b)))),
+                    Ok(Message::Close(_)) => None,
+                    Ok(_) => None,
+                    Err(e) => Some(Err(
+                        crate::api::port::http_inbound_error::HttpInboundError::Internal(
+                            e.to_string(),
+                        ),
+                    )),
+                }
+            }));
+
+            let channel = WsChannel {
+                sender: out_tx,
+                receiver: incoming,
+            };
+
+            let handler_fut = handler.handle_websocket(http_req, ctx, channel);
+
+            let bridge_fut = async move {
+                while let Some(msg) = out_rx.recv().await {
+                    let ws_msg = if msg.binary {
+                        Message::Binary(msg.data.to_vec().into())
+                    } else {
+                        Message::Text(String::from_utf8_lossy(&msg.data).into_owned().into())
+                    };
+                    use futures::SinkExt as _;
+                    if socket_send.send(ws_msg).await.is_err() {
+                        break;
+                    }
+                }
+            };
+
+            tokio::select! {
+                result = handler_fut => {
+                    if let Err(e) = result {
+                        tracing::warn!("WebSocket handler error: {e}");
+                    }
+                }
+                _ = bridge_fut => {}
+            }
+        })
+        .into_response()
 }
 
 // ── TLS accept loop ───────────────────────────────────────────────────────────

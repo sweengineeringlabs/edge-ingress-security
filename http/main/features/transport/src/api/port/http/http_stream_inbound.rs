@@ -16,9 +16,9 @@ use crate::api::value_object::HttpRequest;
 /// into a `text/event-stream` wire frame.
 ///
 /// # WebSocket
-/// The transport upgrades the connection and hands a full-duplex
-/// [`WsChannel`] to the handler. The handler may send and receive frames
-/// concurrently; the connection stays open until the channel is dropped.
+/// The transport upgrades the connection, creates a [`WsChannel`], and passes
+/// it to the handler. The handler processes frames until it returns, at which
+/// point the transport closes the connection.
 pub trait HttpStreamInbound: Send + Sync {
     /// Handle a Server-Sent Events upgrade request.
     ///
@@ -32,13 +32,15 @@ pub trait HttpStreamInbound: Send + Sync {
 
     /// Handle a WebSocket upgrade request.
     ///
-    /// Returns a [`WsChannel`] after the handshake completes. The handler
-    /// owns the channel and may send or receive frames at will.
+    /// The transport provides `channel`: use `channel.sender` to push frames to
+    /// the client and `channel.receiver` to read incoming frames. Return when
+    /// the session is complete; the transport closes the connection on return.
     fn handle_websocket(
         &self,
         request: HttpRequest,
         ctx: RequestContext,
-    ) -> BoxFuture<'_, HttpInboundResult<WsChannel>>;
+        channel: WsChannel,
+    ) -> BoxFuture<'_, HttpInboundResult<()>>;
 }
 
 #[cfg(test)]

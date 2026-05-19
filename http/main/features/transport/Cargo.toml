@@ -19,6 +19,10 @@ name = "swe_edge_ingress_http"
 path = "src/lib.rs"
 
 [[test]]
+name    = "axum_stream_int_test"
+path    = "tests/axum_stream_int_test.rs"
+
+[[test]]
 name    = "axum_server_int_test"
 path    = "tests/axum_server_int_test.rs"
 
@@ -69,7 +73,7 @@ thiserror.workspace   = true
 async-trait.workspace = true
 futures.workspace     = true
 tokio.workspace       = true
-axum.workspace        = true
+axum        = { workspace = true, features = ["ws"] }
 bytes.workspace       = true
 tracing.workspace     = true
 
