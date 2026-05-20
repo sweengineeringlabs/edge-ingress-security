@@ -10,6 +10,7 @@ use super::grpc_server_config::{
 };
 
 /// Fluent builder for [`GrpcServerConfig`].
+#[allow(dead_code)]
 pub struct GrpcServerConfigBuilder {
     bind: SocketAddr,
     tls_required: bool,
