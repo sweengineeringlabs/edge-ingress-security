@@ -6,7 +6,6 @@ pub(crate) mod list_result;
 pub(crate) mod presigned_url;
 
 pub use file_info::FileInfo;
-#[allow(unused_imports)]
 pub use file_metadata::FileMetadata;
 pub use file_storage_config::{FileStorageConfig, FileStorageType};
 pub use list_options::ListOptions;

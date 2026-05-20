@@ -2,7 +2,8 @@
 
 mod builder;
 
-pub use crate::api::builder::{build_file_input, ApplicationConfigBuilder};
+pub use crate::api::application_config_builder::{build_file_input, ApplicationConfigBuilder};
+pub use crate::api::architecture_config_builder::ArchitectureConfigBuilder;
 pub use crate::api::daemon::{DaemonContext, DaemonRunner};
 pub use crate::api::health_check::{HealthCheck, HealthStatus};
 pub use crate::api::inbound_source::InboundSource;
@@ -12,7 +13,6 @@ pub use crate::api::ingress_error::{
 };
 pub use crate::api::metrics::{FieldExtractor, MetricFields, MetricsCollector};
 pub use crate::api::pagination::{PaginatedResponse, Pagination};
-pub use crate::api::pipeline::{Pipeline, Router};
 pub use crate::api::rate_limiter::{RateLimiter, RateLimiterBuilder, RateLimiterSpec};
 pub use builder::{file_input, passthrough_validator};
 
@@ -28,7 +28,7 @@ pub use swe_edge_ingress_grpc::{
 pub use swe_edge_ingress_http::{
     AxumHttpServer, AxumServerError, FormPart, HttpAuth, HttpBody, HttpConfig, HttpDecodeFn,
     HttpEncodeFn, HttpHandlerAdapter, HttpHandlerRegistryDispatcher, HttpHealthCheck, HttpInbound,
-    HttpInboundError, HttpInboundResult, HttpMethod, HttpRequest, HttpResponse, RequestContext,
-    MAX_BODY_BYTES,
+    HttpInboundError, HttpInboundResult, HttpMethod, HttpRequest, HttpResponse, HttpStreamInbound,
+    RequestContext, SseEvent, SseStream, WsChannel, WsMessage, WsReceiver, WsSender, MAX_BODY_BYTES,
 };
 pub use swe_edge_ingress_tls::{IngressTlsConfig, IngressTlsError};

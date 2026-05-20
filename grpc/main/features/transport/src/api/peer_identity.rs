@@ -298,7 +298,7 @@ fn hex_char(n: u8) -> char {
 mod tests {
     use super::*;
 
-    /// @covers: extract_peer_identity — empty input returns fingerprint only.
+    /// @covers: extract_peer_identity
     #[test]
     fn test_extract_peer_identity_returns_only_fingerprint_for_empty_cert() {
         let map = extract_peer_identity(&[]);
@@ -306,7 +306,7 @@ mod tests {
         assert!(map.contains_key(PEER_CERT_FINGERPRINT_SHA256));
     }
 
-    /// @covers: extract_peer_identity — fingerprint is deterministic.
+    /// @covers: extract_peer_identity
     #[test]
     fn test_extract_peer_identity_fingerprint_is_deterministic() {
         let a = extract_peer_identity(b"hello-world");
@@ -314,7 +314,7 @@ mod tests {
         assert_eq!(a, b);
     }
 
-    /// @covers: read_length — short form.
+    /// @covers: extract_peer_identity
     #[test]
     fn test_read_length_short_form() {
         let (len, used) = read_length(&[0x05]).unwrap();
