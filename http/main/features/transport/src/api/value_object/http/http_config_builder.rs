@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use super::http_config::HttpConfig;
 
 /// Fluent builder that constructs an [`HttpConfig`].
+#[allow(dead_code)]
 pub struct HttpConfigBuilder {
     base_url: Option<String>,
     timeout_secs: u64,

@@ -2,6 +2,7 @@
 
 /// Builds runtime configuration for the ingress message consumer from
 /// `config/application.toml` settings.
+#[allow(dead_code)]
 pub struct ApplicationConfigBuilder {
     /// Maximum in-memory channel capacity (default: 1024).
     pub capacity: usize,
