@@ -29,13 +29,11 @@ impl TraceContextInterceptor {
 mod tests {
     use super::*;
 
-    /// @covers: TraceContextInterceptor::new — creates an extractor.
     #[test]
     fn test_new_creates_trace_context_interceptor() {
         let _ = TraceContextInterceptor::new();
     }
 
-    /// @covers: TRACEPARENT, TRACESTATE — are lowercase per HTTP/2 spec.
     #[test]
     fn test_header_constants_are_lowercase() {
         assert_eq!(TRACEPARENT, TRACEPARENT.to_lowercase());

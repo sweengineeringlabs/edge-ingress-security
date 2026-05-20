@@ -29,13 +29,12 @@ impl CompressionMode {
 mod tests {
     use super::*;
 
-    /// @covers: CompressionMode::default — defaults to None.
     #[test]
     fn test_default_is_none_compression() {
         assert_eq!(CompressionMode::default(), CompressionMode::None);
     }
 
-    /// @covers: CompressionMode::header_value — canonical names.
+    /// @covers: header_value
     #[test]
     fn test_header_value_uses_canonical_grpc_identifiers() {
         assert_eq!(CompressionMode::None.header_value(), None);
