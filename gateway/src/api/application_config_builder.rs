@@ -6,6 +6,7 @@ use crate::api::inbound_source::InboundSource;
 
 /// ApplicationConfigBuilder for inbound adapter configuration.
 #[derive(Debug, Default)]
+#[allow(dead_code)]
 pub struct ApplicationConfigBuilder;
 
 impl ApplicationConfigBuilder {

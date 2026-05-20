@@ -4,6 +4,7 @@
 /// `config/application.toml`.
 ///
 /// Corresponds to the `[application]` section in the TOML file.
+#[allow(dead_code)]
 pub struct ApplicationConfigBuilder {
     name: String,
     version: String,
