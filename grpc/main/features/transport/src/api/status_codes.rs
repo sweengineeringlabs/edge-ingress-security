@@ -107,23 +107,41 @@ mod tests {
         GrpcStatusCode::Unauthenticated,
     ];
 
-    /// @covers: from_tonic_code, to_tonic_code — round-trip for all 17 variants.
+    /// @covers: from_tonic_code
     #[test]
-    fn test_round_trip_through_tonic_code_preserves_all_17_variants() {
+    fn test_from_tonic_code_round_trips_all_17_variants() {
         for code in ALL_17 {
-            assert_eq!(from_tonic_code(to_tonic_code(code)), code);
+            let tonic = to_tonic_code(code);
+            assert_eq!(from_tonic_code(tonic), code);
         }
     }
 
-    /// @covers: to_wire, from_wire — wire-value round-trip for all 17 variants.
+    /// @covers: to_tonic_code
     #[test]
-    fn test_round_trip_through_wire_value_preserves_all_17_variants() {
+    fn test_to_tonic_code_round_trips_all_17_variants() {
+        for code in ALL_17 {
+            let tonic = to_tonic_code(code);
+            assert_eq!(from_tonic_code(tonic), code);
+        }
+    }
+
+    /// @covers: to_wire
+    #[test]
+    fn test_to_wire_round_trips_all_17_variants() {
         for code in ALL_17 {
             assert_eq!(from_wire(to_wire(code)), code);
         }
     }
 
-    /// @covers: map_inbound_error — Internal sanitises the message.
+    /// @covers: from_wire
+    #[test]
+    fn test_from_wire_round_trips_all_17_variants() {
+        for code in ALL_17 {
+            assert_eq!(from_wire(to_wire(code)), code);
+        }
+    }
+
+    /// @covers: map_inbound_error
     #[test]
     fn test_map_inbound_error_internal_returns_sanitized_message() {
         let (code, msg) = map_inbound_error(GrpcInboundError::Internal("secret/path".into()));

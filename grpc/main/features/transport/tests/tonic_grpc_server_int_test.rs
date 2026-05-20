@@ -456,6 +456,170 @@ async fn grpc_call_with_trailers(
     (status, grpc_status, data, trailers)
 }
 
+/// Like `grpc_call_body` but injects an `x-grpc-stream-type` header so the
+/// server routes to the named streaming variant.
+async fn grpc_call_with_stream_type(
+    addr: SocketAddr,
+    path: &str,
+    body: Bytes,
+    stream_type: &str,
+) -> (StatusCode, Option<String>, Bytes) {
+    let stream = tokio::net::TcpStream::connect(addr).await.unwrap();
+    let io = TokioIo::new(stream);
+    let (mut sender, conn) = hyper::client::conn::http2::Builder::new(TokioExecutor::new())
+        .handshake(io)
+        .await
+        .unwrap();
+    tokio::spawn(conn);
+
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("http://{addr}{path}"))
+        .header("content-type", "application/grpc")
+        .header("te", "trailers")
+        .header("x-grpc-stream-type", stream_type)
+        .body(Full::new(body))
+        .unwrap();
+
+    let resp = sender.send_request(req).await.unwrap();
+    let status = resp.status();
+    let collected = resp.into_body().collect().await.unwrap();
+    let grpc_status = collected
+        .trailers()
+        .and_then(|t| t.get("grpc-status"))
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_owned);
+    let data = collected.to_bytes();
+    (status, grpc_status, data)
+}
+
+// ── Named streaming variant handlers ─────────────────────────────────────────
+
+/// Routes exclusively through `handle_server_stream`; echoes the request body
+/// three times as consecutive response frames.
+struct NamedServerStreamHandler;
+
+impl GrpcInbound for NamedServerStreamHandler {
+    fn handle_unary(
+        &self,
+        req: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        Box::pin(async move {
+            Ok(GrpcResponse {
+                body: req.body,
+                metadata: GrpcMetadata::default(),
+            })
+        })
+    }
+
+    fn handle_server_stream(
+        &self,
+        req: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcMessageStream>> {
+        Box::pin(async move {
+            let body = req.body;
+            let out: GrpcMessageStream = Box::pin(futures::stream::iter(vec![
+                Ok(body.clone()),
+                Ok(body.clone()),
+                Ok(body),
+            ]));
+            Ok(out)
+        })
+    }
+
+    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+        Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
+    }
+}
+
+/// Routes exclusively through `handle_client_stream`; counts received frames and
+/// returns the count as a single byte.
+struct NamedClientStreamHandler;
+
+impl GrpcInbound for NamedClientStreamHandler {
+    fn handle_unary(
+        &self,
+        _: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        Box::pin(async move {
+            Ok(GrpcResponse {
+                body: vec![],
+                metadata: GrpcMetadata::default(),
+            })
+        })
+    }
+
+    fn handle_client_stream(
+        &self,
+        _method: String,
+        _metadata: GrpcMetadata,
+        messages: GrpcMessageStream,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        Box::pin(async move {
+            use futures::StreamExt;
+            let count = messages.count().await;
+            Ok(GrpcResponse {
+                body: vec![count as u8],
+                metadata: GrpcMetadata::default(),
+            })
+        })
+    }
+
+    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+        Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
+    }
+}
+
+/// Routes exclusively through `handle_bidi_stream`; prepends `0xBD` to each
+/// frame so tests can distinguish this variant from `handle_stream` echoes.
+struct NamedBidiStreamHandler;
+
+impl GrpcInbound for NamedBidiStreamHandler {
+    fn handle_unary(
+        &self,
+        _: GrpcRequest,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        Box::pin(async move {
+            Ok(GrpcResponse {
+                body: vec![],
+                metadata: GrpcMetadata::default(),
+            })
+        })
+    }
+
+    fn handle_bidi_stream(
+        &self,
+        _method: String,
+        _metadata: GrpcMetadata,
+        messages: GrpcMessageStream,
+        _ctx: RequestContext,
+    ) -> BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
+        Box::pin(async move {
+            use futures::StreamExt;
+            let items: Vec<GrpcInboundResult<Vec<u8>>> = messages
+                .map(|r| {
+                    r.map(|mut b| {
+                        b.insert(0, 0xBD);
+                        b
+                    })
+                })
+                .collect()
+                .await;
+            let out: GrpcMessageStream = Box::pin(futures::stream::iter(items));
+            Ok((out, GrpcMetadata::default()))
+        })
+    }
+
+    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+        Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
+    }
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[tokio::test]
@@ -644,6 +808,95 @@ async fn test_bidi_streaming_echoes_all_messages() {
     for (i, expected) in payloads.iter().enumerate() {
         assert_eq!(frames[i].as_ref(), *expected, "frame {i} payload mismatch");
     }
+}
+
+// ── Named streaming variant routing (x-grpc-stream-type) ─────────────────────
+
+/// @covers: route_dispatch server-stream
+#[tokio::test]
+async fn test_server_stream_variant_routes_to_handle_server_stream() {
+    // NamedServerStreamHandler echoes the request body three times via
+    // handle_server_stream.  Without the header the default handle_unary would run
+    // and return a single-frame echo; with the header we get three frames.
+    let (addr, _shutdown) = start_server(NamedServerStreamHandler).await;
+
+    let body = grpc_frame(b"ping");
+    let (status, grpc_status, data) =
+        grpc_call_with_stream_type(addr, "/svc/M", body, "server-stream").await;
+
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(grpc_status.as_deref(), Some("0"));
+
+    let frames = parse_grpc_frames(&data);
+    assert_eq!(
+        frames.len(),
+        3,
+        "server-stream must yield 3 frames, got {}",
+        frames.len()
+    );
+    for frame in &frames {
+        assert_eq!(
+            frame.as_ref(),
+            b"ping",
+            "each frame must echo the request body"
+        );
+    }
+}
+
+/// @covers: route_dispatch client-stream
+#[tokio::test]
+async fn test_client_stream_variant_routes_to_handle_client_stream() {
+    // NamedClientStreamHandler counts received frames and returns the count via
+    // handle_client_stream.  We send 3 frames; response must be a single byte == 3.
+    let (addr, _shutdown) = start_server(NamedClientStreamHandler).await;
+
+    let body = grpc_frames_body(&[b"a", b"b", b"c"]);
+    let (status, grpc_status, data) =
+        grpc_call_with_stream_type(addr, "/svc/M", body, "client-stream").await;
+
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(grpc_status.as_deref(), Some("0"));
+
+    let frames = parse_grpc_frames(&data);
+    assert_eq!(
+        frames.len(),
+        1,
+        "client-stream must yield a single count frame"
+    );
+    assert_eq!(
+        frames[0].as_ref(),
+        &[3u8],
+        "handler must have seen 3 input frames"
+    );
+}
+
+/// @covers: route_dispatch bidi-stream
+#[tokio::test]
+async fn test_bidi_stream_variant_routes_to_handle_bidi_stream() {
+    // NamedBidiStreamHandler prepends 0xBD to each frame via handle_bidi_stream.
+    // The default handle_stream is NOT overridden — routing to bidi-stream is proven
+    // by the 0xBD prefix appearing on every response frame.
+    let (addr, _shutdown) = start_server(NamedBidiStreamHandler).await;
+
+    let body = grpc_frames_body(&[b"x", b"y"]);
+    let (status, grpc_status, data) =
+        grpc_call_with_stream_type(addr, "/svc/M", body, "bidi-stream").await;
+
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(grpc_status.as_deref(), Some("0"));
+
+    let frames = parse_grpc_frames(&data);
+    assert_eq!(frames.len(), 2, "bidi-stream must echo both input frames");
+    assert_eq!(
+        frames[0][0], 0xBD,
+        "frame 0 must have 0xBD prefix from handle_bidi_stream"
+    );
+    assert_eq!(
+        frames[1][0], 0xBD,
+        "frame 1 must have 0xBD prefix from handle_bidi_stream"
+    );
+    assert_eq!(&frames[0][1..], b"x");
+    assert_eq!(&frames[1][1..], b"y");
 }
 
 // ── Error variant coverage ────────────────────────────────────────────────────

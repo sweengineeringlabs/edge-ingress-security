@@ -13,7 +13,6 @@ pub(crate) mod inbound_source;
 pub(crate) mod metrics;
 pub(crate) mod middleware;
 pub(crate) mod pagination;
-pub(crate) mod pipeline;
 pub(crate) mod rate_limiter;
 pub(crate) mod traits;
 pub(crate) mod validator;

@@ -22,8 +22,10 @@ use crate::api::audit_sink::{AuditEvent, AuditSink};
 use crate::api::grpc_timeout::{parse_grpc_timeout, DEFAULT_DEADLINE};
 use crate::api::interceptor::GrpcInboundInterceptorChain;
 use crate::api::peer_identity::extract_peer_identity;
-use crate::api::port::grpc_inbound::{GrpcInbound, GrpcInboundError, GrpcMessageStream};
-use crate::api::server::tonic_grpc_server::{
+use crate::api::port::grpc_inbound::{
+    GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcMessageStream,
+};
+use crate::api::server::{
     TonicGrpcServer, TonicServerError, MISSING_AUTHORIZATION_INTERCEPTOR_MSG,
     REFLECTION_ENABLED_WARN_MSG,
 };
@@ -365,16 +367,22 @@ async fn dispatch(
         RequestContext::unauthenticated()
     };
 
-    // Race the handler future against the deadline — past-deadline
-    // mid-handler is a server-side `DeadlineExceeded` and must NOT
-    // propagate handler partial output.
-    let handler_fut = handler.handle_stream(
+    // Route to the named streaming variant indicated by the client,
+    // falling back to `handle_stream` for backward compatibility.
+    let stream_type = merged_headers
+        .get("x-grpc-stream-type")
+        .cloned()
+        .unwrap_or_default();
+    let handler_fut = route_dispatch(
+        handler.clone(),
+        stream_type.as_str(),
         method.clone(),
         GrpcMetadata {
             headers: merged_headers,
         },
         message_stream,
         ctx,
+        deadline,
     );
     let cancel_fut = cancel.cancelled();
 
@@ -467,6 +475,57 @@ async fn dispatch(
             let (code, msg) = map_inbound_error(e);
             emit(code, grpc_error(code, msg))
         }
+    }
+}
+
+/// Route a request to the correct [`GrpcInbound`] streaming variant.
+///
+/// `x-grpc-stream-type` header values and their targets:
+/// - `"server-stream"` → [`GrpcInbound::handle_server_stream`] (unary request, streaming response)
+/// - `"client-stream"` → [`GrpcInbound::handle_client_stream`] (streaming request, single response)
+/// - `"bidi-stream"`   → [`GrpcInbound::handle_bidi_stream`]   (streaming both directions)
+/// - absent / any other value → [`GrpcInbound::handle_stream`] (backward-compatible default)
+///
+/// All branches normalise to `(GrpcMessageStream, GrpcMetadata)` so the rest of the
+/// dispatch pipeline (drain → interceptors → wire encoding) is unchanged.
+async fn route_dispatch(
+    handler: Arc<dyn GrpcInbound>,
+    stream_type: &str,
+    method: String,
+    metadata: GrpcMetadata,
+    messages: GrpcMessageStream,
+    ctx: RequestContext,
+    deadline: Duration,
+) -> GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)> {
+    use futures::StreamExt;
+    match stream_type {
+        "server-stream" => {
+            // Single request frame → streaming response.
+            let mut s = messages;
+            let body = match s.next().await {
+                Some(Ok(b)) => b,
+                Some(Err(e)) => return Err(e),
+                None => vec![],
+            };
+            let req = GrpcRequest::new(method, body, deadline).with_metadata(metadata);
+            let out = handler.handle_server_stream(req, ctx).await?;
+            Ok((out, GrpcMetadata::default()))
+        }
+        "client-stream" => {
+            // Streaming request → single response wrapped in a one-item stream.
+            let resp = handler
+                .handle_client_stream(method, metadata, messages, ctx)
+                .await?;
+            let out: GrpcMessageStream =
+                Box::pin(futures::stream::once(futures::future::ready(Ok(resp.body))));
+            Ok((out, resp.metadata))
+        }
+        "bidi-stream" => {
+            handler
+                .handle_bidi_stream(method, metadata, messages, ctx)
+                .await
+        }
+        _ => handler.handle_stream(method, metadata, messages, ctx).await,
     }
 }
 
@@ -681,14 +740,12 @@ mod tests {
 
     // ── read_deadline ─────────────────────────────────────────────────────
 
-    /// @covers: read_deadline — falls back to DEFAULT_DEADLINE when header absent.
     #[test]
     fn test_read_deadline_falls_back_to_default_when_header_absent() {
         let map = http::HeaderMap::new();
         assert_eq!(read_deadline(&map), DEFAULT_DEADLINE);
     }
 
-    /// @covers: read_deadline — parses well-formed grpc-timeout header.
     #[test]
     fn test_read_deadline_parses_grpc_timeout_header() {
         let mut map = http::HeaderMap::new();
@@ -696,7 +753,6 @@ mod tests {
         assert_eq!(read_deadline(&map), Duration::from_millis(500));
     }
 
-    /// @covers: read_deadline — malformed header falls back to default rather than panicking.
     #[test]
     fn test_read_deadline_falls_back_on_malformed_header() {
         let mut map = http::HeaderMap::new();
@@ -728,7 +784,6 @@ mod tests {
 
     // ── sanitize_authz_error ──────────────────────────────────────────────
 
-    /// @covers: sanitize_authz_error — replaces PermissionDenied rationale.
     #[test]
     fn test_sanitize_authz_error_strips_permission_denied_rationale() {
         let detailed = GrpcInboundError::PermissionDenied(
@@ -745,7 +800,6 @@ mod tests {
         }
     }
 
-    /// @covers: sanitize_authz_error — Status(PermissionDenied) variant also sanitized.
     #[test]
     fn test_sanitize_authz_error_strips_status_permission_denied_rationale() {
         let detailed = GrpcInboundError::Status(
@@ -763,7 +817,6 @@ mod tests {
         }
     }
 
-    /// @covers: sanitize_authz_error — non-PermissionDenied errors pass through.
     #[test]
     fn test_sanitize_authz_error_passes_through_unrelated_errors() {
         let original = GrpcInboundError::NotFound("row not found".into());
@@ -782,8 +835,8 @@ mod tests {
     use crate::api::port::grpc_inbound::{GrpcHealthCheck, GrpcInbound, GrpcInboundResult};
     use futures::future::BoxFuture;
 
-    struct FakeAuthz;
-    impl GrpcInboundInterceptor for FakeAuthz {
+    struct TonicGrpcServerFakeAuthz;
+    impl GrpcInboundInterceptor for TonicGrpcServerFakeAuthz {
         fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> {
             Ok(())
         }
@@ -794,10 +847,10 @@ mod tests {
             true
         }
     }
-    impl AuthorizationInterceptor for FakeAuthz {}
+    impl AuthorizationInterceptor for TonicGrpcServerFakeAuthz {}
 
-    struct DummyHandler;
-    impl GrpcInbound for DummyHandler {
+    struct TonicGrpcServerDummyHandler;
+    impl GrpcInbound for TonicGrpcServerDummyHandler {
         fn handle_unary(
             &self,
             _: GrpcRequest,
@@ -815,50 +868,46 @@ mod tests {
         }
     }
 
-    /// @covers: enforce_authorization_invariant — passes when authz interceptor is present.
     #[test]
     fn test_enforce_authorization_invariant_succeeds_with_authz_interceptor() {
-        let chain = GrpcInboundInterceptorChain::new().push(Arc::new(FakeAuthz));
-        let server =
-            TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler)).with_interceptors(chain);
+        let chain = GrpcInboundInterceptorChain::new().push(Arc::new(TonicGrpcServerFakeAuthz));
+        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler))
+            .with_interceptors(chain);
         // Should not panic.
         server.enforce_authorization_invariant();
     }
 
-    /// @covers: enforce_authorization_invariant — passes with allow_unauthenticated.
     #[test]
     fn test_enforce_authorization_invariant_succeeds_when_allow_unauthenticated_is_set() {
-        let server =
-            TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler)).allow_unauthenticated(true);
+        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler))
+            .allow_unauthenticated(true);
         // Should not panic, only WARN.
         server.enforce_authorization_invariant();
     }
 
-    /// @covers: enforce_authorization_invariant — panics with no authz + fail-closed default.
     #[test]
     #[should_panic(expected = "AuthorizationInterceptor")]
     fn test_enforce_authorization_invariant_panics_when_authz_missing_and_fail_closed() {
-        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler));
+        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler));
         // No authz registered, allow_unauthenticated defaults to false → panic.
         server.enforce_authorization_invariant();
     }
 
     // ── with_audit_sink / allow_unauthenticated builders ──────────────────
 
-    /// @covers: TonicGrpcServer::with_audit_sink — replaces the default sink.
     #[test]
     fn test_with_audit_sink_installs_provided_sink() {
         use std::sync::Mutex;
-        struct CountingSink(Arc<Mutex<usize>>);
-        impl AuditSink for CountingSink {
+        struct TonicGrpcServerCountingSink(Arc<Mutex<usize>>);
+        impl AuditSink for TonicGrpcServerCountingSink {
             fn record(&self, _: AuditEvent) {
                 *self.0.lock().unwrap() += 1;
             }
         }
         let calls = Arc::new(Mutex::new(0usize));
-        let sink: Arc<dyn AuditSink> = Arc::new(CountingSink(calls.clone()));
-        let server =
-            TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler)).with_audit_sink(sink);
+        let sink: Arc<dyn AuditSink> = Arc::new(TonicGrpcServerCountingSink(calls.clone()));
+        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler))
+            .with_audit_sink(sink);
         // Drive the sink directly through the server's stored Arc.
         server.audit_sink.record(AuditEvent {
             timestamp: SystemTime::UNIX_EPOCH,
@@ -870,37 +919,33 @@ mod tests {
         assert_eq!(*calls.lock().unwrap(), 1);
     }
 
-    /// @covers: TonicGrpcServer::allow_unauthenticated — sets the flag.
     #[test]
     fn test_allow_unauthenticated_sets_the_flag() {
-        let server =
-            TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler)).allow_unauthenticated(true);
+        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler))
+            .allow_unauthenticated(true);
         assert!(server.allow_unauthenticated);
     }
 
-    /// @covers: TonicGrpcServer::new — reflection flag is off by default.
     #[test]
     fn test_new_disables_reflection_flag_by_default() {
-        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler));
+        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler));
         assert!(!server.is_reflection_enabled());
     }
 
-    /// @covers: TonicGrpcServer::enable_reflection — sets the flag.
     #[test]
     fn test_enable_reflection_builder_flips_the_flag() {
-        let server =
-            TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler)).enable_reflection(true);
+        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler))
+            .enable_reflection(true);
         assert!(server.is_reflection_enabled());
     }
 
-    /// @covers: TonicGrpcServer::from_config — propagates enable_reflection from config.
     #[test]
     fn test_from_config_propagates_enable_reflection_from_config() {
         let cfg = GrpcServerConfig::new("127.0.0.1:0".parse().unwrap())
             .allow_plaintext()
             .enable_reflection();
-        let server =
-            TonicGrpcServer::from_config(&cfg, Arc::new(DummyHandler)).expect("config valid");
+        let server = TonicGrpcServer::from_config(&cfg, Arc::new(TonicGrpcServerDummyHandler))
+            .expect("config valid");
         assert!(server.is_reflection_enabled());
     }
 }
@@ -914,8 +959,8 @@ mod dedicated_coverage {
     use futures::future::BoxFuture;
     use std::sync::Arc;
 
-    struct Stub;
-    impl GrpcInbound for Stub {
+    struct TonicGrpcServerStub;
+    impl GrpcInbound for TonicGrpcServerStub {
         fn handle_unary(
             &self,
             _: GrpcRequest,
@@ -939,37 +984,33 @@ mod dedicated_coverage {
     }
 
     fn server() -> TonicGrpcServer {
-        TonicGrpcServer::new("127.0.0.1:0", Arc::new(Stub)).allow_unauthenticated(true)
+        TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerStub))
+            .allow_unauthenticated(true)
     }
 
-    /// @covers: is_reflection_enabled
     #[test]
     fn test_is_reflection_enabled_false_by_default() {
         assert!(!server().is_reflection_enabled());
     }
 
-    /// @covers: with_compression
     #[test]
     fn test_with_compression_stores_mode() {
         let s = server().with_compression(CompressionMode::Gzip);
         assert!(matches!(s.compression, CompressionMode::Gzip));
     }
 
-    /// @covers: with_max_message_size
     #[test]
     fn test_with_max_message_size_overrides_default() {
         let s = server().with_max_message_size(1024);
         assert_eq!(s.max_bytes, 1024);
     }
 
-    /// @covers: with_max_concurrent_streams
     #[test]
     fn test_with_max_concurrent_streams_sets_value() {
         let s = server().with_max_concurrent_streams(32);
         assert_eq!(s.max_concurrent_streams, 32);
     }
 
-    /// @covers: with_interceptors
     #[test]
     fn test_with_interceptors_assigns_chain() {
         use crate::api::interceptor::GrpcInboundInterceptorChain;
@@ -978,7 +1019,6 @@ mod dedicated_coverage {
         drop(s); // interceptors field is not Option — assignment verified by compilation
     }
 
-    /// @covers: with_tls
     #[test]
     fn test_with_tls_sets_config() {
         use swe_edge_ingress_tls::IngressTlsConfig;
@@ -990,7 +1030,8 @@ mod dedicated_coverage {
     /// @covers: serve
     #[tokio::test]
     async fn test_serve_returns_error_on_invalid_bind() {
-        let s = TonicGrpcServer::new("0.0.0.0:99999", Arc::new(Stub)).allow_unauthenticated(true);
+        let s = TonicGrpcServer::new("0.0.0.0:99999", Arc::new(TonicGrpcServerStub))
+            .allow_unauthenticated(true);
         let result = s.serve(std::future::ready(())).await;
         assert!(result.is_err());
     }
@@ -1017,8 +1058,8 @@ mod sync_coverage {
     use futures::future::BoxFuture;
     use std::sync::Arc;
 
-    struct Stub;
-    impl GrpcInbound for Stub {
+    struct TonicGrpcServerStub;
+    impl GrpcInbound for TonicGrpcServerStub {
         fn handle_unary(
             &self,
             _: GrpcRequest,
@@ -1041,15 +1082,15 @@ mod sync_coverage {
         }
     }
 
-    /// @covers: serve
     #[test]
     fn test_serve_is_constructible() {
-        let _ = TonicGrpcServer::new("127.0.0.1:0", Arc::new(Stub)).allow_unauthenticated(true);
+        let _ = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerStub))
+            .allow_unauthenticated(true);
     }
 
-    /// @covers: serve_with_listener
     #[test]
     fn test_serve_with_listener_is_constructible() {
-        let _ = TonicGrpcServer::new("127.0.0.1:0", Arc::new(Stub)).allow_unauthenticated(true);
+        let _ = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerStub))
+            .allow_unauthenticated(true);
     }
 }

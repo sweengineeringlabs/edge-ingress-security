@@ -97,27 +97,27 @@ pub fn is_reserved_peer_key(name: &str) -> bool {
 mod tests {
     use super::*;
 
-    /// @covers: is_reserved_peer_key — matches `x-edge-peer-*`.
+    /// @covers: is_reserved_peer_key
     #[test]
     fn test_is_reserved_peer_key_matches_x_edge_peer_prefix() {
         assert!(is_reserved_peer_key("x-edge-peer-cn"));
         assert!(is_reserved_peer_key("x-edge-peer-identity"));
     }
 
-    /// @covers: is_reserved_peer_key — case-insensitive.
+    /// @covers: is_reserved_peer_key
     #[test]
     fn test_is_reserved_peer_key_is_case_insensitive() {
         assert!(is_reserved_peer_key("X-Edge-Peer-Cn"));
     }
 
-    /// @covers: is_reserved_peer_key — unrelated keys are not reserved.
+    /// @covers: is_reserved_peer_key
     #[test]
     fn test_is_reserved_peer_key_does_not_match_unrelated_keys() {
         assert!(!is_reserved_peer_key("authorization"));
         assert!(!is_reserved_peer_key("x-edge-trace"));
     }
 
-    /// @covers: PeerIdentity::empty — all fields default-initialised.
+    /// @covers: empty
     #[test]
     fn test_peer_identity_empty_has_no_cn_or_san_or_custom_oids() {
         let id = PeerIdentity::empty();
@@ -127,7 +127,12 @@ mod tests {
         assert!(id.is_empty());
     }
 
-    /// @covers: PeerIdentity::is_empty — `false` once any field is populated.
+    /// @covers: is_empty
+    #[test]
+    fn test_is_empty_returns_true_for_default_identity() {
+        assert!(PeerIdentity::default().is_empty());
+    }
+
     #[test]
     fn test_peer_identity_is_not_empty_when_cn_is_populated() {
         let id = PeerIdentity {

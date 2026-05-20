@@ -6,7 +6,6 @@ pub(crate) mod http_request;
 pub(crate) mod http_response;
 
 pub use http_auth::HttpAuth;
-#[allow(unused_imports)]
 pub use http_body::{HttpBody, FormPart};
 pub use http_config::HttpConfig;
 pub use http_method::HttpMethod;

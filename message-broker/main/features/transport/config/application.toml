@@ -1,0 +1,3 @@
+[application]
+# Default in-memory channel capacity for the ingress message consumer.
+capacity = 1024
