@@ -1,12 +1,11 @@
+//! Builder types for verifier application configuration.
+//!
+//! Impl blocks live in the `saf` layer. Struct shapes are declared here so
+//! types are anchored in the interface layer per SEA rule 160.
+
 /// Builder for application configuration.
 #[derive(Debug, Default)]
 pub struct ApplicationConfigBuilder {
-    _private: (),
-}
-
-/// Builder for architecture configuration.
-#[derive(Debug, Default)]
-pub struct ArchitectureConfigBuilder {
     _private: (),
 }
 
@@ -17,10 +16,5 @@ mod tests {
     #[test]
     fn test_application_config_builder_constructs() {
         let _b = ApplicationConfigBuilder::default();
-    }
-
-    #[test]
-    fn test_architecture_config_builder_constructs() {
-        let _b = ArchitectureConfigBuilder::default();
     }
 }

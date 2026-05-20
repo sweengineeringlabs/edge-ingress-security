@@ -2,7 +2,8 @@
 
 mod builder;
 
-pub use crate::api::builder::{build_file_input, ApplicationConfigBuilder};
+pub use crate::api::application_config_builder::{build_file_input, ApplicationConfigBuilder};
+pub use crate::api::architecture_config_builder::ArchitectureConfigBuilder;
 pub use crate::api::daemon::{DaemonContext, DaemonRunner};
 pub use crate::api::health_check::{HealthCheck, HealthStatus};
 pub use crate::api::inbound_source::InboundSource;

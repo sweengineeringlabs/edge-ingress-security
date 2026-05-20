@@ -13,5 +13,6 @@ mod provider;
 mod saf;
 mod state;
 
-pub use api::builder::{ApplicationConfigBuilder, ArchitectureConfigBuilder};
+pub use api::application_config_builder::ApplicationConfigBuilder;
+pub use api::architecture_config_builder::ArchitectureConfigBuilder;
 pub use saf::*;

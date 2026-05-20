@@ -20,12 +20,6 @@ pub fn build_file_input() -> Arc<dyn InboundSource> {
     Arc::new(crate::core::file::LocalFileSource)
 }
 
-/// Builder for architecture configuration.
-#[derive(Debug, Default)]
-pub struct ArchitectureConfigBuilder {
-    _private: (),
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -33,11 +27,6 @@ mod tests {
     #[test]
     fn test_builder_new_returns_default() {
         let _ = ApplicationConfigBuilder::new();
-    }
-
-    #[test]
-    fn test_architecture_config_builder_constructs() {
-        let _b = ArchitectureConfigBuilder::default();
     }
 
     /// @covers: build_file_input
