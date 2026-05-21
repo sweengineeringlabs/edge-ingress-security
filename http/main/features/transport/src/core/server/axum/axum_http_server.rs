@@ -215,7 +215,7 @@ async fn dispatch_websocket(
             let incoming = Box::pin(socket_recv.filter_map(|item| async move {
                 match item {
                     Ok(Message::Text(t)) => Some(Ok(WsMessage::text(t.as_str()))),
-                    Ok(Message::Binary(b)) => Some(Ok(WsMessage::binary(bytes::Bytes::from(b)))),
+                    Ok(Message::Binary(b)) => Some(Ok(WsMessage::binary(b))),
                     Ok(Message::Close(_)) => None,
                     Ok(_) => None,
                     Err(e) => Some(Err(
