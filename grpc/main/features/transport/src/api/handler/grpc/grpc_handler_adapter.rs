@@ -96,8 +96,6 @@ mod tests {
     use edge_domain::RequestContext;
 
     use super::*;
-    use crate::api::handler::decode_fn::DecodeFn;
-    use crate::api::handler::encode_fn::EncodeFn;
 
     #[derive(Debug, PartialEq, Eq)]
     struct TestReq {
