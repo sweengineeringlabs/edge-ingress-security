@@ -6,7 +6,6 @@
 use std::sync::Arc;
 
 use edge_domain::{Handler, HandlerError, HandlerRegistry};
-use futures::future::BoxFuture;
 use swe_observ_metrics::{create_local_metrics_backend, MetricsProvider};
 
 use swe_edge_ingress_http::{
