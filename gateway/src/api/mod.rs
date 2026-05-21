@@ -1,6 +1,4 @@
 //! API layer — inbound trait contracts and public types.
-pub mod application_config_builder;
-pub mod architecture_config_builder;
 pub(crate) mod daemon;
 pub(crate) mod file;
 pub(crate) mod health_check;
@@ -11,6 +9,3 @@ pub(crate) mod pagination;
 pub(crate) mod rate_limiter;
 pub(crate) mod traits;
 pub(crate) mod validator;
-
-pub use application_config_builder::ApplicationConfigBuilder;
-pub use architecture_config_builder::ArchitectureConfigBuilder;
