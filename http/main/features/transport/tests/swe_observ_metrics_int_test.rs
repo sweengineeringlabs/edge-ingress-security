@@ -10,8 +10,8 @@ use futures::future::BoxFuture;
 use swe_observ_metrics::{create_local_metrics_backend, MetricsProvider};
 
 use swe_edge_ingress_http::{
-    HttpHandlerAdapter, HttpHandlerRegistryDispatcher, HttpHealthCheck, HttpInbound,
-    HttpInboundError, HttpInboundResult, HttpRequest, HttpResponse, RequestContext,
+    HttpHandlerAdapter, HttpHandlerRegistryDispatcher, HttpInbound, HttpInboundError, HttpRequest,
+    HttpResponse, RequestContext,
 };
 
 // ── Ping handler ──────────────────────────────────────────────────────────────
