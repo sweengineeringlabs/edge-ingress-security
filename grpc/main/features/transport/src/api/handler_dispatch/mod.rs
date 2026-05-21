@@ -3,5 +3,3 @@
 pub(crate) mod grpc_handler_registry_dispatcher;
 #[allow(clippy::module_inception)]
 pub(crate) mod handler_dispatch;
-
-pub use grpc_handler_registry_dispatcher::GrpcHandlerRegistryDispatcher;
