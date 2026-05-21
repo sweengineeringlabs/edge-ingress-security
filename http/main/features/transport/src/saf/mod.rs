@@ -1,7 +1,5 @@
 //! SAF layer — HTTP inbound public facade.
 pub(crate) mod edge_ingress_http_transport_svc;
-
-pub use crate::api::application_config_builder::ApplicationConfigBuilder;
 pub use crate::api::handler::http::http_decode_fn::HttpDecodeFn;
 pub use crate::api::handler::http::http_dispatcher_error::HttpDispatcherError;
 pub use crate::api::handler::http::http_encode_fn::HttpEncodeFn;
