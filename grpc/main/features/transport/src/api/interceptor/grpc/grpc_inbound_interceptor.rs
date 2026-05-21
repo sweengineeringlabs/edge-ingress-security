@@ -27,11 +27,9 @@ pub trait GrpcInboundInterceptor: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::api::value_object::{GrpcMetadata, GrpcStatusCode};
 
     #[test]
     fn test_is_authorization_defaults_to_false_for_plain_interceptors() {
-        use std::time::Duration;
         struct Plain;
         impl GrpcInboundInterceptor for Plain {
             fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> {

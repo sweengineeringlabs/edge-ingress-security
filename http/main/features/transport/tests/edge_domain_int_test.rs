@@ -6,13 +6,12 @@
 use std::sync::Arc;
 
 use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
-use futures::future::BoxFuture;
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
 use swe_edge_ingress_http::{
-    AxumHttpServer, HttpDecodeFn, HttpEncodeFn, HttpHandlerAdapter, HttpHandlerRegistryDispatcher,
-    HttpHealthCheck, HttpInbound, HttpInboundError, HttpInboundResult, HttpRequest, HttpResponse,
+    AxumHttpServer, HttpHandlerAdapter, HttpHandlerRegistryDispatcher, HttpInbound,
+    HttpInboundError, HttpRequest, HttpResponse,
 };
 
 // ── Domain handler under test ─────────────────────────────────────────────────

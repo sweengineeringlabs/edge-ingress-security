@@ -302,6 +302,6 @@ mod tests {
         // This is the correct behavior - callers must ensure URLs are non-empty.
         let result = path_from_url("");
         // The function returns what it can parse from the empty string.
-        assert!(result == "/" || result == "", "unexpected: {result}");
+        assert!(result == "/" || result.is_empty(), "unexpected: {result}");
     }
 }
