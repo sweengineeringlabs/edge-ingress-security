@@ -72,9 +72,7 @@ async fn test_swe_observ_metrics_provider_is_exercised_via_dispatcher() {
     use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
     use std::sync::Arc;
     use std::time::Duration;
-    use swe_edge_ingress_grpc_transport::{
-        DecodeFn, EncodeFn, GrpcHandlerAdapter, GrpcInbound, GrpcInboundError,
-    };
+    use swe_edge_ingress_grpc_transport::{GrpcHandlerAdapter, GrpcInbound, GrpcInboundError};
     use swe_observ_metrics::{create_local_metrics_backend, MetricsProvider};
 
     #[derive(Debug, PartialEq, Eq)]

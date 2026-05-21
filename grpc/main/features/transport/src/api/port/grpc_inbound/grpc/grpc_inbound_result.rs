@@ -13,7 +13,7 @@ mod tests {
     #[test]
     fn test_grpc_inbound_result_is_result_alias() {
         let ok: GrpcInboundResult<u32> = Ok(42);
-        assert_eq!(ok.unwrap(), 42);
+        assert!(matches!(ok, Ok(42)));
         let err: GrpcInboundResult<u32> = Err(GrpcInboundError::Internal("fail".into()));
         assert!(err.is_err());
     }

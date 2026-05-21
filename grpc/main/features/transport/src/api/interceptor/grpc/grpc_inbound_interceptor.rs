@@ -30,7 +30,6 @@ mod tests {
 
     #[test]
     fn test_is_authorization_defaults_to_false_for_plain_interceptors() {
-        use std::time::Duration;
         struct Plain;
         impl GrpcInboundInterceptor for Plain {
             fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> {

@@ -113,7 +113,7 @@ mod tests {
     use std::sync::Arc;
     use std::time::Duration;
 
-    use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
+    use edge_domain::{HandlerError, HandlerRegistry, RequestContext};
 
     use crate::api::handler::grpc::grpc_handler_registry_dispatcher::GrpcHandlerRegistryDispatcher;
     use crate::api::port::grpc_inbound::{GrpcInbound, GrpcInboundError};
