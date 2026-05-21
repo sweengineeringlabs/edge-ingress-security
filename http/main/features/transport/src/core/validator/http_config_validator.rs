@@ -55,16 +55,20 @@ mod tests {
 
     #[test]
     fn test_validate_returns_err_when_timeout_secs_is_zero() {
-        let mut cfg = HttpConfig::default();
-        cfg.timeout_secs = 0;
+        let cfg = HttpConfig {
+            timeout_secs: 0,
+            ..Default::default()
+        };
         let err = cfg.validate().unwrap_err();
         assert!(err.contains("timeout_secs"), "{err}");
     }
 
     #[test]
     fn test_validate_returns_err_when_connect_timeout_secs_is_zero() {
-        let mut cfg = HttpConfig::default();
-        cfg.connect_timeout_secs = 0;
+        let cfg = HttpConfig {
+            connect_timeout_secs: 0,
+            ..Default::default()
+        };
         let err = cfg.validate().unwrap_err();
         assert!(err.contains("connect_timeout_secs"), "{err}");
     }

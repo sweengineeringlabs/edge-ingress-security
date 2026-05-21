@@ -12,7 +12,7 @@ mod tests {
     #[test]
     fn test_http_inbound_result_ok_wraps_value() {
         let r: HttpInboundResult<u32> = Ok(42);
-        assert_eq!(r.unwrap(), 42);
+        assert!(matches!(r, Ok(42)));
     }
 
     #[test]

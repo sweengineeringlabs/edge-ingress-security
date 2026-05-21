@@ -19,8 +19,10 @@ fn test_validate_returns_ok_for_default_http_config() {
 /// @covers: validate
 #[test]
 fn test_validate_returns_err_when_timeout_secs_is_zero() {
-    let mut cfg = HttpConfig::default();
-    cfg.timeout_secs = 0;
+    let cfg = HttpConfig {
+        timeout_secs: 0,
+        ..Default::default()
+    };
     let result = validate(&cfg);
     assert!(result.is_err(), "expected Err for zero timeout_secs");
     let msg = result.unwrap_err();
@@ -33,8 +35,10 @@ fn test_validate_returns_err_when_timeout_secs_is_zero() {
 /// @covers: validate
 #[test]
 fn test_validate_returns_err_when_connect_timeout_secs_is_zero() {
-    let mut cfg = HttpConfig::default();
-    cfg.connect_timeout_secs = 0;
+    let cfg = HttpConfig {
+        connect_timeout_secs: 0,
+        ..Default::default()
+    };
     let result = validate(&cfg);
     assert!(
         result.is_err(),

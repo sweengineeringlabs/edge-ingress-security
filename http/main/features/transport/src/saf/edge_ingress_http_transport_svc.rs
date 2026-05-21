@@ -24,8 +24,10 @@ mod tests {
     /// @covers: validate
     #[test]
     fn test_validate_returns_err_for_zero_timeout_config() {
-        let mut cfg = HttpConfig::default();
-        cfg.timeout_secs = 0;
+        let cfg = HttpConfig {
+            timeout_secs: 0,
+            ..Default::default()
+        };
         assert!(validate(&cfg).is_err());
     }
 }
