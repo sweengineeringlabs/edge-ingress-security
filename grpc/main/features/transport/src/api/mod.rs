@@ -14,3 +14,5 @@ pub(crate) mod status_codes;
 pub(crate) mod traits;
 pub(crate) mod validator;
 pub(crate) mod value_object;
+
+pub use architecture_config_builder::ArchitectureConfigBuilder;

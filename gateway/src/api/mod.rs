@@ -11,3 +11,6 @@ pub(crate) mod pagination;
 pub(crate) mod rate_limiter;
 pub(crate) mod traits;
 pub(crate) mod validator;
+
+pub use application_config_builder::ApplicationConfigBuilder;
+pub use architecture_config_builder::ArchitectureConfigBuilder;
