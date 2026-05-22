@@ -1,6 +1,5 @@
 /// Builder for architecture configuration.
 #[derive(Debug, Default)]
-#[allow(dead_code)]
 pub struct ArchitectureConfigBuilder {
     _private: (),
 }

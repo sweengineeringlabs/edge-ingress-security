@@ -7,7 +7,6 @@ use super::application_config::ApplicationConfig;
 /// Provides a fluent interface for constructing the application configuration
 /// used at runtime initialisation.
 #[derive(Debug, Clone, Default)]
-#[allow(dead_code)]
 pub struct ApplicationConfigBuilder {
     name: Option<String>,
     version: Option<String>,

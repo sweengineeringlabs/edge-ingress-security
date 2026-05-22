@@ -29,3 +29,7 @@ subtle       = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread"] }
+
+[[test]]
+name = "jwt_claims_int_test"
+path = "tests/jwt_claims_int_test.rs"

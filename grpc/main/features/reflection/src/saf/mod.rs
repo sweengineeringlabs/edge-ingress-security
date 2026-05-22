@@ -1,5 +1,6 @@
 //! SAF layer — public facade.
 
+pub use crate::api::application_config_builder::ApplicationConfigBuilder;
 pub use crate::api::error::ReflectionError;
 pub use crate::api::reflection_service::{
     service_name_from_method_path, ReflectionService, ERROR_CODE_INVALID_ARGUMENT,

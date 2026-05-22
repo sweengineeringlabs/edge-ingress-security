@@ -102,5 +102,9 @@ path    = "tests/validator_int_test.rs"
 name    = "dependency_coverage_int_test"
 path    = "tests/dependency_coverage_int_test.rs"
 
+[[test]]
+name    = "health_service_int_test"
+path    = "tests/health_service_int_test.rs"
+
 [lints]
 workspace = true

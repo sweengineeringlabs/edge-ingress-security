@@ -1,12 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "main/features/transport",
-    "main/features/reflection",
-    "main/features/verifier",
-    "main/features/auth-bearer",
-    "main/features/auth-mtls",
-    "main/features/authz",
+    "main/features/*",
 ]
 
 [workspace.package]
