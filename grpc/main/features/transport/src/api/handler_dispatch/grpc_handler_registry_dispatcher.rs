@@ -1,15 +1,8 @@
 //! Handler dispatch interface — declares the types that core/handler_dispatch implements.
 
-/// Re-export of the primary dispatch type from the handler module.
-///
-/// This file exists to satisfy the SEA rule requiring every core implementation
-/// file to have a corresponding interface counterpart in the api/ layer.
-#[allow(unused_imports)]
-pub use crate::api::handler::grpc::grpc_handler_registry_dispatcher::GrpcHandlerRegistryDispatcher;
-
 #[cfg(test)]
 mod tests {
-    use super::GrpcHandlerRegistryDispatcher;
+    use crate::api::handler::grpc::grpc_handler_registry_dispatcher::GrpcHandlerRegistryDispatcher;
     use edge_domain::HandlerRegistry;
     use std::sync::Arc;
 
