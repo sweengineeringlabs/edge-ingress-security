@@ -1,0 +1,30 @@
+# SEA project configuration (L0) — swe-edge ingress aggregator
+[project]
+name = "swe-edge-ingress"
+workspaces = [
+    "grpc",
+    "http",
+    "message-broker",
+    "tls",
+    "verifier",
+]
+
+[workspace.grpc]
+path = "grpc"
+crate = "swe-edge-ingress-grpc-transport"
+
+[workspace.http]
+path = "http"
+crate = "swe-edge-ingress-http-transport"
+
+[workspace."message-broker"]
+path = "message-broker"
+crate = "swe-edge-ingress-message-broker-transport"
+
+[workspace.tls]
+path = "tls"
+crate = "swe-edge-ingress-tls"
+
+[workspace.verifier]
+path = "verifier"
+crate = "swe-edge-ingress-verifier"

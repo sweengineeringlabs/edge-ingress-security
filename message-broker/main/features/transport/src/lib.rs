@@ -1,4 +1,4 @@
-//! `swe-edge-ingress-message-broker` — opt-in ingress message consumer port.
+//! `swe-edge-ingress-message-broker-transport` — opt-in ingress message consumer port.
 //!
 //! Wraps `swe-edge-runtime-message-broker` as a structured ingress port. Nothing is
 //! compiled unless the caller opts in via a feature flag.
@@ -7,11 +7,11 @@
 //!
 //! ```toml
 //! [dependencies]
-//! swe-edge-ingress-message-broker = { path = "...", features = ["in-memory"] }
+//! swe-edge-ingress-message-broker-transport = { path = "...", features = ["in-memory"] }
 //! ```
 //!
 //! ```rust,ignore
-//! use swe_edge_ingress_message_broker::{default_consumer, MessageConsumer};
+//! use swe_edge_ingress_message_broker_transport::{default_consumer, MessageConsumer};
 //! use futures::StreamExt;
 //!
 //! let consumer = default_consumer();

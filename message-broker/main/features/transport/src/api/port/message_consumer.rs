@@ -11,7 +11,7 @@ use crate::api::port::consumer::consumer_result::ConsumerResult;
 /// to obtain a concrete implementation:
 ///
 /// ```rust,ignore
-/// let consumer = swe_edge_ingress_message_broker::default_consumer();
+/// let consumer = swe_edge_ingress_message_broker_transport::default_consumer();
 /// let mut stream = consumer.subscribe("orders.created").await?;
 /// while let Some(msg) = stream.next().await {
 ///     // handle msg

@@ -1,5 +1,5 @@
 [package]
-name         = "swe-edge-ingress-message-broker"
+name         = "swe-edge-ingress-message-broker-transport"
 version.workspace     = true
 edition.workspace     = true
 license.workspace     = true
@@ -15,7 +15,7 @@ application_type = "lib"
 service_type     = "transport"
 
 [lib]
-name = "swe_edge_ingress_message_broker"
+name = "swe_edge_ingress_message_broker_transport"
 path = "src/lib.rs"
 
 [features]

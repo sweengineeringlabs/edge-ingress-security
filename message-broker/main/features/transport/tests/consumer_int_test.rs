@@ -3,7 +3,7 @@
 #[cfg(feature = "in-memory")]
 mod tests {
     use futures::StreamExt;
-    use swe_edge_ingress_message_broker::{default_consumer, MessageConsumer};
+    use swe_edge_ingress_message_broker_transport::{default_consumer, MessageConsumer};
 
     #[tokio::test]
     async fn test_default_consumer_health_check_returns_ok() {

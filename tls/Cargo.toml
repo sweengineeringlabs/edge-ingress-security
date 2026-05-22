@@ -28,6 +28,10 @@ rustls-pemfile = "2"
 tempfile = "3"
 rcgen    = "0.13"
 
+[[test]]
+name = "traits_int_test"
+path = "tests/traits_int_test.rs"
+
 [lints.rust]
 unsafe_code  = "deny"
 missing_docs = "warn"

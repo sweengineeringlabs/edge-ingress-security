@@ -1,6 +1,6 @@
 //! Integration tests — Validator trait via SAF.
 
-use swe_edge_ingress_message_broker::{validate, ApplicationConfigBuilder, Validator};
+use swe_edge_ingress_message_broker_transport::{validate, ApplicationConfigBuilder, Validator};
 
 #[test]
 fn test_validate_application_config_builder_returns_ok() {

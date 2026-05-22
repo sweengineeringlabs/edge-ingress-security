@@ -56,7 +56,7 @@ where
             match extract_bearer(&req) {
                 Err(e) => Ok(auth_error_response(e)),
                 Ok(token) => match verifier.verify(token) {
-                    Err(e) => Ok(auth_error_response(HttpAuthError::InvalidToken(e))),
+                    Err(e) => Ok(auth_error_response(HttpAuthError::from(e))),
                     Ok(claims) => {
                         // Build RequestContext from verified claims and insert for downstream.
                         let ctx = RequestContext::authenticated(

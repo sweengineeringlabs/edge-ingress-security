@@ -2,7 +2,7 @@
 
 #[cfg(feature = "in-memory")]
 mod tests {
-    use swe_edge_ingress_message_broker::{
+    use swe_edge_ingress_message_broker_transport::{
         check_health, default_consumer, subscribe_to, validate, ApplicationConfigBuilder,
         MessageConsumer, Validator,
     };

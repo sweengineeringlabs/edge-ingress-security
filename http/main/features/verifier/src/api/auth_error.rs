@@ -14,7 +14,13 @@ pub enum HttpAuthError {
     MalformedAuthorization,
     /// The token was rejected by the underlying verifier.
     #[error("invalid token: {0}")]
-    InvalidToken(#[from] VerifierError),
+    InvalidToken(String),
+}
+
+impl From<VerifierError> for HttpAuthError {
+    fn from(e: VerifierError) -> Self {
+        HttpAuthError::InvalidToken(e.to_string())
+    }
 }
 
 #[cfg(test)]
@@ -26,7 +32,16 @@ mod tests {
     fn test_http_auth_error_display_is_non_empty() {
         assert!(!HttpAuthError::MissingAuthorization.to_string().is_empty());
         assert!(!HttpAuthError::MalformedAuthorization.to_string().is_empty());
-        let wrapped = HttpAuthError::InvalidToken(VerifierError::Expired);
+        let wrapped = HttpAuthError::InvalidToken("expired".to_string());
         assert!(!wrapped.to_string().is_empty());
+    }
+
+    /// @covers: From<VerifierError> — conversion preserves the error message.
+    #[test]
+    fn test_from_verifier_error_produces_invalid_token_with_message() {
+        use swe_edge_ingress_verifier::VerifierError;
+        let err = HttpAuthError::from(VerifierError::Expired);
+        assert!(matches!(err, HttpAuthError::InvalidToken(_)));
+        assert!(!err.to_string().is_empty());
     }
 }
