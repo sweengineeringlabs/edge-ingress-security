@@ -1,0 +1,63 @@
+[workspace]
+resolver = "2"
+members = [
+    "grpc/main/features/auth-bearer",
+    "grpc/main/features/auth-mtls",
+    "grpc/main/features/authz",
+    "grpc/main/features/reflection",
+    "grpc/main/features/transport",
+    "grpc/main/features/verifier",
+    "http/main/features/transport",
+    "http/main/features/verifier",
+    "message-broker/main/features/transport",
+    "tls",
+    "verifier",
+]
+
+[workspace.package]
+version      = "0.1.0"
+edition      = "2021"
+license      = "MIT OR Apache-2.0"
+rust-version = "1.95"
+authors      = ["SWE Engineering Labs"]
+repository   = "https://github.com/sweengineeringlabs/edge"
+
+[workspace.dependencies]
+# ── Third-party ───────────────────────────────────────────────────────────────
+async-trait    = "0.1"
+axum           = "0.8"
+bytes          = "1"
+chrono         = { version = "0.4", features = ["serde"] }
+futures        = "0.3"
+http-body-util = "0.1"
+jsonwebtoken   = "9"
+parking_lot    = "0.12"
+reqwest        = { version = "0.12", features = ["json"], default-features = false }
+serde          = { version = "1.0", features = ["derive"] }
+serde_json     = "1.0"
+subtle         = "2"
+thiserror      = "2"
+tokio          = { version = "1.0", features = ["rt-multi-thread", "rt", "sync", "macros", "time"] }
+toml           = "0.8"
+tonic          = { version = "0.12", default-features = false, features = ["transport"] }
+tracing        = { version = "0.1", default-features = false }
+
+# ── External git deps ─────────────────────────────────────────────────────────
+edge-domain            = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.3.4" }
+swe-observ-metrics     = { package = "swe_justobserv_metrics", git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
+swe_justobserv_context = { git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
+swe-edge-runtime-message-broker = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", branch = "dev" }
+
+# ── Workspace-internal path deps ──────────────────────────────────────────────
+swe-edge-ingress-tls      = { path = "tls" }
+swe-edge-ingress-verifier = { path = "verifier" }
+
+swe-edge-ingress-grpc             = { package = "swe-edge-ingress-grpc-transport", path = "grpc/main/features/transport" }
+swe-edge-ingress-grpc-transport   = { path = "grpc/main/features/transport" }
+swe-edge-ingress-grpc-auth-bearer = { path = "grpc/main/features/auth-bearer" }
+swe-edge-ingress-grpc-auth-mtls   = { path = "grpc/main/features/auth-mtls" }
+swe-edge-ingress-grpc-authz       = { path = "grpc/main/features/authz" }
+
+[workspace.lints.rust]
+unsafe_code  = "deny"
+missing_docs = "warn"
