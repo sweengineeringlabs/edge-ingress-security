@@ -6,7 +6,8 @@ pub use crate::api::application_config::{ApplicationConfig, ApplicationConfigBui
 pub use crate::api::audit_sink::{AuditEvent, AuditEventBuilder, AuditSink, NoopAuditSink};
 pub use crate::api::grpc_timeout::{parse_grpc_timeout, DEFAULT_DEADLINE};
 pub use crate::api::handler::{
-    DecodeFn, EncodeFn, GrpcHandlerAdapter, GrpcHandlerRegistryDispatcher,
+    DecodeFn as GrpcDecodeFn, EncodeFn as GrpcEncodeFn, GrpcHandlerAdapter,
+    GrpcHandlerRegistryDispatcher,
 };
 pub use crate::api::health_service::{
     HealthAggregate, HealthService, ServingStatus, HEALTH_CHECK_METHOD, HEALTH_WATCH_METHOD,
