@@ -14,7 +14,7 @@ use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
 use swe_edge_ingress_grpc_transport::{
-    GrpcHealthCheck, GrpcInbound, GrpcInboundResult, GrpcMetadata, GrpcRequest, GrpcResponse,
+    GrpcHealthCheck, GrpcIngress, GrpcIngressResult, GrpcMetadata, GrpcRequest, GrpcResponse,
     RequestContext, TonicGrpcServer,
 };
 
@@ -22,12 +22,12 @@ struct GuardedHandler {
     hit: Arc<AtomicBool>,
 }
 
-impl GrpcInbound for GuardedHandler {
+impl GrpcIngress for GuardedHandler {
     fn handle_unary(
         &self,
         req: GrpcRequest,
         _ctx: RequestContext,
-    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> futures::future::BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         let hit = self.hit.clone();
         Box::pin(async move {
             hit.store(true, Ordering::SeqCst);
@@ -38,7 +38,7 @@ impl GrpcInbound for GuardedHandler {
         })
     }
 
-    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
     }
 }

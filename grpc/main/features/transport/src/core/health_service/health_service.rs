@@ -10,25 +10,25 @@ use crate::api::health_service::{
 };
 use edge_domain::RequestContext;
 
-use crate::api::port::grpc_inbound::{
-    GrpcHealthCheck, GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcMessageStream,
+use crate::api::port::grpc_ingress::{
+    GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream,
 };
 use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode};
 
-impl GrpcInbound for HealthService {
+impl GrpcIngress for HealthService {
     fn handle_unary(
         &self,
         request: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         Box::pin(async move {
             match request.method.as_str() {
                 HEALTH_CHECK_METHOD => self.handle_check(&request.body),
-                HEALTH_WATCH_METHOD => Err(GrpcInboundError::Status(
+                HEALTH_WATCH_METHOD => Err(GrpcIngressError::Status(
                     GrpcStatusCode::Unimplemented,
                     "Watch must be invoked via streaming dispatch".into(),
                 )),
-                other => Err(GrpcInboundError::Unimplemented(format!(
+                other => Err(GrpcIngressError::Unimplemented(format!(
                     "unknown method {other}"
                 ))),
             }
@@ -41,7 +41,7 @@ impl GrpcInbound for HealthService {
         _metadata: GrpcMetadata,
         messages: GrpcMessageStream,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<(GrpcMessageStream, GrpcMetadata)>> {
         Box::pin(async move {
             if method.as_str() != HEALTH_WATCH_METHOD {
                 let mut messages = messages;
@@ -108,7 +108,7 @@ impl GrpcInbound for HealthService {
                             Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
                                 s.phase = HealthServiceWatchPhase::Closed;
                                 return Some((
-                                    Err(GrpcInboundError::Status(
+                                    Err(GrpcIngressError::Status(
                                         GrpcStatusCode::ResourceExhausted,
                                         "watch subscriber fell behind".into(),
                                     )),
@@ -129,20 +129,20 @@ impl GrpcInbound for HealthService {
         })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
 
 impl HealthService {
-    fn handle_check(&self, body: &[u8]) -> GrpcInboundResult<GrpcResponse> {
+    fn handle_check(&self, body: &[u8]) -> GrpcIngressResult<GrpcResponse> {
         let service = decode_health_check_request(body).unwrap_or_default();
         match self.get_status(&service) {
             Some(status) => Ok(GrpcResponse {
                 body: encode_health_check_response(status),
                 metadata: GrpcMetadata::default(),
             }),
-            None => Err(GrpcInboundError::NotFound(format!(
+            None => Err(GrpcIngressError::NotFound(format!(
                 "service {service:?} not registered"
             ))),
         }
@@ -211,7 +211,7 @@ mod tests {
     use crate::api::health_service::{
         HealthAggregate, HealthService, ServingStatus, HEALTH_CHECK_METHOD,
     };
-    use crate::api::port::grpc_inbound::{GrpcHealthCheck, GrpcInbound, GrpcInboundResult};
+    use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
     use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
     #[test]
@@ -270,12 +270,12 @@ mod tests {
     async fn test_health_aggregate_refresh_pushes_dispatcher_health_to_overall() {
         // Local stub — named with the primary type prefix to satisfy SEA cohesion check.
         struct HealthServiceTestDispatcher;
-        impl GrpcInbound for HealthServiceTestDispatcher {
+        impl GrpcIngress for HealthServiceTestDispatcher {
             fn handle_unary(
                 &self,
                 _: GrpcRequest,
                 _ctx: RequestContext,
-            ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+            ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
                 Box::pin(async {
                     Ok(GrpcResponse {
                         body: vec![],
@@ -283,7 +283,7 @@ mod tests {
                     })
                 })
             }
-            fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+            fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
                 Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
             }
         }

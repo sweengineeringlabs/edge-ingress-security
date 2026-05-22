@@ -4,14 +4,14 @@ use std::pin::Pin;
 
 use futures::Stream;
 
-use crate::api::port::http_inbound_error::HttpInboundError;
+use crate::api::port::http_ingress_error::HttpIngressError;
 use crate::api::value_object::ws::ws_message::WsMessage;
 
 /// The receive half of a [`WsChannel`](super::ws_channel::WsChannel).
 ///
 /// Yields [`WsMessage`] frames arriving from the connected WebSocket peer.
 /// Exhausted when the peer closes the connection.
-pub type WsReceiver = Pin<Box<dyn Stream<Item = Result<WsMessage, HttpInboundError>> + Send>>;
+pub type WsReceiver = Pin<Box<dyn Stream<Item = Result<WsMessage, HttpIngressError>> + Send>>;
 
 #[cfg(test)]
 mod tests {

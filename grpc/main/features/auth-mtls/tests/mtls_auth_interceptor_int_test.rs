@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use swe_edge_ingress_grpc::{
-    GrpcInboundError, GrpcInboundInterceptor, GrpcMetadata, GrpcRequest, GrpcStatusCode,
+    GrpcIngressError, GrpcIngressInterceptor, GrpcMetadata, GrpcRequest, GrpcStatusCode,
     PEER_CERT_FINGERPRINT_SHA256, PEER_CN,
 };
 use swe_edge_ingress_grpc_auth_mtls::{MtlsAuthConfig, MtlsAuthInterceptor};
@@ -39,7 +39,7 @@ fn mtls_struct_auth_interceptor_rejects_plaintext_call_int_test() {
     let interceptor = MtlsAuthInterceptor::allow_any_verified_peer();
     let mut r = GrpcRequest::new("/svc/M", vec![], Duration::from_secs(1));
     match interceptor.before_dispatch(&mut r) {
-        Err(GrpcInboundError::Status(GrpcStatusCode::Unauthenticated, _)) => {}
+        Err(GrpcIngressError::Status(GrpcStatusCode::Unauthenticated, _)) => {}
         other => panic!("expected Unauthenticated, got {other:?}"),
     }
 }
@@ -51,7 +51,7 @@ fn mtls_struct_auth_interceptor_enforces_cn_allowlist_through_saf_int_test() {
         MtlsAuthInterceptor::from_config(MtlsAuthConfig::restrict_to_cns(["svc-a".into()]));
     let mut r = req_with_fingerprint_and_cn(Some("svc-evil"));
     match interceptor.before_dispatch(&mut r) {
-        Err(GrpcInboundError::Status(GrpcStatusCode::PermissionDenied, _)) => {}
+        Err(GrpcIngressError::Status(GrpcStatusCode::PermissionDenied, _)) => {}
         other => panic!("expected PermissionDenied, got {other:?}"),
     }
 }

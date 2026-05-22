@@ -1,6 +1,6 @@
 //! Integration tests for TonicGrpcServer — real HTTP/2 gRPC over TCP.
 //!
-//! Each test binds a port-0 listener, wires a [`GrpcInbound`] handler, and
+//! Each test binds a port-0 listener, wires a [`GrpcIngress`] handler, and
 //! exercises the full wire path through `hyper::client::conn::http2`.
 
 use std::collections::HashMap;
@@ -16,7 +16,7 @@ use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
 use swe_edge_ingress_grpc_transport::{
-    GrpcHealthCheck, GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcMessageStream,
+    GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream,
     GrpcMetadata, GrpcRequest, GrpcResponse, RequestContext, TonicGrpcServer,
 };
 
@@ -25,12 +25,12 @@ use swe_edge_ingress_grpc_transport::{
 /// Handler whose `handle_stream` always returns exactly three fixed response frames.
 struct ThreeFrameServerStreamHandler;
 
-impl GrpcInbound for ThreeFrameServerStreamHandler {
+impl GrpcIngress for ThreeFrameServerStreamHandler {
     fn handle_unary(
         &self,
         _req: GrpcRequest,
         _ctx: RequestContext,
-    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> futures::future::BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         Box::pin(async move {
             Ok(GrpcResponse {
                 body: vec![],
@@ -47,7 +47,7 @@ impl GrpcInbound for ThreeFrameServerStreamHandler {
         _metadata: GrpcMetadata,
         _messages: GrpcMessageStream,
         _ctx: RequestContext,
-    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
+    ) -> futures::future::BoxFuture<'_, GrpcIngressResult<(GrpcMessageStream, GrpcMetadata)>> {
         Box::pin(async move {
             let out: GrpcMessageStream = Box::pin(futures::stream::iter(vec![
                 Ok(vec![1u8]),
@@ -58,7 +58,7 @@ impl GrpcInbound for ThreeFrameServerStreamHandler {
         })
     }
 
-    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
@@ -66,12 +66,12 @@ impl GrpcInbound for ThreeFrameServerStreamHandler {
 /// Handler whose `handle_stream` counts input frames and returns the count as a 1-byte response.
 struct FrameCountHandler;
 
-impl GrpcInbound for FrameCountHandler {
+impl GrpcIngress for FrameCountHandler {
     fn handle_unary(
         &self,
         _req: GrpcRequest,
         _ctx: RequestContext,
-    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> futures::future::BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         Box::pin(async move {
             Ok(GrpcResponse {
                 body: vec![],
@@ -86,7 +86,7 @@ impl GrpcInbound for FrameCountHandler {
         _metadata: GrpcMetadata,
         messages: GrpcMessageStream,
         _ctx: RequestContext,
-    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
+    ) -> futures::future::BoxFuture<'_, GrpcIngressResult<(GrpcMessageStream, GrpcMetadata)>> {
         Box::pin(async move {
             use futures::StreamExt;
             let count = messages.count().await;
@@ -96,7 +96,7 @@ impl GrpcInbound for FrameCountHandler {
         })
     }
 
-    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
@@ -104,12 +104,12 @@ impl GrpcInbound for FrameCountHandler {
 /// Handler whose `handle_stream` echoes every input frame back as a separate output frame.
 struct EchoStreamHandler;
 
-impl GrpcInbound for EchoStreamHandler {
+impl GrpcIngress for EchoStreamHandler {
     fn handle_unary(
         &self,
         req: GrpcRequest,
         _ctx: RequestContext,
-    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> futures::future::BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         Box::pin(async move {
             Ok(GrpcResponse {
                 body: req.body,
@@ -124,28 +124,28 @@ impl GrpcInbound for EchoStreamHandler {
         _metadata: GrpcMetadata,
         messages: GrpcMessageStream,
         _ctx: RequestContext,
-    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
+    ) -> futures::future::BoxFuture<'_, GrpcIngressResult<(GrpcMessageStream, GrpcMetadata)>> {
         Box::pin(async move {
             use futures::StreamExt;
-            let items: Vec<GrpcInboundResult<Vec<u8>>> = messages.collect().await;
+            let items: Vec<GrpcIngressResult<Vec<u8>>> = messages.collect().await;
             let out: GrpcMessageStream = Box::pin(futures::stream::iter(items));
             Ok((out, GrpcMetadata::default()))
         })
     }
 
-    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
 
 struct EchoHandler;
 
-impl GrpcInbound for EchoHandler {
+impl GrpcIngress for EchoHandler {
     fn handle_unary(
         &self,
         req: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         Box::pin(async move {
             Ok(GrpcResponse {
                 body: req.body,
@@ -156,87 +156,87 @@ impl GrpcInbound for EchoHandler {
         })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
 
 struct NotFoundHandler;
 
-impl GrpcInbound for NotFoundHandler {
+impl GrpcIngress for NotFoundHandler {
     fn handle_unary(
         &self,
         _: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
-        Box::pin(async move { Err(GrpcInboundError::NotFound("no such method".into())) })
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
+        Box::pin(async move { Err(GrpcIngressError::NotFound("no such method".into())) })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
 
 struct InvalidArgumentHandler;
 
-impl GrpcInbound for InvalidArgumentHandler {
+impl GrpcIngress for InvalidArgumentHandler {
     fn handle_unary(
         &self,
         _: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
-        Box::pin(async move { Err(GrpcInboundError::InvalidArgument("bad field".into())) })
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
+        Box::pin(async move { Err(GrpcIngressError::InvalidArgument("bad field".into())) })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
 
 struct DeadlineExceededHandler;
 
-impl GrpcInbound for DeadlineExceededHandler {
+impl GrpcIngress for DeadlineExceededHandler {
     fn handle_unary(
         &self,
         _: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
-        Box::pin(async move { Err(GrpcInboundError::DeadlineExceeded("took too long".into())) })
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
+        Box::pin(async move { Err(GrpcIngressError::DeadlineExceeded("took too long".into())) })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
 
 struct PermissionDeniedHandler;
 
-impl GrpcInbound for PermissionDeniedHandler {
+impl GrpcIngress for PermissionDeniedHandler {
     fn handle_unary(
         &self,
         _: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
-        Box::pin(async move { Err(GrpcInboundError::PermissionDenied("not allowed".into())) })
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
+        Box::pin(async move { Err(GrpcIngressError::PermissionDenied("not allowed".into())) })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
 
 struct UnimplementedHandler;
 
-impl GrpcInbound for UnimplementedHandler {
+impl GrpcIngress for UnimplementedHandler {
     fn handle_unary(
         &self,
         _: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
-        Box::pin(async move { Err(GrpcInboundError::Unimplemented("not built yet".into())) })
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
+        Box::pin(async move { Err(GrpcIngressError::Unimplemented("not built yet".into())) })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
@@ -244,12 +244,12 @@ impl GrpcInbound for UnimplementedHandler {
 /// Handler that returns custom metadata headers alongside an echo response.
 struct MetadataHandler;
 
-impl GrpcInbound for MetadataHandler {
+impl GrpcIngress for MetadataHandler {
     fn handle_unary(
         &self,
         req: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         Box::pin(async move {
             let mut headers = HashMap::new();
             headers.insert("x-response-id".to_string(), "meta-42".to_string());
@@ -260,7 +260,7 @@ impl GrpcInbound for MetadataHandler {
         })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
@@ -268,12 +268,12 @@ impl GrpcInbound for MetadataHandler {
 /// Handler whose response stream yields one successful frame then an error.
 struct MidStreamErrorHandler;
 
-impl GrpcInbound for MidStreamErrorHandler {
+impl GrpcIngress for MidStreamErrorHandler {
     fn handle_unary(
         &self,
         _: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         Box::pin(async move {
             Ok(GrpcResponse {
                 body: vec![],
@@ -288,24 +288,24 @@ impl GrpcInbound for MidStreamErrorHandler {
         _metadata: GrpcMetadata,
         _messages: GrpcMessageStream,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<(GrpcMessageStream, GrpcMetadata)>> {
         Box::pin(async move {
             let out: GrpcMessageStream = Box::pin(futures::stream::iter(vec![
                 Ok(vec![0u8]),
-                Err(GrpcInboundError::Internal("mid-stream fail".into())),
+                Err(GrpcIngressError::Internal("mid-stream fail".into())),
             ]));
             Ok((out, GrpcMetadata::default()))
         })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-async fn start_server<H: GrpcInbound + 'static>(handler: H) -> (SocketAddr, oneshot::Sender<()>) {
+async fn start_server<H: GrpcIngress + 'static>(handler: H) -> (SocketAddr, oneshot::Sender<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
     // Phase 3 introduces a default-deny authorisation invariant; these
@@ -499,12 +499,12 @@ async fn grpc_call_with_stream_type(
 /// three times as consecutive response frames.
 struct NamedServerStreamHandler;
 
-impl GrpcInbound for NamedServerStreamHandler {
+impl GrpcIngress for NamedServerStreamHandler {
     fn handle_unary(
         &self,
         req: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         Box::pin(async move {
             Ok(GrpcResponse {
                 body: req.body,
@@ -517,7 +517,7 @@ impl GrpcInbound for NamedServerStreamHandler {
         &self,
         req: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcMessageStream>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcMessageStream>> {
         Box::pin(async move {
             let body = req.body;
             let out: GrpcMessageStream = Box::pin(futures::stream::iter(vec![
@@ -529,7 +529,7 @@ impl GrpcInbound for NamedServerStreamHandler {
         })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
@@ -538,12 +538,12 @@ impl GrpcInbound for NamedServerStreamHandler {
 /// returns the count as a single byte.
 struct NamedClientStreamHandler;
 
-impl GrpcInbound for NamedClientStreamHandler {
+impl GrpcIngress for NamedClientStreamHandler {
     fn handle_unary(
         &self,
         _: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         Box::pin(async move {
             Ok(GrpcResponse {
                 body: vec![],
@@ -558,7 +558,7 @@ impl GrpcInbound for NamedClientStreamHandler {
         _metadata: GrpcMetadata,
         messages: GrpcMessageStream,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         Box::pin(async move {
             use futures::StreamExt;
             let count = messages.count().await;
@@ -569,7 +569,7 @@ impl GrpcInbound for NamedClientStreamHandler {
         })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
@@ -578,12 +578,12 @@ impl GrpcInbound for NamedClientStreamHandler {
 /// frame so tests can distinguish this variant from `handle_stream` echoes.
 struct NamedBidiStreamHandler;
 
-impl GrpcInbound for NamedBidiStreamHandler {
+impl GrpcIngress for NamedBidiStreamHandler {
     fn handle_unary(
         &self,
         _: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         Box::pin(async move {
             Ok(GrpcResponse {
                 body: vec![],
@@ -598,10 +598,10 @@ impl GrpcInbound for NamedBidiStreamHandler {
         _metadata: GrpcMetadata,
         messages: GrpcMessageStream,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<(GrpcMessageStream, GrpcMetadata)>> {
         Box::pin(async move {
             use futures::StreamExt;
-            let items: Vec<GrpcInboundResult<Vec<u8>>> = messages
+            let items: Vec<GrpcIngressResult<Vec<u8>>> = messages
                 .map(|r| {
                     r.map(|mut b| {
                         b.insert(0, 0xBD);
@@ -615,7 +615,7 @@ impl GrpcInbound for NamedBidiStreamHandler {
         })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
@@ -1017,12 +1017,12 @@ struct DispatchObserverHandler {
     invoked: Arc<AtomicBool>,
 }
 
-impl GrpcInbound for DispatchObserverHandler {
+impl GrpcIngress for DispatchObserverHandler {
     fn handle_unary(
         &self,
         _: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         let inv = self.invoked.clone();
         Box::pin(async move {
             inv.store(true, Ordering::SeqCst);
@@ -1039,7 +1039,7 @@ impl GrpcInbound for DispatchObserverHandler {
         _metadata: GrpcMetadata,
         _messages: GrpcMessageStream,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<(GrpcMessageStream, GrpcMetadata)>> {
         let inv = self.invoked.clone();
         Box::pin(async move {
             inv.store(true, Ordering::SeqCst);
@@ -1048,7 +1048,7 @@ impl GrpcInbound for DispatchObserverHandler {
         })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
@@ -1086,12 +1086,12 @@ struct ForeverHandler {
     finished: Arc<AtomicBool>,
 }
 
-impl GrpcInbound for ForeverHandler {
+impl GrpcIngress for ForeverHandler {
     fn handle_unary(
         &self,
         _: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         let started = self.started.clone();
         let finished = self.finished.clone();
         Box::pin(async move {
@@ -1111,7 +1111,7 @@ impl GrpcInbound for ForeverHandler {
         _: GrpcMetadata,
         _: GrpcMessageStream,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<(GrpcMessageStream, GrpcMetadata)>> {
         let started = self.started.clone();
         let finished = self.finished.clone();
         Box::pin(async move {
@@ -1123,7 +1123,7 @@ impl GrpcInbound for ForeverHandler {
         })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }
@@ -1233,7 +1233,7 @@ async fn test_server_returns_cancelled_when_client_drops_connection_mid_call() {
     );
 }
 
-/// @covers: TonicGrpcServer dispatch — `GrpcInboundError::Internal` carries
+/// @covers: TonicGrpcServer dispatch — `GrpcIngressError::Internal` carries
 /// a sensitive server-side message into logs but the wire `grpc-message`
 /// must be the sanitized constant (no leak).
 #[tokio::test]
@@ -1242,15 +1242,15 @@ async fn test_server_sanitizes_internal_error_message_on_wire() {
     const RAW_INTERNAL: &str = "panic at /home/svc/secret.rs:42 caller=alice@corp";
 
     struct LeakyHandler;
-    impl GrpcInbound for LeakyHandler {
+    impl GrpcIngress for LeakyHandler {
         fn handle_unary(
             &self,
             _: GrpcRequest,
             _ctx: RequestContext,
-        ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
-            Box::pin(async move { Err(GrpcInboundError::Internal(RAW_INTERNAL.into())) })
+        ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
+            Box::pin(async move { Err(GrpcIngressError::Internal(RAW_INTERNAL.into())) })
         }
-        fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+        fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
             Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
         }
     }

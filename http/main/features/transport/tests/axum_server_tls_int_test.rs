@@ -13,7 +13,7 @@ use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
 use swe_edge_ingress_http::{
-    AxumHttpServer, HttpHealthCheck, HttpInbound, HttpInboundResult, HttpRequest, HttpResponse,
+    AxumHttpServer, HttpHealthCheck, HttpIngress, HttpIngressResult, HttpRequest, HttpResponse,
     IngressTlsConfig, RequestContext,
 };
 
@@ -21,19 +21,19 @@ use swe_edge_ingress_http::{
 
 struct EchoHandler;
 
-impl HttpInbound for EchoHandler {
+impl HttpIngress for EchoHandler {
     fn handle(
         &self,
         req: HttpRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    ) -> BoxFuture<'_, HttpIngressResult<HttpResponse>> {
         Box::pin(async move {
             let body = format!("{} {}", req.method, req.url).into_bytes();
             Ok(HttpResponse::new(200, body))
         })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, HttpIngressResult<HttpHealthCheck>> {
         Box::pin(async { Ok(HttpHealthCheck::healthy()) })
     }
 }

@@ -1,5 +1,5 @@
 //! `swe-edge-ingress-grpc-authz` — pluggable authorisation
-//! [`GrpcInboundInterceptor`].
+//! [`GrpcIngressInterceptor`].
 //!
 //! The crate ships a small [`AuthzPolicy`] trait and a generic
 //! [`AuthzInterceptor`] that wraps any policy.  The default

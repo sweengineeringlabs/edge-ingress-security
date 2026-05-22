@@ -1,15 +1,15 @@
-//! `GrpcInboundInterceptor` + `AuthorizationInterceptor` impl for `BearerTokenInterceptor`.
+//! `GrpcIngressInterceptor` + `AuthorizationInterceptor` impl for `BearerTokenInterceptor`.
 
 use swe_edge_ingress_grpc_transport::{
-    AuthorizationInterceptor, GrpcInboundError, GrpcInboundInterceptor, GrpcRequest, GrpcResponse,
+    AuthorizationInterceptor, GrpcIngressError, GrpcIngressInterceptor, GrpcRequest, GrpcResponse,
     GrpcStatusCode,
 };
 use swe_edge_ingress_verifier::VerifierError;
 
 use crate::api::bearer_interceptor::BearerTokenInterceptor;
 
-impl GrpcInboundInterceptor for BearerTokenInterceptor {
-    fn before_dispatch(&self, req: &mut GrpcRequest) -> Result<(), GrpcInboundError> {
+impl GrpcIngressInterceptor for BearerTokenInterceptor {
+    fn before_dispatch(&self, req: &mut GrpcRequest) -> Result<(), GrpcIngressError> {
         let raw = req
             .metadata
             .headers
@@ -17,14 +17,14 @@ impl GrpcInboundInterceptor for BearerTokenInterceptor {
             .or_else(|| req.metadata.headers.get("Authorization"))
             .map(String::as_str)
             .ok_or_else(|| {
-                GrpcInboundError::Status(
+                GrpcIngressError::Status(
                     GrpcStatusCode::Unauthenticated,
                     "missing authorization metadata".into(),
                 )
             })?;
 
         let token = raw.strip_prefix("Bearer ").ok_or_else(|| {
-            GrpcInboundError::Status(
+            GrpcIngressError::Status(
                 GrpcStatusCode::Unauthenticated,
                 "authorization must be 'Bearer <token>'".into(),
             )
@@ -38,11 +38,11 @@ impl GrpcInboundInterceptor for BearerTokenInterceptor {
                 VerifierError::ClaimMismatch(c) => format!("claim mismatch: {c}"),
                 VerifierError::Invalid(_) | VerifierError::Config(_) => "invalid token".into(),
             };
-            GrpcInboundError::Status(GrpcStatusCode::Unauthenticated, msg)
+            GrpcIngressError::Status(GrpcStatusCode::Unauthenticated, msg)
         })
     }
 
-    fn after_dispatch(&self, _resp: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+    fn after_dispatch(&self, _resp: &mut GrpcResponse) -> Result<(), GrpcIngressError> {
         Ok(())
     }
 
@@ -58,7 +58,7 @@ mod tests {
     use std::sync::Arc;
     use std::time::Duration;
 
-    use swe_edge_ingress_grpc_transport::{GrpcInboundInterceptor, GrpcRequest, GrpcStatusCode};
+    use swe_edge_ingress_grpc_transport::{GrpcIngressInterceptor, GrpcRequest, GrpcStatusCode};
     use swe_edge_ingress_verifier::{Claims, VerifierError};
 
     use crate::api::bearer_interceptor::BearerTokenInterceptor;
@@ -101,7 +101,7 @@ mod tests {
         let err = i.before_dispatch(&mut req).unwrap_err();
         assert!(matches!(
             err,
-            swe_edge_ingress_grpc_transport::GrpcInboundError::Status(
+            swe_edge_ingress_grpc_transport::GrpcIngressError::Status(
                 GrpcStatusCode::Unauthenticated,
                 _
             )
@@ -119,7 +119,7 @@ mod tests {
         let err = i.before_dispatch(&mut req).unwrap_err();
         assert!(matches!(
             err,
-            swe_edge_ingress_grpc_transport::GrpcInboundError::Status(
+            swe_edge_ingress_grpc_transport::GrpcIngressError::Status(
                 GrpcStatusCode::Unauthenticated,
                 _
             )
@@ -134,7 +134,7 @@ mod tests {
         let err = i.before_dispatch(&mut req).unwrap_err();
         assert!(matches!(
             err,
-            swe_edge_ingress_grpc_transport::GrpcInboundError::Status(
+            swe_edge_ingress_grpc_transport::GrpcIngressError::Status(
                 GrpcStatusCode::Unauthenticated,
                 _
             )

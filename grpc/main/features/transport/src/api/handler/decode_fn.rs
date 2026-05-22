@@ -1,13 +1,13 @@
 //! Decode function pointer type for gRPC handler adapters.
 
-use crate::api::port::grpc_inbound::GrpcInboundError;
+use crate::api::port::grpc_ingress::GrpcIngressError;
 
 /// Function pointer that decodes a typed request from raw protobuf bytes.
 ///
-/// Implementations should return [`GrpcInboundError::InvalidArgument`]
+/// Implementations should return [`GrpcIngressError::InvalidArgument`]
 /// when the bytes cannot be parsed — that surfaces as
 /// `tonic::Code::InvalidArgument` on the wire.
-pub type DecodeFn<Req> = fn(&[u8]) -> Result<Req, GrpcInboundError>;
+pub type DecodeFn<Req> = fn(&[u8]) -> Result<Req, GrpcIngressError>;
 
 #[cfg(test)]
 mod tests {
@@ -15,9 +15,9 @@ mod tests {
 
     #[test]
     fn test_decode_fn_type_alias_is_usable() {
-        fn decode(bytes: &[u8]) -> Result<u32, GrpcInboundError> {
+        fn decode(bytes: &[u8]) -> Result<u32, GrpcIngressError> {
             if bytes.len() != 4 {
-                return Err(GrpcInboundError::InvalidArgument("need 4 bytes".into()));
+                return Err(GrpcIngressError::InvalidArgument("need 4 bytes".into()));
             }
             Ok(u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
         }

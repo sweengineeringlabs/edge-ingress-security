@@ -186,12 +186,12 @@ async fn test_health_check_returns_not_found_for_unregistered_service_over_grpc_
 ///
 /// The correct fix (pipe stream frames directly to the wire as they arrive) is tracked as
 /// a follow-up in the streaming-interceptors design. This test exercises the Watch business
-/// logic — snapshot + push-on-change — at the layer where it lives: `GrpcInbound::handle_stream`.
+/// logic — snapshot + push-on-change — at the layer where it lives: `GrpcIngress::handle_stream`.
 #[tokio::test]
 async fn test_health_watch_streams_initial_snapshot_then_status_change() {
     use futures::StreamExt;
     use swe_edge_ingress_grpc_transport::{
-        GrpcInbound, GrpcMessageStream, GrpcMetadata, RequestContext,
+        GrpcIngress, GrpcMessageStream, GrpcMetadata, RequestContext,
     };
 
     let health = Arc::new(HealthService::new());

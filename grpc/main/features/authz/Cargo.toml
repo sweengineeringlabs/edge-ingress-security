@@ -6,7 +6,7 @@ license.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 repository.workspace = true
-description = "Authorization GrpcInboundInterceptor — runs a pluggable AuthzPolicy on identity carried in GrpcMetadata"
+description = "Authorization GrpcIngressInterceptor — runs a pluggable AuthzPolicy on identity carried in GrpcMetadata"
 keywords = ["grpc", "authz", "rbac", "interceptor", "swe"]
 categories = ["network-programming", "authentication"]
 

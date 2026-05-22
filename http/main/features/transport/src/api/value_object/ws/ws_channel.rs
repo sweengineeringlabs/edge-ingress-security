@@ -5,11 +5,11 @@ use crate::api::value_object::ws::ws_sender::WsSender;
 
 /// A full-duplex WebSocket channel returned after a successful handshake.
 ///
-/// The server implementation receives this struct from [`HttpStreamInbound::handle_websocket`]
+/// The server implementation receives this struct from [`HttpStream::handle_websocket`]
 /// and uses [`sender`] to push frames to the peer while consuming
 /// incoming frames from [`receiver`].
 ///
-/// [`HttpStreamInbound::handle_websocket`]: crate::api::port::http::http_stream_inbound::HttpStreamInbound::handle_websocket
+/// [`HttpStream::handle_websocket`]: crate::api::port::http::http_stream::HttpStream::handle_websocket
 pub struct WsChannel {
     /// Send frames to the connected WebSocket peer.
     pub sender: WsSender,

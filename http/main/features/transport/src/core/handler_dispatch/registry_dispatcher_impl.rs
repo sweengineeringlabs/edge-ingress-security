@@ -1,4 +1,4 @@
-//! Registry-backed [`HttpInbound`] dispatcher implementation.
+//! Registry-backed [`HttpIngress`] dispatcher implementation.
 
 use std::time::Instant;
 
@@ -7,17 +7,17 @@ use futures::future::BoxFuture;
 
 use crate::api::handler::http::http_handler_registry_dispatcher::HttpHandlerRegistryDispatcher;
 use crate::api::port::http_health_check::HttpHealthCheck;
-use crate::api::port::http_inbound::HttpInbound;
-use crate::api::port::http_inbound_error::HttpInboundError;
-use crate::api::port::http_inbound_result::HttpInboundResult;
+use crate::api::port::http_ingress::HttpIngress;
+use crate::api::port::http_ingress_error::HttpIngressError;
+use crate::api::port::http_ingress_result::HttpIngressResult;
 use crate::api::value_object::{HttpRequest, HttpResponse};
 
-impl HttpInbound for HttpHandlerRegistryDispatcher {
+impl HttpIngress for HttpHandlerRegistryDispatcher {
     fn handle(
         &self,
         request: HttpRequest,
         ctx: RequestContext,
-    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    ) -> BoxFuture<'_, HttpIngressResult<HttpResponse>> {
         let metrics = self.metrics.clone();
         Box::pin(async move {
             let path = path_from_url(&request.url);
@@ -26,7 +26,7 @@ impl HttpInbound for HttpHandlerRegistryDispatcher {
                 match router.at(&path) {
                     Ok(m) => m.value.clone(),
                     Err(_) => {
-                        return Err(HttpInboundError::NotFound(format!(
+                        return Err(HttpIngressError::NotFound(format!(
                             "no handler registered for {path}"
                         )))
                     }
@@ -35,7 +35,7 @@ impl HttpInbound for HttpHandlerRegistryDispatcher {
             let handler = match self.registry.get(&id) {
                 Some(h) => h,
                 None => {
-                    return Err(HttpInboundError::Internal(format!(
+                    return Err(HttpIngressError::Internal(format!(
                         "route matched `{id}` but handler was not found in registry"
                     )))
                 }
@@ -66,7 +66,7 @@ impl HttpInbound for HttpHandlerRegistryDispatcher {
         })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, HttpIngressResult<HttpHealthCheck>> {
         let registry = self.registry.clone();
         Box::pin(async move {
             let ids = registry.list_ids();
@@ -96,17 +96,17 @@ pub(crate) fn path_from_url(url: &str) -> String {
         })
 }
 
-pub(crate) fn map_handler_error(err: HandlerError) -> HttpInboundError {
+pub(crate) fn map_handler_error(err: HandlerError) -> HttpIngressError {
     match err {
-        HandlerError::Unsupported(m) => HttpInboundError::MethodNotAllowed(m),
-        HandlerError::InvalidRequest(m) => HttpInboundError::InvalidInput(m),
-        HandlerError::NotFound(m) => HttpInboundError::NotFound(m),
-        HandlerError::Conflict(m) => HttpInboundError::Conflict(m),
-        HandlerError::ExecutionFailed(m) => HttpInboundError::Internal(m),
-        HandlerError::Unhealthy => HttpInboundError::Unavailable("handler unhealthy".into()),
-        HandlerError::FailedPrecondition(m) => HttpInboundError::UnprocessableEntity(m),
-        HandlerError::Unauthorized(m) => HttpInboundError::Unauthorized(m),
-        HandlerError::PermissionDenied(m) => HttpInboundError::PermissionDenied(m),
+        HandlerError::Unsupported(m) => HttpIngressError::MethodNotAllowed(m),
+        HandlerError::InvalidRequest(m) => HttpIngressError::InvalidInput(m),
+        HandlerError::NotFound(m) => HttpIngressError::NotFound(m),
+        HandlerError::Conflict(m) => HttpIngressError::Conflict(m),
+        HandlerError::ExecutionFailed(m) => HttpIngressError::Internal(m),
+        HandlerError::Unhealthy => HttpIngressError::Unavailable("handler unhealthy".into()),
+        HandlerError::FailedPrecondition(m) => HttpIngressError::UnprocessableEntity(m),
+        HandlerError::Unauthorized(m) => HttpIngressError::Unauthorized(m),
+        HandlerError::PermissionDenied(m) => HttpIngressError::PermissionDenied(m),
     }
 }
 
@@ -118,8 +118,8 @@ mod tests {
 
     use super::*;
     use crate::api::handler::http::http_handler_adapter::HttpHandlerAdapter;
-    use crate::api::port::http_inbound::HttpInbound;
-    use crate::api::port::http_inbound_error::HttpInboundError;
+    use crate::api::port::http_ingress::HttpIngress;
+    use crate::api::port::http_ingress_error::HttpIngressError;
     use crate::api::value_object::HttpRequest;
 
     fn fresh() -> HttpHandlerRegistryDispatcher {
@@ -151,7 +151,7 @@ mod tests {
                 })
             }
         }
-        fn dec(req: &HttpRequest) -> Result<HttpRequest, HttpInboundError> {
+        fn dec(req: &HttpRequest) -> Result<HttpRequest, HttpIngressError> {
             Ok(req.clone())
         }
         fn enc(r: HttpResponse) -> HttpResponse {
@@ -188,14 +188,14 @@ mod tests {
             .handle(HttpRequest::get("/nope"), ctx())
             .await
             .unwrap_err();
-        assert!(matches!(err, HttpInboundError::NotFound(_)));
+        assert!(matches!(err, HttpIngressError::NotFound(_)));
     }
 
     #[test]
     fn test_map_handler_error_unsupported_maps_to_method_not_allowed() {
         assert!(matches!(
             map_handler_error(HandlerError::Unsupported("x".into())),
-            HttpInboundError::MethodNotAllowed(_)
+            HttpIngressError::MethodNotAllowed(_)
         ));
     }
 
@@ -203,7 +203,7 @@ mod tests {
     fn test_map_handler_error_failed_precondition_maps_to_unprocessable_entity() {
         assert!(matches!(
             map_handler_error(HandlerError::FailedPrecondition("x".into())),
-            HttpInboundError::UnprocessableEntity(_)
+            HttpIngressError::UnprocessableEntity(_)
         ));
     }
 
@@ -243,7 +243,7 @@ mod tests {
                 Err(HandlerError::ExecutionFailed("boom".into()))
             }
         }
-        fn dec(req: &HttpRequest) -> Result<HttpRequest, HttpInboundError> {
+        fn dec(req: &HttpRequest) -> Result<HttpRequest, HttpIngressError> {
             Ok(req.clone())
         }
         fn enc(r: HttpResponse) -> HttpResponse {

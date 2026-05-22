@@ -1,4 +1,4 @@
-//! `swe-edge-ingress-http` — HTTP inbound domain (value objects + HttpInbound port).
+//! `swe-edge-ingress-http` — HTTP inbound domain (value objects + HttpIngress port).
 #![allow(dead_code)]
 
 mod api;

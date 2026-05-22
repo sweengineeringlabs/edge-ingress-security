@@ -10,9 +10,9 @@ use axum::Router;
 use futures::StreamExt as _;
 use tokio::net::TcpListener;
 
-use crate::api::port::http::http_stream_inbound::HttpStreamInbound;
-use crate::api::port::http_inbound::HttpInbound;
-use crate::api::port::http_inbound_error::HttpInboundError;
+use crate::api::port::http::http_stream::HttpStream;
+use crate::api::port::http_ingress::HttpIngress;
+use crate::api::port::http_ingress_error::HttpIngressError;
 use crate::api::value_object::ws::{WsChannel, WsMessage};
 use edge_domain::RequestContext;
 use swe_edge_ingress_verifier::TokenVerifier;
@@ -138,7 +138,7 @@ fn is_sse_request(headers: &axum::http::HeaderMap) -> bool {
 async fn dispatch_sse(
     req: axum::extract::Request,
     body_limit: usize,
-    handler: Arc<dyn HttpStreamInbound>,
+    handler: Arc<dyn HttpStream>,
 ) -> axum::response::Response {
     let (http_req, ctx) = match extract_request(req, body_limit).await {
         Ok(r) => r,
@@ -170,7 +170,7 @@ async fn dispatch_sse(
 
 async fn dispatch_websocket(
     req: axum::extract::Request,
-    handler: Arc<dyn HttpStreamInbound>,
+    handler: Arc<dyn HttpStream>,
 ) -> axum::response::Response {
     use axum::extract::ws::{Message, WebSocketUpgrade};
     use axum::extract::FromRequestParts;
@@ -219,7 +219,7 @@ async fn dispatch_websocket(
                     Ok(Message::Close(_)) => None,
                     Ok(_) => None,
                     Err(e) => Some(Err(
-                        crate::api::port::http_inbound_error::HttpInboundError::Internal(
+                        crate::api::port::http_ingress_error::HttpIngressError::Internal(
                             e.to_string(),
                         ),
                     )),
@@ -263,7 +263,7 @@ async fn dispatch_websocket(
 
 async fn serve_tls<F>(
     listener: TcpListener,
-    handler: Arc<dyn HttpInbound>,
+    handler: Arc<dyn HttpIngress>,
     body_limit: usize,
     verifier: Option<Arc<dyn TokenVerifier>>,
     tls_cfg: &IngressTlsConfig,
@@ -536,18 +536,18 @@ fn build_response(resp: HttpResponse) -> axum::response::Response {
         .unwrap_or_else(|_| internal_server_error("response build failed"))
 }
 
-fn error_response(e: HttpInboundError) -> axum::response::Response {
+fn error_response(e: HttpIngressError) -> axum::response::Response {
     let status = match &e {
-        HttpInboundError::NotFound(_) => axum::http::StatusCode::NOT_FOUND,
-        HttpInboundError::InvalidInput(_) => axum::http::StatusCode::BAD_REQUEST,
-        HttpInboundError::Unauthorized(_) => axum::http::StatusCode::UNAUTHORIZED,
-        HttpInboundError::PermissionDenied(_) => axum::http::StatusCode::FORBIDDEN,
-        HttpInboundError::Conflict(_) => axum::http::StatusCode::CONFLICT,
-        HttpInboundError::MethodNotAllowed(_) => axum::http::StatusCode::METHOD_NOT_ALLOWED,
-        HttpInboundError::UnprocessableEntity(_) => axum::http::StatusCode::UNPROCESSABLE_ENTITY,
-        HttpInboundError::Timeout(_) => axum::http::StatusCode::GATEWAY_TIMEOUT,
-        HttpInboundError::Unavailable(_) => axum::http::StatusCode::SERVICE_UNAVAILABLE,
-        HttpInboundError::Internal(_) => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+        HttpIngressError::NotFound(_) => axum::http::StatusCode::NOT_FOUND,
+        HttpIngressError::InvalidInput(_) => axum::http::StatusCode::BAD_REQUEST,
+        HttpIngressError::Unauthorized(_) => axum::http::StatusCode::UNAUTHORIZED,
+        HttpIngressError::PermissionDenied(_) => axum::http::StatusCode::FORBIDDEN,
+        HttpIngressError::Conflict(_) => axum::http::StatusCode::CONFLICT,
+        HttpIngressError::MethodNotAllowed(_) => axum::http::StatusCode::METHOD_NOT_ALLOWED,
+        HttpIngressError::UnprocessableEntity(_) => axum::http::StatusCode::UNPROCESSABLE_ENTITY,
+        HttpIngressError::Timeout(_) => axum::http::StatusCode::GATEWAY_TIMEOUT,
+        HttpIngressError::Unavailable(_) => axum::http::StatusCode::SERVICE_UNAVAILABLE,
+        HttpIngressError::Internal(_) => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
     };
     axum::response::Response::builder()
         .status(status)
@@ -704,37 +704,37 @@ mod tests {
 
     #[test]
     fn test_error_response_maps_not_found_to_404() {
-        let r = error_response(HttpInboundError::NotFound("x".into()));
+        let r = error_response(HttpIngressError::NotFound("x".into()));
         assert_eq!(r.status(), axum::http::StatusCode::NOT_FOUND);
     }
 
     #[test]
     fn test_error_response_maps_invalid_input_to_400() {
-        let r = error_response(HttpInboundError::InvalidInput("bad".into()));
+        let r = error_response(HttpIngressError::InvalidInput("bad".into()));
         assert_eq!(r.status(), axum::http::StatusCode::BAD_REQUEST);
     }
 
     #[test]
     fn test_error_response_maps_permission_denied_to_403() {
-        let r = error_response(HttpInboundError::PermissionDenied("no".into()));
+        let r = error_response(HttpIngressError::PermissionDenied("no".into()));
         assert_eq!(r.status(), axum::http::StatusCode::FORBIDDEN);
     }
 
     #[test]
     fn test_error_response_maps_timeout_to_504() {
-        let r = error_response(HttpInboundError::Timeout("slow".into()));
+        let r = error_response(HttpIngressError::Timeout("slow".into()));
         assert_eq!(r.status(), axum::http::StatusCode::GATEWAY_TIMEOUT);
     }
 
     #[test]
     fn test_error_response_maps_unavailable_to_503() {
-        let r = error_response(HttpInboundError::Unavailable("down".into()));
+        let r = error_response(HttpIngressError::Unavailable("down".into()));
         assert_eq!(r.status(), axum::http::StatusCode::SERVICE_UNAVAILABLE);
     }
 
     #[test]
     fn test_error_response_maps_internal_to_500() {
-        let r = error_response(HttpInboundError::Internal("oops".into()));
+        let r = error_response(HttpIngressError::Internal("oops".into()));
         assert_eq!(r.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
     }
 
@@ -765,8 +765,8 @@ mod tests {
 mod dedicated_coverage {
     use super::AxumHttpServer;
     use crate::api::port::http_health_check::HttpHealthCheck;
-    use crate::api::port::http_inbound::HttpInbound;
-    use crate::api::port::http_inbound_result::HttpInboundResult;
+    use crate::api::port::http_ingress::HttpIngress;
+    use crate::api::port::http_ingress_result::HttpIngressResult;
     use crate::api::server::axum::axum_http_server::MAX_BODY_BYTES;
     use crate::api::value_object::{HttpRequest, HttpResponse};
     use edge_domain::RequestContext;
@@ -774,17 +774,17 @@ mod dedicated_coverage {
     use std::sync::Arc;
     use swe_edge_ingress_tls::IngressTlsConfig;
 
-    fn make_handler() -> Arc<dyn HttpInbound> {
+    fn make_handler() -> Arc<dyn HttpIngress> {
         struct AxumHttpServerOkHandler;
-        impl HttpInbound for AxumHttpServerOkHandler {
+        impl HttpIngress for AxumHttpServerOkHandler {
             fn handle(
                 &self,
                 _: HttpRequest,
                 _ctx: RequestContext,
-            ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+            ) -> BoxFuture<'_, HttpIngressResult<HttpResponse>> {
                 Box::pin(async { Ok(HttpResponse::new(200, vec![])) })
             }
-            fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+            fn health_check(&self) -> BoxFuture<'_, HttpIngressResult<HttpHealthCheck>> {
                 Box::pin(async { Ok(HttpHealthCheck::healthy()) })
             }
         }
@@ -839,24 +839,24 @@ mod dedicated_coverage {
 mod sync_coverage {
     use super::AxumHttpServer;
     use crate::api::port::http_health_check::HttpHealthCheck;
-    use crate::api::port::http_inbound::HttpInbound;
-    use crate::api::port::http_inbound_result::HttpInboundResult;
+    use crate::api::port::http_ingress::HttpIngress;
+    use crate::api::port::http_ingress_result::HttpIngressResult;
     use crate::api::value_object::{HttpRequest, HttpResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
     use std::sync::Arc;
 
-    fn make_handler() -> Arc<dyn HttpInbound> {
+    fn make_handler() -> Arc<dyn HttpIngress> {
         struct AxumHttpServerOkHandler;
-        impl HttpInbound for AxumHttpServerOkHandler {
+        impl HttpIngress for AxumHttpServerOkHandler {
             fn handle(
                 &self,
                 _: HttpRequest,
                 _ctx: RequestContext,
-            ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+            ) -> BoxFuture<'_, HttpIngressResult<HttpResponse>> {
                 Box::pin(async { Ok(HttpResponse::new(200, vec![])) })
             }
-            fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+            fn health_check(&self) -> BoxFuture<'_, HttpIngressResult<HttpHealthCheck>> {
                 Box::pin(async { Ok(HttpHealthCheck::healthy()) })
             }
         }

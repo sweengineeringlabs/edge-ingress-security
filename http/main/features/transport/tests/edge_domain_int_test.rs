@@ -10,8 +10,8 @@ use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
 use swe_edge_ingress_http::{
-    AxumHttpServer, HttpHandlerAdapter, HttpHandlerRegistryDispatcher, HttpInbound,
-    HttpInboundError, HttpRequest, HttpResponse,
+    AxumHttpServer, HttpHandlerAdapter, HttpHandlerRegistryDispatcher, HttpIngress,
+    HttpIngressError, HttpRequest, HttpResponse,
 };
 
 // ── Domain handler under test ─────────────────────────────────────────────────
@@ -43,7 +43,7 @@ impl Handler<GreetReq, GreetResp> for GreetHandler {
     }
 }
 
-fn decode(req: &HttpRequest) -> Result<GreetReq, HttpInboundError> {
+fn decode(req: &HttpRequest) -> Result<GreetReq, HttpIngressError> {
     let name = req
         .query
         .get("name")
@@ -66,7 +66,7 @@ fn build_dispatcher() -> HttpHandlerRegistryDispatcher {
     dispatcher
 }
 
-async fn start_dispatcher_server(handler: Arc<dyn HttpInbound>) -> (String, oneshot::Sender<()>) {
+async fn start_dispatcher_server(handler: Arc<dyn HttpIngress>) -> (String, oneshot::Sender<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
     let base = format!("http://{addr}");
@@ -111,7 +111,7 @@ async fn test_edge_domain_dispatcher_returns_not_found_for_unregistered_route() 
         )
         .await
         .unwrap_err();
-    assert!(matches!(err, HttpInboundError::NotFound(_)));
+    assert!(matches!(err, HttpIngressError::NotFound(_)));
 }
 
 /// @covers: HttpHandlerRegistryDispatcher::handle

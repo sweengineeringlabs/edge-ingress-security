@@ -5,26 +5,26 @@ use std::sync::Arc;
 use swe_edge_ingress_tls::IngressTlsConfig;
 use swe_edge_ingress_verifier::TokenVerifier;
 
-use crate::api::port::http::http_stream_inbound::HttpStreamInbound;
-use crate::api::port::http_inbound::HttpInbound;
+use crate::api::port::http::http_stream::HttpStream;
+use crate::api::port::http_ingress::HttpIngress;
 
 /// Default maximum inbound request body size (4 MiB).
 pub const MAX_BODY_BYTES: usize = 4 * 1_024 * 1_024; // 4 MiB
 
 /// Axum-based HTTP server that routes all inbound requests through an
-/// [`HttpInbound`] port.
+/// [`HttpIngress`] port.
 pub struct AxumHttpServer {
     pub(crate) bind: String,
-    pub(crate) handler: Arc<dyn HttpInbound>,
+    pub(crate) handler: Arc<dyn HttpIngress>,
     pub(crate) body_limit: usize,
     pub(crate) tls: Option<IngressTlsConfig>,
     pub(crate) bearer_verifier: Option<Arc<dyn TokenVerifier>>,
-    pub(crate) stream_handler: Option<Arc<dyn HttpStreamInbound>>,
+    pub(crate) stream_handler: Option<Arc<dyn HttpStream>>,
 }
 
 impl AxumHttpServer {
     /// Create a server that will bind to `bind` and delegate to `handler`.
-    pub fn new(bind: impl Into<String>, handler: Arc<dyn HttpInbound>) -> Self {
+    pub fn new(bind: impl Into<String>, handler: Arc<dyn HttpIngress>) -> Self {
         Self {
             bind: bind.into(),
             handler,
@@ -35,12 +35,12 @@ impl AxumHttpServer {
         }
     }
 
-    /// Attach an [`HttpStreamInbound`] handler for SSE and WebSocket requests.
+    /// Attach an [`HttpStream`] handler for SSE and WebSocket requests.
     ///
     /// When set, `Accept: text/event-stream` requests route to
-    /// [`HttpStreamInbound::handle_sse`] and `Upgrade: websocket` requests
-    /// route to [`HttpStreamInbound::handle_websocket`].
-    pub fn with_stream_handler(mut self, handler: Arc<dyn HttpStreamInbound>) -> Self {
+    /// [`HttpStream::handle_sse`] and `Upgrade: websocket` requests
+    /// route to [`HttpStream::handle_websocket`].
+    pub fn with_stream_handler(mut self, handler: Arc<dyn HttpStream>) -> Self {
         self.stream_handler = Some(handler);
         self
     }
@@ -75,23 +75,23 @@ impl AxumHttpServer {
 mod tests {
     use super::*;
     use crate::api::port::http_health_check::HttpHealthCheck;
-    use crate::api::port::http_inbound::HttpInbound;
-    use crate::api::port::http_inbound_result::HttpInboundResult;
+    use crate::api::port::http_ingress::HttpIngress;
+    use crate::api::port::http_ingress_result::HttpIngressResult;
     use crate::api::value_object::{HttpRequest, HttpResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
     use std::sync::Arc;
 
     struct DummyHandler;
-    impl HttpInbound for DummyHandler {
+    impl HttpIngress for DummyHandler {
         fn handle(
             &self,
             _: HttpRequest,
             _ctx: RequestContext,
-        ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+        ) -> BoxFuture<'_, HttpIngressResult<HttpResponse>> {
             Box::pin(async { Ok(HttpResponse::new(200, vec![])) })
         }
-        fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+        fn health_check(&self) -> BoxFuture<'_, HttpIngressResult<HttpHealthCheck>> {
             Box::pin(async { Ok(HttpHealthCheck::healthy()) })
         }
     }
@@ -127,18 +127,18 @@ mod tests {
     /// @covers: with_stream_handler
     #[test]
     fn test_with_stream_handler_sets_stream_handler() {
-        use crate::api::port::http::http_stream_inbound::HttpStreamInbound;
-        use crate::api::port::http_inbound_result::HttpInboundResult;
+        use crate::api::port::http::http_stream::HttpStream;
+        use crate::api::port::http_ingress_result::HttpIngressResult;
         use crate::api::value_object::sse::SseStream;
         use crate::api::value_object::ws::WsChannel;
 
         struct AxumHttpServerStreamStub;
-        impl HttpStreamInbound for AxumHttpServerStreamStub {
+        impl HttpStream for AxumHttpServerStreamStub {
             fn handle_sse(
                 &self,
                 _: crate::api::value_object::HttpRequest,
                 _: edge_domain::RequestContext,
-            ) -> futures::future::BoxFuture<'_, HttpInboundResult<SseStream>> {
+            ) -> futures::future::BoxFuture<'_, HttpIngressResult<SseStream>> {
                 Box::pin(async { Ok(Box::pin(futures::stream::empty()) as SseStream) })
             }
             fn handle_websocket(
@@ -146,7 +146,7 @@ mod tests {
                 _: crate::api::value_object::HttpRequest,
                 _: edge_domain::RequestContext,
                 _: WsChannel,
-            ) -> futures::future::BoxFuture<'_, HttpInboundResult<()>> {
+            ) -> futures::future::BoxFuture<'_, HttpIngressResult<()>> {
                 Box::pin(async { Ok(()) })
             }
         }

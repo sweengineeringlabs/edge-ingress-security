@@ -1,7 +1,7 @@
 //! `swe-edge-ingress-grpc-auth-bearer` — JWT bearer
-//! [`GrpcInboundInterceptor`] for the gRPC ingress stack.
+//! [`GrpcIngressInterceptor`] for the gRPC ingress stack.
 //!
-//! [`BearerInboundInterceptor`] validates incoming
+//! [`BearerIngressInterceptor`] validates incoming
 //! `authorization: Bearer <jwt>` against a configured secret/key,
 //! then surfaces the verified `sub` claim under the internal metadata
 //! key [`crate::EXTRACTED_BEARER_SUBJECT`] for downstream authz

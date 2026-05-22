@@ -83,7 +83,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::api::port::http_inbound_error::HttpInboundError;
+    use crate::api::port::http_ingress_error::HttpIngressError;
 
     #[derive(Debug, PartialEq)]
     struct GetUserReq {
@@ -94,12 +94,12 @@ mod tests {
         name: String,
     }
 
-    fn decode(req: &HttpRequest) -> Result<GetUserReq, HttpInboundError> {
+    fn decode(req: &HttpRequest) -> Result<GetUserReq, HttpIngressError> {
         req.query
             .get("id")
             .and_then(|v| v.parse::<u32>().ok())
             .map(|id| GetUserReq { id })
-            .ok_or_else(|| HttpInboundError::InvalidInput("missing id".into()))
+            .ok_or_else(|| HttpIngressError::InvalidInput("missing id".into()))
     }
     fn encode(resp: GetUserResp) -> HttpResponse {
         HttpResponse::new(200, resp.name.into_bytes())

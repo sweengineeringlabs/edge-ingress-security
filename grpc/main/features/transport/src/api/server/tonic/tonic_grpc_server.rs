@@ -5,8 +5,8 @@ use std::sync::Arc;
 use swe_edge_ingress_tls::IngressTlsConfig;
 
 use crate::api::audit_sink::{AuditSink, NoopAuditSink};
-use crate::api::interceptor::GrpcInboundInterceptorChain;
-use crate::api::port::grpc_inbound::GrpcInbound;
+use crate::api::interceptor::GrpcIngressInterceptorChain;
+use crate::api::port::grpc_ingress::GrpcIngress;
 use crate::api::value_object::{CompressionMode, GrpcServerConfig};
 
 use crate::api::server::grpc::grpc_server_config_error::GrpcServerConfigError;
@@ -26,14 +26,14 @@ pub const REFLECTION_ENABLED_WARN_MSG: &str =
 /// Default maximum inbound message size (4 MiB).
 pub const MAX_MESSAGE_BYTES: usize = 4 * 1_024 * 1_024; // 4 MiB
 
-/// gRPC server that routes all unary requests through a [`GrpcInbound`] port.
+/// gRPC server that routes all unary requests through a [`GrpcIngress`] port.
 pub struct TonicGrpcServer {
     pub(crate) bind: String,
-    pub(crate) handler: Arc<dyn GrpcInbound>,
+    pub(crate) handler: Arc<dyn GrpcIngress>,
     pub(crate) max_bytes: usize,
     pub(crate) max_concurrent_streams: u32,
     pub(crate) tls: Option<IngressTlsConfig>,
-    pub(crate) interceptors: GrpcInboundInterceptorChain,
+    pub(crate) interceptors: GrpcIngressInterceptorChain,
     pub(crate) compression: CompressionMode,
     pub(crate) allow_unauthenticated: bool,
     pub(crate) audit_sink: Arc<dyn AuditSink>,
@@ -42,14 +42,14 @@ pub struct TonicGrpcServer {
 
 impl TonicGrpcServer {
     /// Create a server that will bind to `bind` and delegate to `handler`.
-    pub fn new(bind: impl Into<String>, handler: Arc<dyn GrpcInbound>) -> Self {
+    pub fn new(bind: impl Into<String>, handler: Arc<dyn GrpcIngress>) -> Self {
         Self {
             bind: bind.into(),
             handler,
             max_bytes: MAX_MESSAGE_BYTES,
             max_concurrent_streams: 100,
             tls: None,
-            interceptors: GrpcInboundInterceptorChain::new(),
+            interceptors: GrpcIngressInterceptorChain::new(),
             compression: CompressionMode::None,
             allow_unauthenticated: false,
             audit_sink: Arc::new(NoopAuditSink),
@@ -60,7 +60,7 @@ impl TonicGrpcServer {
     /// Construct a server from a [`GrpcServerConfig`].
     pub fn from_config(
         config: &GrpcServerConfig,
-        handler: Arc<dyn GrpcInbound>,
+        handler: Arc<dyn GrpcIngress>,
     ) -> Result<Self, GrpcServerConfigError> {
         if config.tls_required && config.tls.is_none() {
             return Err(GrpcServerConfigError::TlsRequiredButMissing);
@@ -71,7 +71,7 @@ impl TonicGrpcServer {
             max_bytes: config.max_message_bytes,
             max_concurrent_streams: config.max_concurrent_streams,
             tls: config.tls.clone(),
-            interceptors: GrpcInboundInterceptorChain::new(),
+            interceptors: GrpcIngressInterceptorChain::new(),
             compression: config.compression,
             allow_unauthenticated: config.allow_unauthenticated,
             audit_sink: Arc::new(NoopAuditSink),
@@ -115,7 +115,7 @@ impl TonicGrpcServer {
     }
 
     /// Attach an interceptor chain that runs before and after each dispatch.
-    pub fn with_interceptors(mut self, chain: GrpcInboundInterceptorChain) -> Self {
+    pub fn with_interceptors(mut self, chain: GrpcIngressInterceptorChain) -> Self {
         self.interceptors = chain;
         self
     }
@@ -136,19 +136,19 @@ impl TonicGrpcServer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::api::port::grpc_inbound::{GrpcHealthCheck, GrpcInbound, GrpcInboundResult};
+    use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
     use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
     use std::sync::Arc;
 
     struct DummyHandler;
-    impl GrpcInbound for DummyHandler {
+    impl GrpcIngress for DummyHandler {
         fn handle_unary(
             &self,
             _: GrpcRequest,
             _ctx: RequestContext,
-        ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
             Box::pin(async {
                 Ok(GrpcResponse {
                     body: vec![],
@@ -156,7 +156,7 @@ mod tests {
                 })
             })
         }
-        fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+        fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
             Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
         }
     }
@@ -250,8 +250,8 @@ mod tests {
     /// @covers: with_interceptors
     #[test]
     fn test_with_interceptors_assigns_chain() {
-        use crate::api::interceptor::GrpcInboundInterceptorChain;
-        let chain = GrpcInboundInterceptorChain::new();
+        use crate::api::interceptor::GrpcIngressInterceptorChain;
+        let chain = GrpcIngressInterceptorChain::new();
         let s = TonicGrpcServer::new("127.0.0.1:0", Arc::new(DummyHandler))
             .allow_unauthenticated(true)
             .with_interceptors(chain);

@@ -1,4 +1,4 @@
-//! HTTP streaming inbound port traits.
-pub(crate) mod http_stream_inbound;
+//! HTTP streaming port traits.
+pub(crate) mod http_stream;
 
-pub use http_stream_inbound::HttpStreamInbound;
+pub use http_stream::HttpStream;

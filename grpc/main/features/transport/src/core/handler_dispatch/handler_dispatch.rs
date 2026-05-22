@@ -1,6 +1,6 @@
-//! Registry-backed [`GrpcInbound`] dispatcher implementation.
+//! Registry-backed [`GrpcIngress`] dispatcher implementation.
 //!
-//! This module provides the [`GrpcInbound`] implementation for
+//! This module provides the [`GrpcIngress`] implementation for
 //! [`GrpcHandlerRegistryDispatcher`].
 
 /// Marker type confirming this module implements the handler dispatch contract.
@@ -16,17 +16,17 @@ use edge_domain::{HandlerError, RequestContext};
 use futures::future::BoxFuture;
 
 use crate::api::handler::grpc::grpc_handler_registry_dispatcher::GrpcHandlerRegistryDispatcher;
-use crate::api::port::grpc_inbound::{
-    GrpcHealthCheck, GrpcInbound, GrpcInboundError, GrpcInboundResult,
+use crate::api::port::grpc_ingress::{
+    GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult,
 };
 use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
-impl GrpcInbound for GrpcHandlerRegistryDispatcher {
+impl GrpcIngress for GrpcHandlerRegistryDispatcher {
     fn handle_unary(
         &self,
         request: GrpcRequest,
         ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         let registry = self.registry.clone();
         let metrics = self.metrics.clone();
         Box::pin(async move {
@@ -34,7 +34,7 @@ impl GrpcInbound for GrpcHandlerRegistryDispatcher {
             let handler = match registry.get(&method) {
                 Some(h) => h,
                 None => {
-                    return Err(GrpcInboundError::Unimplemented(format!(
+                    return Err(GrpcIngressError::Unimplemented(format!(
                         "no handler registered for {method}"
                     )));
                 }
@@ -71,7 +71,7 @@ impl GrpcInbound for GrpcHandlerRegistryDispatcher {
         })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         let registry = self.registry.clone();
         Box::pin(async move {
             let ids = registry.list_ids();
@@ -89,22 +89,22 @@ impl GrpcInbound for GrpcHandlerRegistryDispatcher {
     }
 }
 
-pub(crate) fn map_handler_error(err: HandlerError) -> GrpcInboundError {
+pub(crate) fn map_handler_error(err: HandlerError) -> GrpcIngressError {
     use crate::api::value_object::GrpcStatusCode;
     match err {
-        HandlerError::Unsupported(m) => GrpcInboundError::Unimplemented(m),
-        HandlerError::InvalidRequest(m) => GrpcInboundError::InvalidArgument(m),
-        HandlerError::NotFound(m) => GrpcInboundError::NotFound(m),
-        HandlerError::Conflict(m) => GrpcInboundError::Status(GrpcStatusCode::AlreadyExists, m),
-        HandlerError::ExecutionFailed(m) => GrpcInboundError::Internal(m),
-        HandlerError::Unhealthy => GrpcInboundError::Unavailable("handler unhealthy".into()),
+        HandlerError::Unsupported(m) => GrpcIngressError::Unimplemented(m),
+        HandlerError::InvalidRequest(m) => GrpcIngressError::InvalidArgument(m),
+        HandlerError::NotFound(m) => GrpcIngressError::NotFound(m),
+        HandlerError::Conflict(m) => GrpcIngressError::Status(GrpcStatusCode::AlreadyExists, m),
+        HandlerError::ExecutionFailed(m) => GrpcIngressError::Internal(m),
+        HandlerError::Unhealthy => GrpcIngressError::Unavailable("handler unhealthy".into()),
         HandlerError::FailedPrecondition(m) => {
-            GrpcInboundError::Status(GrpcStatusCode::FailedPrecondition, m)
+            GrpcIngressError::Status(GrpcStatusCode::FailedPrecondition, m)
         }
         HandlerError::Unauthorized(m) => {
-            GrpcInboundError::Status(GrpcStatusCode::Unauthenticated, m)
+            GrpcIngressError::Status(GrpcStatusCode::Unauthenticated, m)
         }
-        HandlerError::PermissionDenied(m) => GrpcInboundError::PermissionDenied(m),
+        HandlerError::PermissionDenied(m) => GrpcIngressError::PermissionDenied(m),
     }
 }
 
@@ -116,7 +116,7 @@ mod tests {
     use edge_domain::{HandlerError, HandlerRegistry, RequestContext};
 
     use crate::api::handler::grpc::grpc_handler_registry_dispatcher::GrpcHandlerRegistryDispatcher;
-    use crate::api::port::grpc_inbound::{GrpcInbound, GrpcInboundError};
+    use crate::api::port::grpc_ingress::{GrpcIngress, GrpcIngressError};
     use crate::api::value_object::GrpcRequest;
 
     // Use Handler<Vec<u8>, Vec<u8>> directly to avoid struct definitions in test code.
@@ -134,21 +134,21 @@ mod tests {
             .handle_unary(req, RequestContext::unauthenticated())
             .await
             .expect_err("must error");
-        assert!(matches!(err, GrpcInboundError::Unimplemented(_)));
+        assert!(matches!(err, GrpcIngressError::Unimplemented(_)));
     }
 
     #[test]
     fn test_map_handler_error_execution_failed_maps_to_internal() {
         assert!(matches!(
             super::map_handler_error(HandlerError::ExecutionFailed("x".into())),
-            GrpcInboundError::Internal(_)
+            GrpcIngressError::Internal(_)
         ));
     }
 
     #[test]
     fn test_handle_unary_is_available_on_dispatcher() {
-        // Verifies GrpcInbound is implemented for GrpcHandlerRegistryDispatcher.
-        fn _assert(_: &dyn crate::api::port::grpc_inbound::GrpcInbound) {}
+        // Verifies GrpcIngress is implemented for GrpcHandlerRegistryDispatcher.
+        fn _assert(_: &dyn crate::api::port::grpc_ingress::GrpcIngress) {}
         let d = fresh_dispatcher();
         _assert(&d);
     }

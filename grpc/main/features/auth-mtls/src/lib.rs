@@ -1,4 +1,4 @@
-//! `swe-edge-ingress-grpc-auth-mtls` — mTLS-based [`GrpcInboundInterceptor`].
+//! `swe-edge-ingress-grpc-auth-mtls` — mTLS-based [`GrpcIngressInterceptor`].
 //!
 //! The ingress `TonicGrpcServer` already performs the mTLS
 //! handshake, parses the client cert, and injects identity into

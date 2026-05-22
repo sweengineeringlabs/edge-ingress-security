@@ -16,7 +16,7 @@ use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
 use swe_edge_ingress_grpc_transport::{
-    GrpcHealthCheck, GrpcInbound, GrpcInboundResult, GrpcMetadata, GrpcRequest, GrpcResponse,
+    GrpcHealthCheck, GrpcIngress, GrpcIngressResult, GrpcMetadata, GrpcRequest, GrpcResponse,
     IngressTlsConfig, RequestContext, TonicGrpcServer,
 };
 
@@ -24,12 +24,12 @@ use swe_edge_ingress_grpc_transport::{
 
 struct EchoHandler;
 
-impl GrpcInbound for EchoHandler {
+impl GrpcIngress for EchoHandler {
     fn handle_unary(
         &self,
         req: GrpcRequest,
         _ctx: RequestContext,
-    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> futures::future::BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         Box::pin(async move {
             Ok(GrpcResponse {
                 body: req.body,
@@ -38,7 +38,7 @@ impl GrpcInbound for EchoHandler {
         })
     }
 
-    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
     }
 }

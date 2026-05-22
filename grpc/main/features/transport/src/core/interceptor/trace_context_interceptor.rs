@@ -10,8 +10,8 @@ pub(crate) struct TraceContextInterceptorImpl;
 use crate::api::interceptor::trace_context_interceptor::{
     TraceContextInterceptor, EXTRACTED_TRACEPARENT, EXTRACTED_TRACESTATE, TRACEPARENT, TRACESTATE,
 };
-use crate::api::interceptor::GrpcInboundInterceptor;
-use crate::api::port::grpc_inbound::GrpcInboundError;
+use crate::api::interceptor::GrpcIngressInterceptor;
+use crate::api::port::grpc_ingress::GrpcIngressError;
 use crate::api::value_object::{GrpcRequest, GrpcResponse};
 
 fn is_valid_traceparent(value: &str) -> bool {
@@ -30,8 +30,8 @@ fn is_valid_traceparent(value: &str) -> bool {
     hex(&bytes[3..35]) && hex(&bytes[36..52]) && hex(&bytes[53..55])
 }
 
-impl GrpcInboundInterceptor for TraceContextInterceptor {
-    fn before_dispatch(&self, req: &mut GrpcRequest) -> Result<(), GrpcInboundError> {
+impl GrpcIngressInterceptor for TraceContextInterceptor {
+    fn before_dispatch(&self, req: &mut GrpcRequest) -> Result<(), GrpcIngressError> {
         if let Some(tp) = req.metadata.headers.get(TRACEPARENT).cloned() {
             if is_valid_traceparent(&tp) {
                 req.metadata
@@ -49,7 +49,7 @@ impl GrpcInboundInterceptor for TraceContextInterceptor {
         Ok(())
     }
 
-    fn after_dispatch(&self, _resp: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+    fn after_dispatch(&self, _resp: &mut GrpcResponse) -> Result<(), GrpcIngressError> {
         Ok(())
     }
 }

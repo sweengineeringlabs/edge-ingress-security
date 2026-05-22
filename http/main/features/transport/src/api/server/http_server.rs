@@ -2,12 +2,12 @@
 
 use futures::future::BoxFuture;
 
-use crate::api::port::http_inbound_error::HttpInboundError;
+use crate::api::port::http_ingress_error::HttpIngressError;
 
-/// A runnable HTTP server that drives an [`HttpInbound`](crate::api::port::http_inbound::HttpInbound) handler.
+/// A runnable HTTP server that drives an [`HttpIngress`](crate::api::port::http_ingress::HttpIngress) handler.
 pub trait HttpServer: Send + Sync {
     /// Bind and serve until `shutdown` resolves.
-    fn serve<'s>(&'s self) -> BoxFuture<'s, Result<(), HttpInboundError>>;
+    fn serve<'s>(&'s self) -> BoxFuture<'s, Result<(), HttpIngressError>>;
 }
 
 #[cfg(test)]

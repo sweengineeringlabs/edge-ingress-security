@@ -10,7 +10,7 @@ use futures::future::BoxFuture;
 use tokio::net::TcpListener;
 
 use swe_edge_ingress_http::{
-    AxumHttpServer, HttpHealthCheck, HttpInbound, HttpInboundResult, HttpRequest, HttpResponse,
+    AxumHttpServer, HttpHealthCheck, HttpIngress, HttpIngressResult, HttpRequest, HttpResponse,
     IngressTlsConfig, RequestContext,
 };
 use swe_edge_ingress_tls::IngressTlsError;
@@ -23,16 +23,16 @@ fn _tls_error_variant() -> Option<IngressTlsError> {
 
 struct OkHandler;
 
-impl HttpInbound for OkHandler {
+impl HttpIngress for OkHandler {
     fn handle(
         &self,
         _req: HttpRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    ) -> BoxFuture<'_, HttpIngressResult<HttpResponse>> {
         Box::pin(async { Ok(HttpResponse::new(200, b"tls-ok".to_vec())) })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, HttpIngressResult<HttpHealthCheck>> {
         Box::pin(async { Ok(HttpHealthCheck::healthy()) })
     }
 }

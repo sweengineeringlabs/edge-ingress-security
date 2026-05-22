@@ -6,7 +6,7 @@ license.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 repository.workspace = true
-description = "JWT bearer GrpcInboundInterceptor — validates incoming Bearer tokens and surfaces the verified subject"
+description = "JWT bearer GrpcIngressInterceptor — validates incoming Bearer tokens and surfaces the verified subject"
 keywords = ["grpc", "jwt", "bearer", "auth", "interceptor"]
 categories = ["network-programming", "authentication"]
 

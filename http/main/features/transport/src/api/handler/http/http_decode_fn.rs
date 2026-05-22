@@ -1,10 +1,10 @@
 //! Decode function type alias for the HTTP adapter.
 
-use crate::api::port::http_inbound_error::HttpInboundError;
+use crate::api::port::http_ingress_error::HttpIngressError;
 use crate::api::value_object::HttpRequest;
 
 /// Decodes a typed request from an inbound [`HttpRequest`].
-pub type HttpDecodeFn<Req> = fn(&HttpRequest) -> Result<Req, HttpInboundError>;
+pub type HttpDecodeFn<Req> = fn(&HttpRequest) -> Result<Req, HttpIngressError>;
 
 #[cfg(test)]
 mod tests {
@@ -13,11 +13,11 @@ mod tests {
     #[derive(Debug, PartialEq)]
     struct Ping;
 
-    fn decode_ping(req: &HttpRequest) -> Result<Ping, HttpInboundError> {
+    fn decode_ping(req: &HttpRequest) -> Result<Ping, HttpIngressError> {
         if req.url.contains("ping") {
             Ok(Ping)
         } else {
-            Err(HttpInboundError::InvalidInput("not a ping".into()))
+            Err(HttpIngressError::InvalidInput("not a ping".into()))
         }
     }
 

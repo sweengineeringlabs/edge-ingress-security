@@ -12,7 +12,7 @@ use tokio::sync::oneshot;
 
 use axum::http::StatusCode;
 use swe_edge_ingress_http::{
-    AxumHttpServer, HttpHealthCheck, HttpInbound, HttpInboundResult, HttpRequest, HttpResponse,
+    AxumHttpServer, HttpHealthCheck, HttpIngress, HttpIngressResult, HttpRequest, HttpResponse,
     RequestContext,
 };
 
@@ -24,21 +24,21 @@ fn _axum_status_code_200() -> StatusCode {
 
 struct PongHandler;
 
-impl HttpInbound for PongHandler {
+impl HttpIngress for PongHandler {
     fn handle(
         &self,
         _req: HttpRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    ) -> BoxFuture<'_, HttpIngressResult<HttpResponse>> {
         Box::pin(async { Ok(HttpResponse::new(200, b"pong".to_vec())) })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, HttpIngressResult<HttpHealthCheck>> {
         Box::pin(async { Ok(HttpHealthCheck::healthy()) })
     }
 }
 
-async fn start(handler: Arc<dyn HttpInbound>) -> (String, oneshot::Sender<()>) {
+async fn start(handler: Arc<dyn HttpIngress>) -> (String, oneshot::Sender<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
     let base = format!("http://{addr}");

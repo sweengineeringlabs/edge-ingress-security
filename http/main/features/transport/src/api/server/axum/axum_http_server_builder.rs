@@ -5,7 +5,7 @@ use std::sync::Arc;
 use swe_edge_ingress_tls::IngressTlsConfig;
 use swe_edge_ingress_verifier::TokenVerifier;
 
-use crate::api::port::http_inbound::HttpInbound;
+use crate::api::port::http_ingress::HttpIngress;
 use crate::api::server::axum::axum_http_server::{AxumHttpServer, MAX_BODY_BYTES};
 
 /// Fluent builder that constructs an [`AxumHttpServer`].
@@ -14,7 +14,7 @@ use crate::api::server::axum::axum_http_server::{AxumHttpServer, MAX_BODY_BYTES}
 /// setters, and call [`AxumHttpServerBuilder::build`] to get the server.
 pub struct AxumHttpServerBuilder {
     bind: String,
-    handler: Arc<dyn HttpInbound>,
+    handler: Arc<dyn HttpIngress>,
     body_limit: usize,
     tls: Option<IngressTlsConfig>,
     bearer_verifier: Option<Arc<dyn TokenVerifier>>,
@@ -22,7 +22,7 @@ pub struct AxumHttpServerBuilder {
 
 impl AxumHttpServerBuilder {
     /// Start a builder for a server that binds to `bind` and delegates to `handler`.
-    pub fn new(bind: impl Into<String>, handler: Arc<dyn HttpInbound>) -> Self {
+    pub fn new(bind: impl Into<String>, handler: Arc<dyn HttpIngress>) -> Self {
         Self {
             bind: bind.into(),
             handler,
@@ -68,27 +68,27 @@ impl AxumHttpServerBuilder {
 mod tests {
     use super::*;
     use crate::api::port::http_health_check::HttpHealthCheck;
-    use crate::api::port::http_inbound::HttpInbound;
-    use crate::api::port::http_inbound_result::HttpInboundResult;
+    use crate::api::port::http_ingress::HttpIngress;
+    use crate::api::port::http_ingress_result::HttpIngressResult;
     use crate::api::value_object::{HttpRequest, HttpResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
 
     struct Stub;
-    impl HttpInbound for Stub {
+    impl HttpIngress for Stub {
         fn handle(
             &self,
             _: HttpRequest,
             _ctx: RequestContext,
-        ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+        ) -> BoxFuture<'_, HttpIngressResult<HttpResponse>> {
             Box::pin(async { Ok(HttpResponse::new(200, vec![])) })
         }
-        fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+        fn health_check(&self) -> BoxFuture<'_, HttpIngressResult<HttpHealthCheck>> {
             Box::pin(async { Ok(HttpHealthCheck::healthy()) })
         }
     }
 
-    fn handler() -> Arc<dyn HttpInbound> {
+    fn handler() -> Arc<dyn HttpIngress> {
         Arc::new(Stub)
     }
 

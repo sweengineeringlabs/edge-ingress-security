@@ -10,7 +10,7 @@ use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
 use swe_edge_ingress_http::{
-    AxumHttpServer, HttpHealthCheck, HttpInbound, HttpInboundResult, HttpRequest, HttpResponse,
+    AxumHttpServer, HttpHealthCheck, HttpIngress, HttpIngressResult, HttpRequest, HttpResponse,
     RequestContext,
 };
 use swe_edge_ingress_verifier::{Claims, TokenVerifier, VerifierError};
@@ -19,12 +19,12 @@ use swe_edge_ingress_verifier::{Claims, TokenVerifier, VerifierError};
 
 struct WhoAmIHandler;
 
-impl HttpInbound for WhoAmIHandler {
+impl HttpIngress for WhoAmIHandler {
     fn handle(
         &self,
         _req: HttpRequest,
         ctx: RequestContext,
-    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    ) -> BoxFuture<'_, HttpIngressResult<HttpResponse>> {
         let subject = ctx.subject.as_deref().unwrap_or("anonymous").to_string();
         Box::pin(async move {
             let body = format!("subject={subject}").into_bytes();
@@ -32,7 +32,7 @@ impl HttpInbound for WhoAmIHandler {
         })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, HttpIngressResult<HttpHealthCheck>> {
         Box::pin(async { Ok(HttpHealthCheck::healthy()) })
     }
 }

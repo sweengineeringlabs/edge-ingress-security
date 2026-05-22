@@ -8,7 +8,7 @@ use swe_edge_ingress_verifier::TokenVerifier;
 /// in the `authorization` metadata key.
 ///
 /// Wire up by calling `.push(Arc::new(BearerTokenInterceptor::new(verifier)))` on
-/// a [`GrpcInboundInterceptorChain`](swe_edge_ingress_grpc_transport::GrpcInboundInterceptorChain).
+/// a [`GrpcIngressInterceptorChain`](swe_edge_ingress_grpc_transport::GrpcIngressInterceptorChain).
 pub struct BearerTokenInterceptor {
     pub(crate) verifier: Arc<dyn TokenVerifier>,
 }

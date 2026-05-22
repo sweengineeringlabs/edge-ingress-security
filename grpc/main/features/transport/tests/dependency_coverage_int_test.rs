@@ -72,7 +72,7 @@ async fn test_swe_observ_metrics_provider_is_exercised_via_dispatcher() {
     use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
     use std::sync::Arc;
     use std::time::Duration;
-    use swe_edge_ingress_grpc_transport::{GrpcHandlerAdapter, GrpcInbound, GrpcInboundError};
+    use swe_edge_ingress_grpc_transport::{GrpcHandlerAdapter, GrpcIngress, GrpcIngressError};
     use swe_observ_metrics::{create_local_metrics_backend, MetricsProvider};
 
     #[derive(Debug, PartialEq, Eq)]
@@ -94,9 +94,9 @@ async fn test_swe_observ_metrics_provider_is_exercised_via_dispatcher() {
         }
     }
 
-    fn decode(b: &[u8]) -> Result<Req, GrpcInboundError> {
+    fn decode(b: &[u8]) -> Result<Req, GrpcIngressError> {
         if b.len() != 4 {
-            return Err(GrpcInboundError::InvalidArgument("expected 4 bytes".into()));
+            return Err(GrpcIngressError::InvalidArgument("expected 4 bytes".into()));
         }
         Ok(Req(u32::from_be_bytes([b[0], b[1], b[2], b[3]])))
     }
@@ -162,8 +162,8 @@ fn test_tonic_code_conversion_is_exercised_via_saf_status_functions() {
 /// Exercises tonic via map_inbound_error.
 #[test]
 fn test_tonic_map_inbound_error_exercises_tonic_dependency() {
-    use swe_edge_ingress_grpc_transport::{map_inbound_error, GrpcInboundError, GrpcStatusCode};
-    let err = GrpcInboundError::Status(GrpcStatusCode::Unavailable, "service down".into());
+    use swe_edge_ingress_grpc_transport::{map_inbound_error, GrpcIngressError, GrpcStatusCode};
+    let err = GrpcIngressError::Status(GrpcStatusCode::Unavailable, "service down".into());
     let (code, msg) = map_inbound_error(err);
     assert_eq!(code, TonicCode::Unavailable);
     assert_eq!(msg, "service down");

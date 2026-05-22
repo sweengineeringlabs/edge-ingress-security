@@ -6,23 +6,23 @@ use std::sync::Arc;
 use futures::future::BoxFuture;
 use futures::stream;
 use swe_edge_ingress_http::{
-    AxumHttpServer, HttpHealthCheck, HttpInbound, HttpInboundResult, HttpRequest, HttpResponse,
-    HttpStreamInbound, RequestContext, SseEvent, SseStream, WsChannel,
+    AxumHttpServer, HttpHealthCheck, HttpIngress, HttpIngressResult, HttpRequest, HttpResponse,
+    HttpStream, RequestContext, SseEvent, SseStream, WsChannel,
 };
 use tokio::net::TcpListener;
 
 // ── Stub non-streaming handler ────────────────────────────────────────────────
 
-struct AxumStreamStubHttpInbound;
-impl HttpInbound for AxumStreamStubHttpInbound {
+struct AxumStreamStubHttpIngress;
+impl HttpIngress for AxumStreamStubHttpIngress {
     fn handle(
         &self,
         _: HttpRequest,
         _: RequestContext,
-    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    ) -> BoxFuture<'_, HttpIngressResult<HttpResponse>> {
         Box::pin(async { Ok(HttpResponse::new(200, b"ok".to_vec())) })
     }
-    fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, HttpIngressResult<HttpHealthCheck>> {
         Box::pin(async { Ok(HttpHealthCheck::healthy()) })
     }
 }
@@ -30,12 +30,12 @@ impl HttpInbound for AxumStreamStubHttpInbound {
 // ── SSE handler stub ──────────────────────────────────────────────────────────
 
 struct AxumStreamStubSseHandler;
-impl HttpStreamInbound for AxumStreamStubSseHandler {
+impl HttpStream for AxumStreamStubSseHandler {
     fn handle_sse(
         &self,
         _: HttpRequest,
         _: RequestContext,
-    ) -> BoxFuture<'_, HttpInboundResult<SseStream>> {
+    ) -> BoxFuture<'_, HttpIngressResult<SseStream>> {
         Box::pin(async {
             let events: SseStream = Box::pin(stream::iter(vec![
                 Ok(SseEvent::data("hello")),
@@ -49,7 +49,7 @@ impl HttpStreamInbound for AxumStreamStubSseHandler {
         _: HttpRequest,
         _: RequestContext,
         _: WsChannel,
-    ) -> BoxFuture<'_, HttpInboundResult<()>> {
+    ) -> BoxFuture<'_, HttpIngressResult<()>> {
         Box::pin(async { Ok(()) })
     }
 }
@@ -57,12 +57,12 @@ impl HttpStreamInbound for AxumStreamStubSseHandler {
 // ── WebSocket echo handler stub ───────────────────────────────────────────────
 
 struct AxumStreamStubWsEchoHandler;
-impl HttpStreamInbound for AxumStreamStubWsEchoHandler {
+impl HttpStream for AxumStreamStubWsEchoHandler {
     fn handle_sse(
         &self,
         _: HttpRequest,
         _: RequestContext,
-    ) -> BoxFuture<'_, HttpInboundResult<SseStream>> {
+    ) -> BoxFuture<'_, HttpIngressResult<SseStream>> {
         Box::pin(async { Ok(Box::pin(stream::empty()) as SseStream) })
     }
     fn handle_websocket(
@@ -70,7 +70,7 @@ impl HttpStreamInbound for AxumStreamStubWsEchoHandler {
         _: HttpRequest,
         _: RequestContext,
         mut channel: WsChannel,
-    ) -> BoxFuture<'_, HttpInboundResult<()>> {
+    ) -> BoxFuture<'_, HttpIngressResult<()>> {
         Box::pin(async move {
             use futures::StreamExt;
             while let Some(msg) = channel.receiver.next().await {
@@ -93,7 +93,7 @@ async fn start_sse_server() -> (String, tokio::sync::oneshot::Sender<()>) {
     let addr = listener.local_addr().unwrap();
     let url = format!("http://{addr}/events");
     let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
-    let server = AxumHttpServer::new(addr.to_string(), Arc::new(AxumStreamStubHttpInbound))
+    let server = AxumHttpServer::new(addr.to_string(), Arc::new(AxumStreamStubHttpIngress))
         .with_stream_handler(Arc::new(AxumStreamStubSseHandler));
     tokio::spawn(async move {
         let signal = async move {
@@ -148,12 +148,12 @@ async fn test_non_sse_request_falls_through_to_regular_handler() {
 
 #[test]
 fn test_axum_http_server_with_stream_handler_is_constructible() {
-    let _s = AxumHttpServer::new("127.0.0.1:0", Arc::new(AxumStreamStubHttpInbound))
+    let _s = AxumHttpServer::new("127.0.0.1:0", Arc::new(AxumStreamStubHttpIngress))
         .with_stream_handler(Arc::new(AxumStreamStubSseHandler));
 }
 
 #[test]
 fn test_websocket_echo_handler_stub_is_constructible() {
-    let _s = AxumHttpServer::new("127.0.0.1:0", Arc::new(AxumStreamStubHttpInbound))
+    let _s = AxumHttpServer::new("127.0.0.1:0", Arc::new(AxumStreamStubHttpIngress))
         .with_stream_handler(Arc::new(AxumStreamStubWsEchoHandler));
 }

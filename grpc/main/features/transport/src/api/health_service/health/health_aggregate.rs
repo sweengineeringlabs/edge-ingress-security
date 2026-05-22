@@ -1,8 +1,8 @@
-//! Aggregate dispatcher tying HealthService to a GrpcInbound dispatcher.
+//! Aggregate dispatcher tying HealthService to a GrpcIngress dispatcher.
 
 use std::sync::Arc;
 
-use crate::api::port::grpc_inbound::GrpcInbound;
+use crate::api::port::grpc_ingress::GrpcIngress;
 
 use super::super::serving_status::ServingStatus;
 use super::health_service::HealthService;
@@ -12,12 +12,12 @@ use super::health_service::HealthService;
 /// registered handler.
 pub struct HealthAggregate {
     pub(crate) service: Arc<HealthService>,
-    pub(crate) dispatcher: Arc<dyn GrpcInbound>,
+    pub(crate) dispatcher: Arc<dyn GrpcIngress>,
 }
 
 impl HealthAggregate {
     /// Bind a [`HealthService`] to a dispatcher.
-    pub fn new(service: Arc<HealthService>, dispatcher: Arc<dyn GrpcInbound>) -> Self {
+    pub fn new(service: Arc<HealthService>, dispatcher: Arc<dyn GrpcIngress>) -> Self {
         Self {
             service,
             dispatcher,
@@ -44,21 +44,21 @@ mod tests {
 
     use crate::api::health_service::health::health_service::HealthService;
     use crate::api::health_service::serving_status::ServingStatus;
-    use crate::api::port::grpc_inbound::{GrpcHealthCheck, GrpcInbound, GrpcInboundResult};
+    use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
     use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
     use super::*;
 
-    fn make_always_healthy() -> Arc<dyn GrpcInbound> {
-        // Return Arc<dyn GrpcInbound> backed by a closure-based impl.
+    fn make_always_healthy() -> Arc<dyn GrpcIngress> {
+        // Return Arc<dyn GrpcIngress> backed by a closure-based impl.
         // Using a local struct inside the function avoids module-level type definitions.
         struct HealthServiceAlwaysHealthyStub;
-        impl GrpcInbound for HealthServiceAlwaysHealthyStub {
+        impl GrpcIngress for HealthServiceAlwaysHealthyStub {
             fn handle_unary(
                 &self,
                 _: GrpcRequest,
                 _ctx: RequestContext,
-            ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+            ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
                 Box::pin(async {
                     Ok(GrpcResponse {
                         body: vec![],
@@ -66,7 +66,7 @@ mod tests {
                     })
                 })
             }
-            fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+            fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
                 Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
             }
         }

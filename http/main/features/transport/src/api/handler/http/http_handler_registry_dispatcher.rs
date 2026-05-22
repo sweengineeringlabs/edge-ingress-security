@@ -101,7 +101,7 @@ mod tests {
     #[test]
     fn test_register_adds_handler_to_registry() {
         use crate::api::handler::http::http_handler_adapter::HttpHandlerAdapter;
-        use crate::api::port::http_inbound_error::HttpInboundError;
+        use crate::api::port::http_ingress_error::HttpIngressError;
         use crate::api::value_object::{HttpRequest, HttpResponse};
         use edge_domain::{Handler, HandlerError};
 
@@ -119,7 +119,7 @@ mod tests {
             }
         }
 
-        fn dec(req: &HttpRequest) -> Result<HttpRequest, HttpInboundError> {
+        fn dec(req: &HttpRequest) -> Result<HttpRequest, HttpIngressError> {
             Ok(req.clone())
         }
         fn enc(r: HttpResponse) -> HttpResponse {

@@ -6,7 +6,7 @@ use tokio_util::sync::CancellationToken;
 
 use super::grpc_metadata::GrpcMetadata;
 
-/// A gRPC request envelope handed to a [`crate::api::port::GrpcInbound`] handler.
+/// A gRPC request envelope handed to a [`crate::api::port::GrpcIngress`] handler.
 ///
 /// ## Mandatory deadline
 ///

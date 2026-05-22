@@ -21,7 +21,7 @@ use tokio::sync::oneshot;
 
 use edge_domain::{Handler, HandlerError, HandlerRegistry};
 use swe_edge_ingress_grpc_transport::{
-    GrpcHandlerAdapter, GrpcHandlerRegistryDispatcher, GrpcInboundError, TonicGrpcServer,
+    GrpcHandlerAdapter, GrpcHandlerRegistryDispatcher, GrpcIngressError, TonicGrpcServer,
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -34,9 +34,9 @@ struct TripleResp {
     value: u32,
 }
 
-fn decode_triple_req(bytes: &[u8]) -> Result<TripleReq, GrpcInboundError> {
+fn decode_triple_req(bytes: &[u8]) -> Result<TripleReq, GrpcIngressError> {
     if bytes.len() != 4 {
-        return Err(GrpcInboundError::InvalidArgument(format!(
+        return Err(GrpcIngressError::InvalidArgument(format!(
             "expected 4 bytes, got {}",
             bytes.len()
         )));

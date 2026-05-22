@@ -2,12 +2,12 @@
 
 use futures::future::BoxFuture;
 
-use crate::api::port::grpc_inbound::GrpcInboundError;
+use crate::api::port::grpc_ingress::GrpcIngressError;
 
-/// A runnable gRPC server that drives a [`GrpcInbound`](super::super::port::grpc_inbound::GrpcInbound) handler.
+/// A runnable gRPC server that drives a [`GrpcIngress`](super::super::port::grpc_ingress::GrpcIngress) handler.
 pub trait GrpcServer: Send + Sync {
     /// Bind and serve until `shutdown` resolves.
-    fn serve<'s>(&'s self) -> BoxFuture<'s, Result<(), GrpcInboundError>>;
+    fn serve<'s>(&'s self) -> BoxFuture<'s, Result<(), GrpcIngressError>>;
 }
 
 #[cfg(test)]

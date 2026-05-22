@@ -7,7 +7,7 @@
 //! front of authn).
 
 use swe_edge_ingress_grpc::{
-    AuthorizationInterceptor, GrpcInboundError, GrpcInboundInterceptor, GrpcMetadata, GrpcRequest,
+    AuthorizationInterceptor, GrpcIngressError, GrpcIngressInterceptor, GrpcMetadata, GrpcRequest,
     GrpcResponse, GrpcStatusCode, PeerIdentity, PEER_CN, PEER_SAN_DNS,
 };
 
@@ -43,12 +43,12 @@ impl AuthzInterceptor {
     }
 }
 
-impl GrpcInboundInterceptor for AuthzInterceptor {
-    fn before_dispatch(&self, req: &mut GrpcRequest) -> Result<(), GrpcInboundError> {
+impl GrpcIngressInterceptor for AuthzInterceptor {
+    fn before_dispatch(&self, req: &mut GrpcRequest) -> Result<(), GrpcIngressError> {
         let identity = match Self::identity_from_metadata(&req.metadata) {
             Some(i) => i,
             None => {
-                return Err(GrpcInboundError::Status(
+                return Err(GrpcIngressError::Status(
                     GrpcStatusCode::Unauthenticated,
                     "no verified identity for authz".into(),
                 ));
@@ -63,14 +63,14 @@ impl GrpcInboundInterceptor for AuthzInterceptor {
                 method = %req.method,
                 "authz denied",
             );
-            Err(GrpcInboundError::Status(
+            Err(GrpcIngressError::Status(
                 GrpcStatusCode::PermissionDenied,
                 "authorization denied".into(),
             ))
         }
     }
 
-    fn after_dispatch(&self, _resp: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+    fn after_dispatch(&self, _resp: &mut GrpcResponse) -> Result<(), GrpcIngressError> {
         Ok(())
     }
 
@@ -84,7 +84,7 @@ impl GrpcInboundInterceptor for AuthzInterceptor {
 
 /// `AuthzInterceptor` is the canonical authorisation gate for inbound
 /// gRPC.  Implementing the marker trait declares its role explicitly
-/// alongside the runtime detection hook on `GrpcInboundInterceptor`.
+/// alongside the runtime detection hook on `GrpcIngressInterceptor`.
 impl AuthorizationInterceptor for AuthzInterceptor {}
 
 #[cfg(test)]
@@ -110,7 +110,7 @@ mod tests {
         let interceptor = AuthzInterceptor::from_policy(|_: &PeerIdentity, _: &str| true);
         let mut req = req_with_cn(None, "/svc/M");
         match interceptor.before_dispatch(&mut req) {
-            Err(GrpcInboundError::Status(GrpcStatusCode::Unauthenticated, _)) => {}
+            Err(GrpcIngressError::Status(GrpcStatusCode::Unauthenticated, _)) => {}
             other => panic!("expected Unauthenticated, got {other:?}"),
         }
     }
@@ -131,7 +131,7 @@ mod tests {
         let interceptor = AuthzInterceptor::from_policy(|_: &PeerIdentity, _: &str| false);
         let mut req = req_with_cn(Some("alice"), "/svc/M");
         match interceptor.before_dispatch(&mut req) {
-            Err(GrpcInboundError::Status(GrpcStatusCode::PermissionDenied, _)) => {}
+            Err(GrpcIngressError::Status(GrpcStatusCode::PermissionDenied, _)) => {}
             other => panic!("expected PermissionDenied, got {other:?}"),
         }
     }

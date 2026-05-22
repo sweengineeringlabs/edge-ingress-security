@@ -8,7 +8,7 @@ use futures::StreamExt;
 
 use edge_domain::RequestContext;
 use swe_edge_ingress_grpc::{
-    GrpcHealthCheck, GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcMessageStream,
+    GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream,
     GrpcMetadata, GrpcRequest, GrpcResponse,
 };
 
@@ -85,15 +85,15 @@ impl ReflectionService {
     }
 }
 
-impl GrpcInbound for ReflectionService {
+impl GrpcIngress for ReflectionService {
     fn handle_unary(
         &self,
         request: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         Box::pin(async move {
             if request.method.as_str() != REFLECTION_INFO_METHOD {
-                return Err(GrpcInboundError::Unimplemented(format!(
+                return Err(GrpcIngressError::Unimplemented(format!(
                     "unknown method {}",
                     request.method
                 )));
@@ -101,7 +101,7 @@ impl GrpcInbound for ReflectionService {
             let parsed = match decode_request(&request.body) {
                 Ok(p) => p,
                 Err(e) => {
-                    return Err(GrpcInboundError::InvalidArgument(format!(
+                    return Err(GrpcIngressError::InvalidArgument(format!(
                         "malformed ServerReflectionRequest: {e}"
                     )))
                 }
@@ -121,10 +121,10 @@ impl GrpcInbound for ReflectionService {
         _metadata: GrpcMetadata,
         messages: GrpcMessageStream,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<(GrpcMessageStream, GrpcMetadata)>> {
         Box::pin(async move {
             if method.as_str() != REFLECTION_INFO_METHOD {
-                return Err(GrpcInboundError::Unimplemented(format!(
+                return Err(GrpcIngressError::Unimplemented(format!(
                     "unknown method {method}"
                 )));
             }
@@ -163,13 +163,13 @@ impl GrpcInbound for ReflectionService {
                 responses.push(encode_response(&response, &body));
             }
             let out: GrpcMessageStream = Box::pin(futures::stream::iter(
-                responses.into_iter().map(Ok::<Vec<u8>, GrpcInboundError>),
+                responses.into_iter().map(Ok::<Vec<u8>, GrpcIngressError>),
             ));
             Ok((out, GrpcMetadata::default()))
         })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async move { Ok(GrpcHealthCheck::healthy()) })
     }
 }

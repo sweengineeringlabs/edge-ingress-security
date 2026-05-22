@@ -20,7 +20,7 @@ use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
 use swe_edge_ingress_grpc_transport::{
-    GrpcHealthCheck, GrpcInbound, GrpcInboundResult, GrpcMetadata, GrpcRequest, GrpcResponse,
+    GrpcHealthCheck, GrpcIngress, GrpcIngressResult, GrpcMetadata, GrpcRequest, GrpcResponse,
     IngressTlsConfig, RequestContext, TonicGrpcServer, PEER_CERT_FINGERPRINT_SHA256, PEER_CN,
     PEER_SAN_DNS,
 };
@@ -31,12 +31,12 @@ struct CapturingHandler {
     captured: Arc<Mutex<Option<GrpcMetadata>>>,
 }
 
-impl GrpcInbound for CapturingHandler {
+impl GrpcIngress for CapturingHandler {
     fn handle_unary(
         &self,
         req: GrpcRequest,
         _ctx: RequestContext,
-    ) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> futures::future::BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         let captured = self.captured.clone();
         Box::pin(async move {
             *captured.lock().unwrap() = Some(req.metadata.clone());
@@ -47,7 +47,7 @@ impl GrpcInbound for CapturingHandler {
         })
     }
 
-    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> futures::future::BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
     }
 }

@@ -1,6 +1,6 @@
 //! gRPC status-code conversions and sanitization constant.
 
-use crate::api::port::grpc_inbound::GrpcInboundError;
+use crate::api::port::grpc_ingress::GrpcIngressError;
 use crate::api::value_object::GrpcStatusCode;
 
 /// Sanitized message returned to clients for any `Internal` server error.
@@ -64,22 +64,22 @@ pub fn from_wire(value: i32) -> GrpcStatusCode {
     from_tonic_code(tonic::Code::from(value))
 }
 
-/// Map a [`GrpcInboundError`] to `(tonic::Code, on-wire message)`.
+/// Map a [`GrpcIngressError`] to `(tonic::Code, on-wire message)`.
 ///
 /// `Internal(raw)` sanitizes the message for the wire and logs at WARN.
-pub fn map_inbound_error(e: GrpcInboundError) -> (tonic::Code, String) {
+pub fn map_inbound_error(e: GrpcIngressError) -> (tonic::Code, String) {
     match e {
-        GrpcInboundError::Status(code, msg) => (to_tonic_code(code), msg),
-        GrpcInboundError::Internal(msg) => {
+        GrpcIngressError::Status(code, msg) => (to_tonic_code(code), msg),
+        GrpcIngressError::Internal(msg) => {
             tracing::warn!(server_internal_msg = %msg, "gRPC handler returned Internal — sanitizing for wire");
             (tonic::Code::Internal, SANITIZED_INTERNAL_MSG.to_owned())
         }
-        GrpcInboundError::NotFound(m) => (tonic::Code::NotFound, m),
-        GrpcInboundError::InvalidArgument(m) => (tonic::Code::InvalidArgument, m),
-        GrpcInboundError::Unavailable(m) => (tonic::Code::Unavailable, m),
-        GrpcInboundError::DeadlineExceeded(m) => (tonic::Code::DeadlineExceeded, m),
-        GrpcInboundError::PermissionDenied(m) => (tonic::Code::PermissionDenied, m),
-        GrpcInboundError::Unimplemented(m) => (tonic::Code::Unimplemented, m),
+        GrpcIngressError::NotFound(m) => (tonic::Code::NotFound, m),
+        GrpcIngressError::InvalidArgument(m) => (tonic::Code::InvalidArgument, m),
+        GrpcIngressError::Unavailable(m) => (tonic::Code::Unavailable, m),
+        GrpcIngressError::DeadlineExceeded(m) => (tonic::Code::DeadlineExceeded, m),
+        GrpcIngressError::PermissionDenied(m) => (tonic::Code::PermissionDenied, m),
+        GrpcIngressError::Unimplemented(m) => (tonic::Code::Unimplemented, m),
     }
 }
 
@@ -144,7 +144,7 @@ mod tests {
     /// @covers: map_inbound_error
     #[test]
     fn test_map_inbound_error_internal_returns_sanitized_message() {
-        let (code, msg) = map_inbound_error(GrpcInboundError::Internal("secret/path".into()));
+        let (code, msg) = map_inbound_error(GrpcIngressError::Internal("secret/path".into()));
         assert_eq!(code, tonic::Code::Internal);
         assert_eq!(msg, SANITIZED_INTERNAL_MSG);
     }

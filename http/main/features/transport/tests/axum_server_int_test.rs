@@ -7,7 +7,7 @@ use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
 use swe_edge_ingress_http::{
-    AxumHttpServer, HttpHealthCheck, HttpInbound, HttpInboundError, HttpInboundResult, HttpRequest,
+    AxumHttpServer, HttpHealthCheck, HttpIngress, HttpIngressError, HttpIngressResult, HttpRequest,
     HttpResponse, RequestContext,
 };
 
@@ -15,45 +15,45 @@ use swe_edge_ingress_http::{
 
 struct EchoHandler;
 
-impl HttpInbound for EchoHandler {
+impl HttpIngress for EchoHandler {
     fn handle(
         &self,
         req: HttpRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    ) -> BoxFuture<'_, HttpIngressResult<HttpResponse>> {
         Box::pin(async move {
             let body = format!("{} {}", req.method, req.url).into_bytes();
             Ok(HttpResponse::new(200, body))
         })
     }
-    fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, HttpIngressResult<HttpHealthCheck>> {
         Box::pin(async { Ok(HttpHealthCheck::healthy()) })
     }
 }
 
 struct NotFoundHandler;
 
-impl HttpInbound for NotFoundHandler {
+impl HttpIngress for NotFoundHandler {
     fn handle(
         &self,
         _: HttpRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
-        Box::pin(async { Err(HttpInboundError::NotFound("gone".into())) })
+    ) -> BoxFuture<'_, HttpIngressResult<HttpResponse>> {
+        Box::pin(async { Err(HttpIngressError::NotFound("gone".into())) })
     }
-    fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, HttpIngressResult<HttpHealthCheck>> {
         Box::pin(async { Ok(HttpHealthCheck::healthy()) })
     }
 }
 
 struct JsonEchoHandler;
 
-impl HttpInbound for JsonEchoHandler {
+impl HttpIngress for JsonEchoHandler {
     fn handle(
         &self,
         req: HttpRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    ) -> BoxFuture<'_, HttpIngressResult<HttpResponse>> {
         Box::pin(async move {
             let body = serde_json::to_vec(&serde_json::json!({
                 "received": req.body.is_some()
@@ -65,7 +65,7 @@ impl HttpInbound for JsonEchoHandler {
             Ok(resp)
         })
     }
-    fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, HttpIngressResult<HttpHealthCheck>> {
         Box::pin(async { Ok(HttpHealthCheck::healthy()) })
     }
 }
@@ -73,12 +73,12 @@ impl HttpInbound for JsonEchoHandler {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /// Bind on port 0, start the server, return (base_url, shutdown_trigger).
-async fn start_server(handler: Arc<dyn HttpInbound>) -> (String, oneshot::Sender<()>) {
+async fn start_server(handler: Arc<dyn HttpIngress>) -> (String, oneshot::Sender<()>) {
     start_server_with_limit(handler, swe_edge_ingress_http::MAX_BODY_BYTES).await
 }
 
 async fn start_server_with_limit(
-    handler: Arc<dyn HttpInbound>,
+    handler: Arc<dyn HttpIngress>,
     body_limit: usize,
 ) -> (String, oneshot::Sender<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();

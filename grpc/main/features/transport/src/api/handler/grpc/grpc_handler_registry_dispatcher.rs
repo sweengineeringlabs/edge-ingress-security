@@ -52,7 +52,7 @@ mod tests {
     use std::sync::Arc;
 
     use crate::api::handler::grpc::grpc_handler_adapter::GrpcHandlerAdapter;
-    use crate::api::port::grpc_inbound::GrpcInboundError;
+    use crate::api::port::grpc_ingress::GrpcIngressError;
 
     #[derive(Debug, PartialEq, Eq)]
     struct TestReq {
@@ -63,9 +63,9 @@ mod tests {
         value: u32,
     }
 
-    fn decode_test_req(bytes: &[u8]) -> Result<TestReq, GrpcInboundError> {
+    fn decode_test_req(bytes: &[u8]) -> Result<TestReq, GrpcIngressError> {
         if bytes.len() != 4 {
-            return Err(GrpcInboundError::InvalidArgument(format!(
+            return Err(GrpcIngressError::InvalidArgument(format!(
                 "expected 4 bytes, got {}",
                 bytes.len()
             )));

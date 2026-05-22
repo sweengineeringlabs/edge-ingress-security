@@ -2,7 +2,7 @@
 
 use crate::api::MtlsAuthConfig;
 
-/// `GrpcInboundInterceptor` that enforces mTLS-derived identity.
+/// `GrpcIngressInterceptor` that enforces mTLS-derived identity.
 #[derive(Debug, Clone)]
 pub struct MtlsAuthInterceptor {
     pub(crate) config: MtlsAuthConfig,

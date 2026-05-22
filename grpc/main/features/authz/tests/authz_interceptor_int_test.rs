@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use swe_edge_ingress_grpc::{
-    GrpcInboundError, GrpcInboundInterceptor, GrpcMetadata, GrpcRequest, GrpcStatusCode,
+    GrpcIngressError, GrpcIngressInterceptor, GrpcMetadata, GrpcRequest, GrpcStatusCode,
     PeerIdentity, PEER_CN,
 };
 use swe_edge_ingress_grpc_authz::{
@@ -39,7 +39,7 @@ fn authz_struct_interceptor_method_acl_policy_denies_method_outside_acl_int_test
 
     let mut req = req_with_cn("alice", "/svc/Write");
     match interceptor.before_dispatch(&mut req) {
-        Err(GrpcInboundError::Status(GrpcStatusCode::PermissionDenied, _)) => {}
+        Err(GrpcIngressError::Status(GrpcStatusCode::PermissionDenied, _)) => {}
         other => panic!("expected PermissionDenied, got {other:?}"),
     }
 }
@@ -54,7 +54,7 @@ fn authz_struct_interceptor_closure_policy_round_trips_int_test() {
     let mut denied = req_with_cn("alice", "/svc/Write");
     interceptor.before_dispatch(&mut allowed).expect("allowed");
     match interceptor.before_dispatch(&mut denied) {
-        Err(GrpcInboundError::Status(GrpcStatusCode::PermissionDenied, _)) => {}
+        Err(GrpcIngressError::Status(GrpcStatusCode::PermissionDenied, _)) => {}
         other => panic!("expected PermissionDenied, got {other:?}"),
     }
 }

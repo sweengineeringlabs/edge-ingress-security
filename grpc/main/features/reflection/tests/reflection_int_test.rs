@@ -31,7 +31,7 @@ use tokio::sync::oneshot;
 
 use edge_domain::{Handler, HandlerError, HandlerRegistry, RequestContext};
 use swe_edge_ingress_grpc::{
-    GrpcHandlerAdapter, GrpcHandlerRegistryDispatcher, GrpcInboundError, TonicGrpcServer,
+    GrpcHandlerAdapter, GrpcHandlerRegistryDispatcher, GrpcIngressError, TonicGrpcServer,
     REFLECTION_ENABLED_WARN_MSG,
 };
 use swe_edge_ingress_grpc_reflection::{
@@ -46,7 +46,7 @@ struct EchoReq(Vec<u8>);
 #[derive(Debug, PartialEq, Eq)]
 struct EchoResp(Vec<u8>);
 
-fn decode_echo(bytes: &[u8]) -> Result<EchoReq, GrpcInboundError> {
+fn decode_echo(bytes: &[u8]) -> Result<EchoReq, GrpcIngressError> {
     Ok(EchoReq(bytes.to_vec()))
 }
 
@@ -90,7 +90,7 @@ impl Handler<Vec<u8>, Vec<u8>> for ReflectionHandlerWrapper {
     }
     async fn execute(&self, req: Vec<u8>) -> Result<Vec<u8>, HandlerError> {
         use std::time::Duration;
-        use swe_edge_ingress_grpc::GrpcInbound;
+        use swe_edge_ingress_grpc::GrpcIngress;
         use swe_edge_ingress_grpc::GrpcRequest;
         let r = GrpcRequest::new(REFLECTION_INFO_METHOD, req, Duration::from_secs(5));
         match self

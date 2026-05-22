@@ -5,7 +5,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use edge_domain::{Handler, HandlerError, RequestContext};
 
-use crate::api::port::grpc_inbound::GrpcInboundError;
+use crate::api::port::grpc_ingress::GrpcIngressError;
 
 use crate::api::handler::decode_fn::DecodeFn;
 use crate::api::handler::encode_fn::EncodeFn;
@@ -78,8 +78,8 @@ where
         ctx: RequestContext,
     ) -> Result<Vec<u8>, HandlerError> {
         let typed = (self.decode)(&req).map_err(|e| match e {
-            GrpcInboundError::InvalidArgument(msg) => HandlerError::InvalidRequest(msg),
-            GrpcInboundError::Status(_, msg) => HandlerError::InvalidRequest(msg),
+            GrpcIngressError::InvalidArgument(msg) => HandlerError::InvalidRequest(msg),
+            GrpcIngressError::Status(_, msg) => HandlerError::InvalidRequest(msg),
             other => HandlerError::InvalidRequest(other.to_string()),
         })?;
         let resp = self.inner.execute_with_context(typed, ctx).await?;
@@ -107,9 +107,9 @@ mod tests {
         value: u32,
     }
 
-    fn decode_test_req(bytes: &[u8]) -> Result<TestReq, GrpcInboundError> {
+    fn decode_test_req(bytes: &[u8]) -> Result<TestReq, GrpcIngressError> {
         if bytes.len() != 4 {
-            return Err(GrpcInboundError::InvalidArgument(format!(
+            return Err(GrpcIngressError::InvalidArgument(format!(
                 "expected 4 bytes, got {}",
                 bytes.len()
             )));

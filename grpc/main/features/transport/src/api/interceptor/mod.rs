@@ -5,4 +5,4 @@ pub(crate) mod grpc;
 pub(crate) mod trace_context_interceptor;
 
 pub use authorization_interceptor::AuthorizationInterceptor;
-pub use grpc::{GrpcInboundInterceptor, GrpcInboundInterceptorChain};
+pub use grpc::{GrpcIngressInterceptor, GrpcIngressInterceptorChain};

@@ -16,11 +16,11 @@ pub use crate::api::interceptor::trace_context_interceptor::{
     TraceContextInterceptor, EXTRACTED_TRACEPARENT, EXTRACTED_TRACESTATE, TRACEPARENT, TRACESTATE,
 };
 pub use crate::api::interceptor::{
-    AuthorizationInterceptor, GrpcInboundInterceptor, GrpcInboundInterceptorChain,
+    AuthorizationInterceptor, GrpcIngressInterceptor, GrpcIngressInterceptorChain,
 };
 pub use crate::api::peer_identity::extract_peer_identity;
-pub use crate::api::port::grpc_inbound::{
-    GrpcHealthCheck, GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcMessageStream,
+pub use crate::api::port::grpc_ingress::{
+    GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream,
 };
 pub use crate::api::server::{
     GrpcServer, GrpcServerConfigError, TonicGrpcServer, TonicGrpcServerBuilder, TonicServerError,

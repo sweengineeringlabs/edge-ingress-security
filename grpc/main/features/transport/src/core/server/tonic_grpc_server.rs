@@ -1,5 +1,5 @@
 //! gRPC server — binds a socket and delegates all unary calls to a
-//! [`GrpcInbound`] handler.  HTTP/2 framing is handled by Hyper directly
+//! [`GrpcIngress`] handler.  HTTP/2 framing is handled by Hyper directly
 //! (avoiding the axum 0.7 / 0.8 type mismatch that Tonic's routing layer
 //! would otherwise introduce). gRPC length-prefix framing is handled here.
 
@@ -20,10 +20,10 @@ use edge_domain::RequestContext;
 
 use crate::api::audit_sink::{AuditEvent, AuditSink};
 use crate::api::grpc_timeout::{parse_grpc_timeout, DEFAULT_DEADLINE};
-use crate::api::interceptor::GrpcInboundInterceptorChain;
+use crate::api::interceptor::GrpcIngressInterceptorChain;
 use crate::api::peer_identity::extract_peer_identity;
-use crate::api::port::grpc_inbound::{
-    GrpcInbound, GrpcInboundError, GrpcInboundResult, GrpcMessageStream,
+use crate::api::port::grpc_ingress::{
+    GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream,
 };
 use crate::api::server::{
     TonicGrpcServer, TonicServerError, MISSING_AUTHORIZATION_INTERCEPTOR_MSG,
@@ -241,9 +241,9 @@ fn read_deadline(headers: &http::HeaderMap) -> Duration {
 
 async fn dispatch(
     req: Request<hyper::body::Incoming>,
-    handler: Arc<dyn GrpcInbound>,
+    handler: Arc<dyn GrpcIngress>,
     max_bytes: usize,
-    interceptors: GrpcInboundInterceptorChain,
+    interceptors: GrpcIngressInterceptorChain,
     compression: CompressionMode,
     peer_metadata: HashMap<String, String>,
     audit_sink: Arc<dyn AuditSink>,
@@ -308,7 +308,7 @@ async fn dispatch(
     let message_stream: GrpcMessageStream = Box::pin(futures::stream::iter(
         frames
             .into_iter()
-            .map(|f| Ok::<Vec<u8>, GrpcInboundError>(f.to_vec())),
+            .map(|f| Ok::<Vec<u8>, GrpcIngressError>(f.to_vec())),
     ));
 
     // Build merged request metadata.  Reserved peer-identity keys
@@ -478,25 +478,25 @@ async fn dispatch(
     }
 }
 
-/// Route a request to the correct [`GrpcInbound`] streaming variant.
+/// Route a request to the correct [`GrpcIngress`] streaming variant.
 ///
 /// `x-grpc-stream-type` header values and their targets:
-/// - `"server-stream"` → [`GrpcInbound::handle_server_stream`] (unary request, streaming response)
-/// - `"client-stream"` → [`GrpcInbound::handle_client_stream`] (streaming request, single response)
-/// - `"bidi-stream"`   → [`GrpcInbound::handle_bidi_stream`]   (streaming both directions)
-/// - absent / any other value → [`GrpcInbound::handle_stream`] (backward-compatible default)
+/// - `"server-stream"` → [`GrpcIngress::handle_server_stream`] (unary request, streaming response)
+/// - `"client-stream"` → [`GrpcIngress::handle_client_stream`] (streaming request, single response)
+/// - `"bidi-stream"`   → [`GrpcIngress::handle_bidi_stream`]   (streaming both directions)
+/// - absent / any other value → [`GrpcIngress::handle_stream`] (backward-compatible default)
 ///
 /// All branches normalise to `(GrpcMessageStream, GrpcMetadata)` so the rest of the
 /// dispatch pipeline (drain → interceptors → wire encoding) is unchanged.
 async fn route_dispatch(
-    handler: Arc<dyn GrpcInbound>,
+    handler: Arc<dyn GrpcIngress>,
     stream_type: &str,
     method: String,
     metadata: GrpcMetadata,
     messages: GrpcMessageStream,
     ctx: RequestContext,
     deadline: Duration,
-) -> GrpcInboundResult<(GrpcMessageStream, GrpcMetadata)> {
+) -> GrpcIngressResult<(GrpcMessageStream, GrpcMetadata)> {
     use futures::StreamExt;
     match stream_type {
         "server-stream" => {
@@ -535,12 +535,12 @@ async fn route_dispatch(
 /// the error message — those strings could leak the server's ACL
 /// shape.  Replace any `PermissionDenied` payload with a fixed,
 /// non-revealing string.  Other errors pass through untouched.
-fn sanitize_authz_error(err: GrpcInboundError) -> GrpcInboundError {
+fn sanitize_authz_error(err: GrpcIngressError) -> GrpcIngressError {
     match err {
-        GrpcInboundError::PermissionDenied(_) => {
-            GrpcInboundError::PermissionDenied("authorization denied".into())
+        GrpcIngressError::PermissionDenied(_) => {
+            GrpcIngressError::PermissionDenied("authorization denied".into())
         }
-        GrpcInboundError::Status(GrpcStatusCode::PermissionDenied, _) => GrpcInboundError::Status(
+        GrpcIngressError::Status(GrpcStatusCode::PermissionDenied, _) => GrpcIngressError::Status(
             GrpcStatusCode::PermissionDenied,
             "authorization denied".into(),
         ),
@@ -551,7 +551,7 @@ fn sanitize_authz_error(err: GrpcInboundError) -> GrpcInboundError {
 /// Drain a [`GrpcMessageStream`] into a list of payloads.
 async fn collect_response_payload(
     mut stream: GrpcMessageStream,
-) -> Result<Vec<Vec<u8>>, GrpcInboundError> {
+) -> Result<Vec<Vec<u8>>, GrpcIngressError> {
     use futures::StreamExt;
     let mut out = Vec::new();
     while let Some(item) = stream.next().await {
@@ -786,12 +786,12 @@ mod tests {
 
     #[test]
     fn test_sanitize_authz_error_strips_permission_denied_rationale() {
-        let detailed = GrpcInboundError::PermissionDenied(
+        let detailed = GrpcIngressError::PermissionDenied(
             "policy ROLE_ADMIN denied subject=alice path=/svc/Drop".into(),
         );
         let sanitized = sanitize_authz_error(detailed);
         match sanitized {
-            GrpcInboundError::PermissionDenied(msg) => {
+            GrpcIngressError::PermissionDenied(msg) => {
                 assert_eq!(msg, "authorization denied");
                 assert!(!msg.contains("alice"));
                 assert!(!msg.contains("ROLE_ADMIN"));
@@ -802,13 +802,13 @@ mod tests {
 
     #[test]
     fn test_sanitize_authz_error_strips_status_permission_denied_rationale() {
-        let detailed = GrpcInboundError::Status(
+        let detailed = GrpcIngressError::Status(
             GrpcStatusCode::PermissionDenied,
             "denied: subject=bob lacks scope=admin".into(),
         );
         let sanitized = sanitize_authz_error(detailed);
         match sanitized {
-            GrpcInboundError::Status(GrpcStatusCode::PermissionDenied, msg) => {
+            GrpcIngressError::Status(GrpcStatusCode::PermissionDenied, msg) => {
                 assert_eq!(msg, "authorization denied");
                 assert!(!msg.contains("bob"));
                 assert!(!msg.contains("scope"));
@@ -819,10 +819,10 @@ mod tests {
 
     #[test]
     fn test_sanitize_authz_error_passes_through_unrelated_errors() {
-        let original = GrpcInboundError::NotFound("row not found".into());
+        let original = GrpcIngressError::NotFound("row not found".into());
         let result = sanitize_authz_error(original);
         match result {
-            GrpcInboundError::NotFound(msg) => assert_eq!(msg, "row not found"),
+            GrpcIngressError::NotFound(msg) => assert_eq!(msg, "row not found"),
             other => panic!("expected NotFound, got {other:?}"),
         }
     }
@@ -830,17 +830,17 @@ mod tests {
     // ── enforce_authorization_invariant ──────────────────────────────────
 
     use crate::api::interceptor::{
-        AuthorizationInterceptor, GrpcInboundInterceptor, GrpcInboundInterceptorChain,
+        AuthorizationInterceptor, GrpcIngressInterceptor, GrpcIngressInterceptorChain,
     };
-    use crate::api::port::grpc_inbound::{GrpcHealthCheck, GrpcInbound, GrpcInboundResult};
+    use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
     use futures::future::BoxFuture;
 
     struct TonicGrpcServerFakeAuthz;
-    impl GrpcInboundInterceptor for TonicGrpcServerFakeAuthz {
-        fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> {
+    impl GrpcIngressInterceptor for TonicGrpcServerFakeAuthz {
+        fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcIngressError> {
             Ok(())
         }
-        fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+        fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcIngressError> {
             Ok(())
         }
         fn is_authorization(&self) -> bool {
@@ -850,12 +850,12 @@ mod tests {
     impl AuthorizationInterceptor for TonicGrpcServerFakeAuthz {}
 
     struct TonicGrpcServerDummyHandler;
-    impl GrpcInbound for TonicGrpcServerDummyHandler {
+    impl GrpcIngress for TonicGrpcServerDummyHandler {
         fn handle_unary(
             &self,
             _: GrpcRequest,
             _ctx: RequestContext,
-        ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
             Box::pin(async {
                 Ok(GrpcResponse {
                     body: vec![],
@@ -863,14 +863,14 @@ mod tests {
                 })
             })
         }
-        fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+        fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
             Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
         }
     }
 
     #[test]
     fn test_enforce_authorization_invariant_succeeds_with_authz_interceptor() {
-        let chain = GrpcInboundInterceptorChain::new().push(Arc::new(TonicGrpcServerFakeAuthz));
+        let chain = GrpcIngressInterceptorChain::new().push(Arc::new(TonicGrpcServerFakeAuthz));
         let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler))
             .with_interceptors(chain);
         // Should not panic.
@@ -953,19 +953,19 @@ mod tests {
 #[cfg(test)]
 mod dedicated_coverage {
     use super::TonicGrpcServer;
-    use crate::api::port::grpc_inbound::{GrpcHealthCheck, GrpcInbound, GrpcInboundResult};
+    use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
     use crate::api::value_object::{CompressionMode, GrpcRequest, GrpcResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
     use std::sync::Arc;
 
     struct TonicGrpcServerStub;
-    impl GrpcInbound for TonicGrpcServerStub {
+    impl GrpcIngress for TonicGrpcServerStub {
         fn handle_unary(
             &self,
             _: GrpcRequest,
             _ctx: RequestContext,
-        ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
             Box::pin(async {
                 Ok(GrpcResponse {
                     body: vec![],
@@ -973,7 +973,7 @@ mod dedicated_coverage {
                 })
             })
         }
-        fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+        fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
             Box::pin(async {
                 Ok(GrpcHealthCheck {
                     healthy: true,
@@ -1013,8 +1013,8 @@ mod dedicated_coverage {
 
     #[test]
     fn test_with_interceptors_assigns_chain() {
-        use crate::api::interceptor::GrpcInboundInterceptorChain;
-        let chain = GrpcInboundInterceptorChain::new();
+        use crate::api::interceptor::GrpcIngressInterceptorChain;
+        let chain = GrpcIngressInterceptorChain::new();
         let s = server().with_interceptors(chain);
         drop(s); // interceptors field is not Option — assignment verified by compilation
     }
@@ -1052,19 +1052,19 @@ mod dedicated_coverage {
 #[cfg(test)]
 mod sync_coverage {
     use super::TonicGrpcServer;
-    use crate::api::port::grpc_inbound::{GrpcHealthCheck, GrpcInbound, GrpcInboundResult};
+    use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
     use crate::api::value_object::{GrpcRequest, GrpcResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
     use std::sync::Arc;
 
     struct TonicGrpcServerStub;
-    impl GrpcInbound for TonicGrpcServerStub {
+    impl GrpcIngress for TonicGrpcServerStub {
         fn handle_unary(
             &self,
             _: GrpcRequest,
             _ctx: RequestContext,
-        ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+        ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
             Box::pin(async {
                 Ok(GrpcResponse {
                     body: vec![],
@@ -1072,7 +1072,7 @@ mod sync_coverage {
                 })
             })
         }
-        fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+        fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
             Box::pin(async {
                 Ok(GrpcHealthCheck {
                     healthy: true,

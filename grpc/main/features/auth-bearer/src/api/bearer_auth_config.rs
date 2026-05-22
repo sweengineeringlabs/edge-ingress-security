@@ -39,7 +39,7 @@ impl BearerSecret {
 
 /// Inbound (server) bearer config.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BearerInboundConfig {
+pub struct BearerIngressConfig {
     /// Verification key material.
     pub secret: BearerSecret,
     /// Required `iss` value — tokens with a different issuer are rejected.

@@ -15,20 +15,20 @@ use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
 use swe_edge_ingress_grpc_transport::{
-    AuditEvent, AuditSink, AuthorizationInterceptor, GrpcHealthCheck, GrpcInbound,
-    GrpcInboundError, GrpcInboundInterceptor, GrpcInboundInterceptorChain, GrpcInboundResult,
+    AuditEvent, AuditSink, AuthorizationInterceptor, GrpcHealthCheck, GrpcIngress,
+    GrpcIngressError, GrpcIngressInterceptor, GrpcIngressInterceptorChain, GrpcIngressResult,
     GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode, RequestContext, TonicGrpcServer,
 };
 
 // ── Test fixtures ─────────────────────────────────────────────────────────────
 
 struct EchoHandler;
-impl GrpcInbound for EchoHandler {
+impl GrpcIngress for EchoHandler {
     fn handle_unary(
         &self,
         req: GrpcRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, GrpcInboundResult<GrpcResponse>> {
+    ) -> BoxFuture<'_, GrpcIngressResult<GrpcResponse>> {
         Box::pin(async move {
             Ok(GrpcResponse {
                 body: req.body,
@@ -36,7 +36,7 @@ impl GrpcInbound for EchoHandler {
             })
         })
     }
-    fn health_check(&self) -> BoxFuture<'_, GrpcInboundResult<GrpcHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, GrpcIngressResult<GrpcHealthCheck>> {
         Box::pin(async { Ok(GrpcHealthCheck::healthy()) })
     }
 }
@@ -44,16 +44,16 @@ impl GrpcInbound for EchoHandler {
 /// Authz interceptor that always denies, but with a *detailed* error
 /// message — used to verify the wire never sees the rationale.
 struct DetailedDenyInterceptor;
-impl GrpcInboundInterceptor for DetailedDenyInterceptor {
-    fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> {
-        Err(GrpcInboundError::Status(
+impl GrpcIngressInterceptor for DetailedDenyInterceptor {
+    fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcIngressError> {
+        Err(GrpcIngressError::Status(
             GrpcStatusCode::PermissionDenied,
             "policy decision: subject=mallory@evil.example role=anonymous \
              rejected by ROLE_ADMIN (rule_id=42)"
                 .into(),
         ))
     }
-    fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+    fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcIngressError> {
         Ok(())
     }
     fn is_authorization(&self) -> bool {
@@ -64,11 +64,11 @@ impl AuthorizationInterceptor for DetailedDenyInterceptor {}
 
 /// Authz interceptor that always allows.
 struct AllowAllInterceptor;
-impl GrpcInboundInterceptor for AllowAllInterceptor {
-    fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcInboundError> {
+impl GrpcIngressInterceptor for AllowAllInterceptor {
+    fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcIngressError> {
         Ok(())
     }
-    fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+    fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcIngressError> {
         Ok(())
     }
     fn is_authorization(&self) -> bool {
@@ -95,8 +95,8 @@ fn grpc_frame(payload: &[u8]) -> Bytes {
 }
 
 async fn start_server(
-    handler: Arc<dyn GrpcInbound>,
-    chain: GrpcInboundInterceptorChain,
+    handler: Arc<dyn GrpcIngress>,
+    chain: GrpcIngressInterceptorChain,
     sink: Arc<dyn AuditSink>,
     allow_unauthenticated: bool,
 ) -> (SocketAddr, oneshot::Sender<()>) {
@@ -177,7 +177,7 @@ async fn test_server_panics_at_startup_when_no_authz_and_fail_closed_default() {
 async fn test_server_starts_when_allow_unauthenticated_is_true_and_no_authz() {
     let (_, _shutdown) = start_server(
         Arc::new(EchoHandler),
-        GrpcInboundInterceptorChain::new(),
+        GrpcIngressInterceptorChain::new(),
         Arc::new(swe_edge_ingress_grpc_transport::NoopAuditSink),
         true, // allow_unauthenticated
     )
@@ -195,7 +195,7 @@ async fn test_server_starts_when_allow_unauthenticated_is_true_and_no_authz() {
 /// Issue #6 acceptance gate.
 #[tokio::test]
 async fn test_authz_permission_denied_sanitizes_policy_rationale_on_the_wire() {
-    let chain = GrpcInboundInterceptorChain::new().push(Arc::new(DetailedDenyInterceptor));
+    let chain = GrpcIngressInterceptorChain::new().push(Arc::new(DetailedDenyInterceptor));
     let (addr, _shutdown) = start_server(
         Arc::new(EchoHandler),
         chain,
@@ -233,7 +233,7 @@ async fn test_audit_sink_records_one_event_per_authenticated_dispatch() {
     let sink: Arc<dyn AuditSink> = Arc::new(CapturingAuditSink {
         events: events.clone(),
     });
-    let chain = GrpcInboundInterceptorChain::new().push(Arc::new(AllowAllInterceptor));
+    let chain = GrpcIngressInterceptorChain::new().push(Arc::new(AllowAllInterceptor));
 
     let (addr, _shutdown) = start_server(Arc::new(EchoHandler), chain, sink, false).await;
 
@@ -265,7 +265,7 @@ async fn test_audit_sink_records_event_for_authz_rejected_dispatch() {
     let sink: Arc<dyn AuditSink> = Arc::new(CapturingAuditSink {
         events: events.clone(),
     });
-    let chain = GrpcInboundInterceptorChain::new().push(Arc::new(DetailedDenyInterceptor));
+    let chain = GrpcIngressInterceptorChain::new().push(Arc::new(DetailedDenyInterceptor));
 
     let (addr, _shutdown) = start_server(Arc::new(EchoHandler), chain, sink, false).await;
 

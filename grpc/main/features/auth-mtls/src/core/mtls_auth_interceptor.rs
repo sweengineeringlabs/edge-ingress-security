@@ -1,4 +1,4 @@
-//! [`GrpcInboundInterceptor`] that requires an mTLS peer identity in
+//! [`GrpcIngressInterceptor`] that requires an mTLS peer identity in
 //! request metadata, optionally restricted to a CN/SAN allowlist.
 //!
 //! Wire-shape contract: relies on the keys that
@@ -10,7 +10,7 @@
 //! interpreted as "no mTLS".
 
 use swe_edge_ingress_grpc::{
-    GrpcInboundError, GrpcInboundInterceptor, GrpcRequest, GrpcResponse, GrpcStatusCode,
+    GrpcIngressError, GrpcIngressInterceptor, GrpcRequest, GrpcResponse, GrpcStatusCode,
     PEER_CERT_FINGERPRINT_SHA256, PEER_CN, PEER_SAN_DNS,
 };
 
@@ -88,16 +88,16 @@ impl MtlsAuthInterceptor {
     }
 }
 
-impl GrpcInboundInterceptor for MtlsAuthInterceptor {
-    fn before_dispatch(&self, req: &mut GrpcRequest) -> Result<(), GrpcInboundError> {
+impl GrpcIngressInterceptor for MtlsAuthInterceptor {
+    fn before_dispatch(&self, req: &mut GrpcRequest) -> Result<(), GrpcIngressError> {
         match self.classify(req) {
             Ok(()) => Ok(()),
-            Err(MtlsAuthError::MissingIdentity) => Err(GrpcInboundError::Status(
+            Err(MtlsAuthError::MissingIdentity) => Err(GrpcIngressError::Status(
                 GrpcStatusCode::Unauthenticated,
                 "mTLS peer identity required".into(),
             )),
             Err(MtlsAuthError::DisallowedCn(_)) | Err(MtlsAuthError::DisallowedSan) => {
-                Err(GrpcInboundError::Status(
+                Err(GrpcIngressError::Status(
                     GrpcStatusCode::PermissionDenied,
                     "peer identity is not on the allowlist".into(),
                 ))
@@ -105,7 +105,7 @@ impl GrpcInboundInterceptor for MtlsAuthInterceptor {
         }
     }
 
-    fn after_dispatch(&self, _resp: &mut GrpcResponse) -> Result<(), GrpcInboundError> {
+    fn after_dispatch(&self, _resp: &mut GrpcResponse) -> Result<(), GrpcIngressError> {
         Ok(())
     }
 }
@@ -148,7 +148,7 @@ mod tests {
         let interceptor = MtlsAuthInterceptor::allow_any_verified_peer();
         let mut r = req_no_identity();
         match interceptor.before_dispatch(&mut r) {
-            Err(GrpcInboundError::Status(GrpcStatusCode::Unauthenticated, _)) => {}
+            Err(GrpcIngressError::Status(GrpcStatusCode::Unauthenticated, _)) => {}
             other => panic!("expected Unauthenticated, got {other:?}"),
         }
     }
@@ -168,7 +168,7 @@ mod tests {
             MtlsAuthInterceptor::from_config(MtlsAuthConfig::restrict_to_cns(["svc-a".into()]));
         let mut r = req_with_identity(Some("svc-evil"), None);
         match interceptor.before_dispatch(&mut r) {
-            Err(GrpcInboundError::Status(GrpcStatusCode::PermissionDenied, _)) => {}
+            Err(GrpcIngressError::Status(GrpcStatusCode::PermissionDenied, _)) => {}
             other => panic!("expected PermissionDenied, got {other:?}"),
         }
     }
@@ -213,7 +213,7 @@ mod tests {
         let interceptor = MtlsAuthInterceptor::from_config(cfg);
         let mut r = req_with_identity(None, Some("other.local"));
         match interceptor.before_dispatch(&mut r) {
-            Err(GrpcInboundError::Status(GrpcStatusCode::PermissionDenied, _)) => {}
+            Err(GrpcIngressError::Status(GrpcStatusCode::PermissionDenied, _)) => {}
             other => panic!("expected PermissionDenied, got {other:?}"),
         }
     }

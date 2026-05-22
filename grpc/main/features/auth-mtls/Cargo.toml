@@ -6,7 +6,7 @@ license.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 repository.workspace = true
-description = "mTLS-based GrpcInboundInterceptor — rejects calls when no peer identity is present in GrpcMetadata"
+description = "mTLS-based GrpcIngressInterceptor — rejects calls when no peer identity is present in GrpcMetadata"
 keywords = ["grpc", "mtls", "auth", "interceptor", "swe"]
 categories = ["network-programming", "authentication"]
 

@@ -9,7 +9,7 @@ use edge_domain::{Handler, HandlerError, HandlerRegistry};
 use swe_observ_metrics::{create_local_metrics_backend, MetricsProvider};
 
 use swe_edge_ingress_http::{
-    HttpHandlerAdapter, HttpHandlerRegistryDispatcher, HttpInbound, HttpInboundError, HttpRequest,
+    HttpHandlerAdapter, HttpHandlerRegistryDispatcher, HttpIngress, HttpIngressError, HttpRequest,
     HttpResponse, RequestContext,
 };
 
@@ -47,7 +47,7 @@ impl Handler<HttpRequest, HttpResponse> for BoomHandler {
     }
 }
 
-fn identity_decode(req: &HttpRequest) -> Result<HttpRequest, HttpInboundError> {
+fn identity_decode(req: &HttpRequest) -> Result<HttpRequest, HttpIngressError> {
     Ok(req.clone())
 }
 

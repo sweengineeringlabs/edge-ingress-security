@@ -9,7 +9,7 @@ pub trait Validator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::api::port::grpc_inbound::GrpcInbound;
+    use crate::api::port::grpc_ingress::GrpcIngress;
 
     #[test]
     fn test_validator_is_object_safe() {
@@ -17,7 +17,7 @@ mod tests {
     }
 
     #[test]
-    fn test_grpc_inbound_is_object_safe() {
-        fn _assert(_: &dyn GrpcInbound) {}
+    fn test_grpc_ingress_is_object_safe() {
+        fn _assert(_: &dyn GrpcIngress) {}
     }
 }

@@ -6,7 +6,7 @@ license.workspace     = true
 rust-version.workspace = true
 authors.workspace     = true
 repository.workspace  = true
-description  = "swe-edge ingress — gRPC inbound domain (value objects + GrpcInbound port)"
+description  = "swe-edge ingress — gRPC inbound domain (value objects + GrpcIngress port)"
 keywords     = ["grpc", "inbound", "edge", "swe"]
 categories   = ["network-programming"]
 
@@ -71,8 +71,8 @@ name    = "grpc_health_v1_int_test"
 path    = "tests/grpc_health_v1_int_test.rs"
 
 [[test]]
-name    = "grpc_inbound_int_test"
-path    = "tests/grpc_inbound_int_test.rs"
+name    = "grpc_ingress_int_test"
+path    = "tests/grpc_ingress_int_test.rs"
 
 [[test]]
 name    = "grpc_message_size_int_test"

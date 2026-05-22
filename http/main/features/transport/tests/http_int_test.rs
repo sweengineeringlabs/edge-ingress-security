@@ -11,7 +11,7 @@ use tokio::sync::oneshot;
 
 use http::Method;
 use swe_edge_ingress_http::{
-    AxumHttpServer, HttpHealthCheck, HttpInbound, HttpInboundResult, HttpMethod, HttpRequest,
+    AxumHttpServer, HttpHealthCheck, HttpIngress, HttpIngressResult, HttpMethod, HttpRequest,
     HttpResponse, RequestContext,
 };
 
@@ -25,19 +25,19 @@ fn _http_get_method() -> Method {
 
 struct ReflectHandler;
 
-impl HttpInbound for ReflectHandler {
+impl HttpIngress for ReflectHandler {
     fn handle(
         &self,
         req: HttpRequest,
         _ctx: RequestContext,
-    ) -> BoxFuture<'_, HttpInboundResult<HttpResponse>> {
+    ) -> BoxFuture<'_, HttpIngressResult<HttpResponse>> {
         Box::pin(async move {
             let body = format!("{} {}", req.method, req.url).into_bytes();
             Ok(HttpResponse::new(200, body))
         })
     }
 
-    fn health_check(&self) -> BoxFuture<'_, HttpInboundResult<HttpHealthCheck>> {
+    fn health_check(&self) -> BoxFuture<'_, HttpIngressResult<HttpHealthCheck>> {
         Box::pin(async { Ok(HttpHealthCheck::healthy()) })
     }
 }

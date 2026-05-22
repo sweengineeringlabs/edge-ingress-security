@@ -6,7 +6,7 @@ license.workspace     = true
 rust-version.workspace = true
 authors.workspace     = true
 repository.workspace  = true
-description  = "swe-edge ingress — HTTP inbound domain (value objects + HttpInbound port)"
+description  = "swe-edge ingress — HTTP inbound domain (value objects + HttpIngress port)"
 keywords     = ["http", "inbound", "edge", "swe"]
 categories   = ["web-programming", "network-programming"]
 
@@ -31,8 +31,8 @@ name    = "axum_server_tls_int_test"
 path    = "tests/axum_server_tls_int_test.rs"
 
 [[test]]
-name    = "http_inbound_int_test"
-path    = "tests/http_inbound_int_test.rs"
+name    = "http_ingress_int_test"
+path    = "tests/http_ingress_int_test.rs"
 
 [[test]]
 name    = "axum_int_test"
