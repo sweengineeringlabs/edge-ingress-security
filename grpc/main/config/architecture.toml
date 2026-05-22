@@ -1,9 +1,0 @@
-# SEA project configuration (L0)
-[project]
-name = "swe-edge-ingress-grpc"
-workspaces = [
-    "main/features/*",
-]
-
-[workspace."main/features/*"]
-path = "main/features/*"
