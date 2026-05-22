@@ -10,16 +10,13 @@ workspaces = [
 ]
 
 [workspace.grpc]
-path = "grpc"
-crate = "swe-edge-ingress-grpc-transport"
+path = "grpc/main/features/*"
 
 [workspace.http]
-path = "http"
-crate = "swe-edge-ingress-http-transport"
+path = "http/main/features/*"
 
 [workspace."message-broker"]
-path = "message-broker"
-crate = "swe-edge-ingress-message-broker-transport"
+path = "message-broker/main/features/*"
 
 [workspace.tls]
 path = "tls"
@@ -28,3 +25,5 @@ crate = "swe-edge-ingress-tls"
 [workspace.verifier]
 path = "verifier"
 crate = "swe-edge-ingress-verifier"
+
+
