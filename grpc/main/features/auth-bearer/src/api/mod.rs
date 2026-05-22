@@ -1,12 +1,12 @@
-//! API layer — config, error, and constants for the inbound bearer interceptor.
+//! API layer — config, error, and contracts for the inbound bearer interceptor.
 
-pub(crate) mod bearer_auth_config;
-pub(crate) mod bearer_auth_error;
-pub(crate) mod bearer_ingress_interceptor;
-pub(crate) mod jwt_claims;
-pub(crate) mod metadata_keys;
+pub(crate) mod application_config_builder;
+pub(crate) mod bearer;
+pub(crate) mod processor;
+pub(crate) mod traits;
 
-pub use bearer_auth_config::{BearerIngressConfig, BearerSecret};
-pub use bearer_auth_error::BearerAuthError;
-pub use bearer_ingress_interceptor::BearerIngressInterceptor;
-pub use metadata_keys::{AUTHORIZATION_HEADER, EXTRACTED_BEARER_SUBJECT};
+pub use application_config_builder::ApplicationConfigBuilder;
+pub use bearer::{
+    BearerAuthError, BearerIngressConfig, BearerIngressInterceptor, BearerSecret,
+    AUTHORIZATION_HEADER, EXTRACTED_BEARER_SUBJECT,
+};

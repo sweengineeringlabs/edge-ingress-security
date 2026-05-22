@@ -1,0 +1,2 @@
+[authz]
+default_policy = "deny"

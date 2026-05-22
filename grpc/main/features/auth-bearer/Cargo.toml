@@ -20,16 +20,81 @@ path = "src/lib.rs"
 [dependencies]
 swe-edge-ingress-grpc.workspace = true
 thiserror    = { workspace = true }
-futures      = { workspace = true }
 serde        = { workspace = true }
-toml         = { workspace = true }
 tracing      = { workspace = true }
 jsonwebtoken = { workspace = true }
 subtle       = { workspace = true }
 
 [dev-dependencies]
-tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread"] }
+tokio   = { workspace = true, features = ["macros", "rt", "rt-multi-thread"] }
+futures = { workspace = true }
+toml    = { workspace = true }
+subtle  = { workspace = true }
 
 [[test]]
 name = "jwt_claims_int_test"
 path = "tests/jwt_claims_int_test.rs"
+
+[[test]]
+name = "bearer_ingress_int_test"
+path = "tests/bearer_ingress_int_test.rs"
+
+[[test]]
+name = "bearer_auth_config_int_test"
+path = "tests/bearer_auth_config_int_test.rs"
+
+[[test]]
+name = "bearer_auth_error_int_test"
+path = "tests/bearer_auth_error_int_test.rs"
+
+[[test]]
+name = "metadata_keys_int_test"
+path = "tests/metadata_keys_int_test.rs"
+
+[[test]]
+name = "processor_int_test"
+path = "tests/processor_int_test.rs"
+
+[[test]]
+name = "bearer_ingress_config_int_test"
+path = "tests/bearer_ingress_config_int_test.rs"
+
+[[test]]
+name = "bearer_ingress_interceptor_int_test"
+path = "tests/bearer_ingress_interceptor_int_test.rs"
+
+[[test]]
+name = "bearer_secret_int_test"
+path = "tests/bearer_secret_int_test.rs"
+
+[[test]]
+name = "traits_int_test"
+path = "tests/traits_int_test.rs"
+
+[[test]]
+name = "futures_coverage_int_test"
+path = "tests/futures_coverage_int_test.rs"
+
+[[test]]
+name = "subtle_coverage_int_test"
+path = "tests/subtle_coverage_int_test.rs"
+
+[[test]]
+name = "application_config_builder_int_test"
+path = "tests/application_config_builder_int_test.rs"
+
+[[test]]
+name = "validator_int_test"
+path = "tests/validator_int_test.rs"
+
+[[test]]
+name = "bearer_svc_int_test"
+path = "tests/bearer_svc_int_test.rs"
+
+[[test]]
+name = "jwt_claims_builder_contract_int_test"
+path = "tests/jwt_claims_builder_contract_int_test.rs"
+
+[[test]]
+name = "claims_builder_int_test"
+path = "tests/claims_builder_int_test.rs"

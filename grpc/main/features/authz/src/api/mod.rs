@@ -1,13 +1,16 @@
 //! API layer — policy trait, error type, identity adapter.
 
-pub(crate) mod authz_error;
+pub(crate) mod application_config;
+pub(crate) mod application_config_builder;
+pub(crate) mod authz;
 pub(crate) mod authz_interceptor;
-pub(crate) mod authz_policy;
-pub(crate) mod method_acl_config;
+pub(crate) mod method;
 pub(crate) mod method_acl_policy;
+pub(crate) mod processor;
+pub(crate) mod traits;
 
-pub use authz_error::AuthzError;
-pub use authz_interceptor::AuthzInterceptor;
-pub use authz_policy::AuthzPolicy;
-pub use method_acl_config::MethodAclConfig;
-pub use method_acl_policy::MethodAclPolicy;
+pub use authz::AuthzError;
+pub use authz::AuthzInterceptor;
+pub use authz::AuthzPolicy;
+pub use method::MethodAclConfig;
+pub use method::MethodAclPolicy;
