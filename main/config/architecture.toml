@@ -1,4 +1,4 @@
-# SEA project configuration (L0) — swe-edge ingress aggregator
+# SEA project configuration (L0) — swe-edge ingress
 [project]
 name = "swe-edge-ingress"
 workspaces = [
@@ -20,10 +20,8 @@ path = "message-broker/main/features/*"
 
 [workspace.tls]
 path = "tls"
-crate = "swe-edge-ingress-tls"
+kind = "package"
 
 [workspace.verifier]
 path = "verifier"
-crate = "swe-edge-ingress-verifier"
-
-
+kind = "package"
