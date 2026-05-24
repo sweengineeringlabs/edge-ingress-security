@@ -222,13 +222,15 @@ mod tests {
     use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
     use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
+    /// @covers: HealthCheckCodec::decode_request
     #[test]
-    fn test_decode_health_check_request_empty_body_yields_empty_service_name() {
+    fn test_decode_request_empty_body_returns_empty_service_name() {
         assert_eq!(HealthCheckCodec::decode_request(&[]), Some(String::new()));
     }
 
+    /// @covers: HealthCheckCodec::decode_request
     #[test]
-    fn test_decode_health_check_request_round_trips_service_name() {
+    fn test_decode_request_with_varint_length_field_decodes_service_name() {
         let mut out = Vec::new();
         let b = "pkg.A".as_bytes();
         out.push(0x0a);
@@ -249,8 +251,9 @@ mod tests {
         );
     }
 
+    /// @covers: HealthCheckCodec::encode_response
     #[test]
-    fn test_encode_health_check_response_serving_yields_two_byte_payload() {
+    fn test_encode_response_serving_status_produces_field_tag_and_varint() {
         assert_eq!(
             HealthCheckCodec::encode_response(ServingStatus::Serving),
             vec![0x08, 0x01]
