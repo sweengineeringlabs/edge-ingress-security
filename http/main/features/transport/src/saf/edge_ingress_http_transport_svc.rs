@@ -1,7 +1,7 @@
 //! `validate` SAF facade function for the [`Validator`] trait.
 
-use swe_edge_configbuilder::ConfigBuilder as _;
 use crate::api::traits::Validator;
+use swe_edge_configbuilder::ConfigBuilder as _;
 
 /// Return a [`ConfigBuilder`] pre-seeded with this crate's package name and version.
 pub fn create_config_builder() -> impl swe_edge_configbuilder::ConfigBuilder {
