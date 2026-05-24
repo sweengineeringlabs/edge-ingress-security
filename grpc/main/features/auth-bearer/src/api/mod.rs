@@ -3,6 +3,7 @@
 pub(crate) mod bearer;
 pub(crate) mod processor;
 pub(crate) mod traits;
+pub mod types;
 
 pub use bearer::{
     BearerAuthError, BearerIngressConfig, BearerIngressInterceptor, BearerSecret,
