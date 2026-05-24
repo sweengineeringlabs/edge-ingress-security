@@ -25,88 +25,102 @@ const SAN_URI_TAG: u8 = 0x86;
 const OID_COMMON_NAME: &[u8] = &[0x55, 0x04, 0x03];
 const OID_SUBJECT_ALT_NAME: &[u8] = &[0x55, 0x1D, 0x11];
 
-/// Extract peer-identity key/value pairs from a DER-encoded leaf cert.
-///
-/// Returns at minimum a SHA-256 fingerprint; CN / SAN / DN are added
-/// when the cert structure is parseable.
-pub fn extract_peer_identity(leaf_der: &[u8]) -> HashMap<String, String> {
-    let mut out = HashMap::new();
-    let fp = hex_lower(&Sha256::digest(leaf_der));
-    out.insert(PEER_CERT_FINGERPRINT_SHA256.to_string(), fp);
+/// Extractor for peer identity from DER-encoded leaf certificates.
+pub struct PeerIdentityExtractor;
 
-    let Some((_, cert_body)) = read_tlv(leaf_der) else {
-        return out;
-    };
-    if cert_body.is_empty() {
-        return out;
-    };
-    let Some((tag, tbs_body)) = read_tlv(cert_body) else {
-        return out;
-    };
-    if tag != TAG_SEQUENCE {
-        return out;
-    };
-
-    let mut rest = tbs_body;
-    if let Some(b) = rest.first() {
-        if *b == TAG_CONTEXT_0 {
-            let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
-                return out;
-            };
-            rest = after;
-        }
+impl PeerIdentityExtractor {
+    /// Extract peer-identity key/value pairs from a DER-encoded leaf cert.
+    ///
+    /// Returns at minimum a SHA-256 fingerprint; CN / SAN / DN are added
+    /// when the cert structure is parseable.
+    pub fn extract(leaf_der: &[u8]) -> HashMap<String, String> {
+        Self::extract_impl(leaf_der)
     }
-    let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
-        return out;
-    };
-    rest = after;
-    let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
-        return out;
-    };
-    rest = after;
-    let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
-        return out;
-    };
-    rest = after;
-    let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
-        return out;
-    };
-    rest = after;
-    let Some((tag, subject_body, after)) = read_tlv_with_remainder(rest) else {
-        return out;
-    };
-    if tag == TAG_SEQUENCE {
-        let dn = render_name(subject_body);
-        if !dn.is_empty() {
-            out.insert(PEER_IDENTITY.to_string(), dn);
-        }
-        if let Some(cn) = find_common_name(subject_body) {
-            out.insert(PEER_CN.to_string(), cn);
-        }
-    }
-    rest = after;
-    let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
-        return out;
-    };
-    rest = after;
 
-    while let Some((tag, body, after)) = read_tlv_with_remainder(rest) {
-        if tag == TAG_CONTEXT_3 {
-            if let Some((TAG_SEQUENCE, ext_seq)) = read_tlv(body) {
-                if let Some((dns, uri)) = find_san_in_extensions(ext_seq) {
-                    if !dns.is_empty() {
-                        out.insert(PEER_SAN_DNS.to_string(), dns.join(","));
-                    }
-                    if !uri.is_empty() {
-                        out.insert(PEER_SAN_URI.to_string(), uri.join(","));
-                    }
-                }
+    fn extract_impl(leaf_der: &[u8]) -> HashMap<String, String> {
+        let mut out = HashMap::new();
+        let fp = hex_lower(&Sha256::digest(leaf_der));
+        out.insert(PEER_CERT_FINGERPRINT_SHA256.to_string(), fp);
+
+        let Some((_, cert_body)) = read_tlv(leaf_der) else {
+            return out;
+        };
+        if cert_body.is_empty() {
+            return out;
+        };
+        let Some((tag, tbs_body)) = read_tlv(cert_body) else {
+            return out;
+        };
+        if tag != TAG_SEQUENCE {
+            return out;
+        };
+
+        let mut rest = tbs_body;
+        if let Some(b) = rest.first() {
+            if *b == TAG_CONTEXT_0 {
+                let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
+                    return out;
+                };
+                rest = after;
             }
-            break;
+        }
+        let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
+            return out;
+        };
+        rest = after;
+        let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
+            return out;
+        };
+        rest = after;
+        let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
+            return out;
+        };
+        rest = after;
+        let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
+            return out;
+        };
+        rest = after;
+        let Some((tag, subject_body, after)) = read_tlv_with_remainder(rest) else {
+            return out;
+        };
+        if tag == TAG_SEQUENCE {
+            let dn = render_name(subject_body);
+            if !dn.is_empty() {
+                out.insert(PEER_IDENTITY.to_string(), dn);
+            }
+            if let Some(cn) = find_common_name(subject_body) {
+                out.insert(PEER_CN.to_string(), cn);
+            }
         }
         rest = after;
+        let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
+            return out;
+        };
+        rest = after;
+
+        while let Some((tag, body, after)) = read_tlv_with_remainder(rest) {
+            if tag == TAG_CONTEXT_3 {
+                if let Some((TAG_SEQUENCE, ext_seq)) = read_tlv(body) {
+                    if let Some((dns, uri)) = find_san_in_extensions(ext_seq) {
+                        if !dns.is_empty() {
+                            out.insert(PEER_SAN_DNS.to_string(), dns.join(","));
+                        }
+                        if !uri.is_empty() {
+                            out.insert(PEER_SAN_URI.to_string(), uri.join(","));
+                        }
+                    }
+                }
+                break;
+            }
+            rest = after;
+        }
+        out
     }
-    out
+}
+
+/// Backward-compatibility wrapper.
+pub fn extract_peer_identity(leaf_der: &[u8]) -> HashMap<String, String> {
+    PeerIdentityExtractor::extract(leaf_der)
 }
 
 fn read_tlv_with_remainder(data: &[u8]) -> Option<(u8, &[u8], &[u8])> {
