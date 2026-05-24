@@ -1,6 +1,6 @@
 //! Receiver of audit events.
 
-use super::audit_event::AuditEvent;
+use crate::api::types::audit::AuditEvent;
 
 /// Receiver of [`AuditEvent`]s.
 ///
@@ -21,7 +21,7 @@ mod tests {
     use crate::api::value_object::GrpcStatusCode;
 
     use super::*;
-    use crate::api::audit_sink::audit::audit_event::AuditEvent;
+    use crate::api::types::audit::AuditEvent;
 
     /// Capturing sink — records every event into a shared `Vec` for assertions.
     struct CapturingAuditSink {

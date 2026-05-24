@@ -13,11 +13,11 @@ pub use crate::api::health_service::{
     HealthAggregate, HealthService, ServingStatus, HEALTH_CHECK_METHOD, HEALTH_WATCH_METHOD,
     WATCH_CHANNEL_CAPACITY,
 };
-pub use crate::api::interceptor::trace_context_interceptor::{
-    TraceContextInterceptor, EXTRACTED_TRACEPARENT, EXTRACTED_TRACESTATE, TRACEPARENT, TRACESTATE,
-};
 pub use crate::api::interceptor::{
     AuthorizationInterceptor, GrpcIngressInterceptor, GrpcIngressInterceptorChain,
+};
+pub use crate::api::interceptor::{
+    TraceContextInterceptor, EXTRACTED_TRACEPARENT, EXTRACTED_TRACESTATE, TRACEPARENT, TRACESTATE,
 };
 pub use crate::api::peer_identity::extract_peer_identity;
 pub use crate::api::port::grpc_ingress::{

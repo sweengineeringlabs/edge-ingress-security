@@ -7,10 +7,10 @@
 /// a primary type matching the filename.
 pub(crate) struct TraceContextInterceptorImpl;
 
-use crate::api::interceptor::trace_context_interceptor::{
+use crate::api::interceptor::GrpcIngressInterceptor;
+use crate::api::interceptor::{
     TraceContextInterceptor, EXTRACTED_TRACEPARENT, EXTRACTED_TRACESTATE, TRACEPARENT, TRACESTATE,
 };
-use crate::api::interceptor::GrpcIngressInterceptor;
 use crate::api::port::grpc_ingress::GrpcIngressError;
 use crate::api::value_object::{GrpcRequest, GrpcResponse};
 

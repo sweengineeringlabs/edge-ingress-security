@@ -1,12 +1,9 @@
 //! Health service declarations.
+//!
+//! Re-exports from [`crate::api::types::health`] and [`crate::api::types::serving_status`].
 
-pub(crate) mod health;
-#[allow(clippy::module_inception)]
-pub(crate) mod health_service;
-pub(crate) mod serving_status;
-
-pub use health::{
+pub use crate::api::types::health::{
     HealthAggregate, HealthService, HEALTH_CHECK_METHOD, HEALTH_WATCH_METHOD,
     WATCH_CHANNEL_CAPACITY,
 };
-pub use serving_status::ServingStatus;
+pub use crate::api::types::serving_status::ServingStatus;

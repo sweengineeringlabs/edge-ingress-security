@@ -1,7 +1,7 @@
 //! Default no-op audit sink.
 
-use super::audit::audit_event::AuditEvent;
-use super::audit::audit_sink::AuditSink;
+use super::audit_event::AuditEvent;
+use crate::api::audit_sink::audit::audit_sink::AuditSink;
 
 /// Default no-op sink — drops every event.
 ///
@@ -27,7 +27,7 @@ mod tests {
     use crate::api::value_object::GrpcStatusCode;
 
     use super::*;
-    use crate::api::audit_sink::audit::audit_event::AuditEvent;
+    use crate::api::types::audit::AuditEvent;
 
     #[test]
     fn test_noop_audit_sink_record_drops_events_silently() {

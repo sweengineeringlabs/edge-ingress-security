@@ -1,5 +1,5 @@
 //! Application configuration — maps to `config/application.toml`.
+//!
+//! Re-exports from [`crate::api::types::application`].
 
-pub(crate) mod application;
-
-pub use application::ApplicationConfig;
+pub use crate::api::types::application::ApplicationConfig;

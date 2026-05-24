@@ -1,4 +1,8 @@
 //! API layer — gRPC domain types, port, and interceptors.
+
+pub mod error;
+pub mod types;
+
 pub(crate) mod application_config;
 pub(crate) mod audit_sink;
 pub(crate) mod grpc_timeout;

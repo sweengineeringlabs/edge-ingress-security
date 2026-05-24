@@ -6,9 +6,9 @@ use edge_domain::RequestContext;
 
 use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
-use super::grpc_health_check::GrpcHealthCheck;
 use super::grpc_ingress_result::GrpcIngressResult;
 use super::grpc_message_stream::GrpcMessageStream;
+use crate::api::port::GrpcHealthCheck;
 
 /// Handles inbound gRPC requests (server-side).
 pub trait GrpcIngress: Send + Sync {

@@ -178,7 +178,7 @@ impl GrpcIngress for ReflectionService {
 
 #[cfg(test)]
 mod tests {
-    use crate::api::reflection_service::{service_name_from_method_path, ReflectionService};
+    use crate::api::types::reflection_service::{service_name_from_method_path, ReflectionService};
     use edge_domain::HandlerRegistry;
     use std::sync::Arc;
 
@@ -226,7 +226,7 @@ mod tests {
             ReflectionResponse::Error { error_code, .. } => {
                 assert_eq!(
                     error_code,
-                    crate::api::reflection_service::ERROR_CODE_INVALID_ARGUMENT
+                    crate::api::types::reflection_service::ERROR_CODE_INVALID_ARGUMENT
                 );
             }
             other => panic!("expected Error, got {other:?}"),

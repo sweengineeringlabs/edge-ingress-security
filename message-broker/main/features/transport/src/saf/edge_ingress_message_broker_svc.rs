@@ -1,7 +1,7 @@
 //! SAF factory functions for the ingress message consumer.
 
-use swe_edge_configbuilder::ConfigBuilder as _;
 use futures::future::BoxFuture;
+use swe_edge_configbuilder::ConfigBuilder as _;
 use swe_edge_runtime_message_broker::MessageStream;
 
 use crate::api::port::consumer::consumer_error::ConsumerError;
