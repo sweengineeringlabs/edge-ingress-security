@@ -2,6 +2,7 @@
 
 use swe_edge_configbuilder::ConfigBuilder as _;
 
+use crate::api::traits::Validator;
 use crate::api::types::reflection_service::ReflectionService;
 use crate::api::types::{ReflectionRequest, ReflectionResponse};
 
@@ -26,4 +27,11 @@ pub fn handle_reflection(svc: &ReflectionService, req: ReflectionRequest) -> Ref
 /// empty payloads. Returns `Ok(())` for every well-formed input.
 pub fn validate_payload(_raw: &[u8]) -> Result<(), String> {
     Ok(())
+}
+
+/// Validate a raw inbound frame using a custom validator implementation.
+///
+/// Delegates to the provided validator's `validate` method.
+pub fn validate_with(validator: &impl Validator, raw: &[u8]) -> Result<(), String> {
+    validator.validate(raw)
 }

@@ -10,4 +10,6 @@ pub use crate::api::types::reflection_service::{
 };
 pub use crate::api::types::{Descriptor, ReflectionRequest, ReflectionResponse};
 pub use crate::api::wire::{decode_request, encode_response};
-pub use reflection_svc::{create_config_builder, handle_reflection, validate_payload};
+pub use reflection_svc::{
+    create_config_builder, handle_reflection, validate_payload, validate_with,
+};

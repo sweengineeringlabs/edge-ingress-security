@@ -2,8 +2,7 @@
 
 use futures::future::BoxFuture;
 
-use crate::api::reflection::reflection_request::ReflectionRequest;
-use crate::api::reflection::reflection_response::ReflectionResponse;
+use crate::api::types::{ReflectionRequest, ReflectionResponse};
 
 /// Core processing contract for the gRPC reflection service.
 ///
