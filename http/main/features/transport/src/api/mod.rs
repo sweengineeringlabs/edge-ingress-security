@@ -1,4 +1,5 @@
 //! API layer — HTTP domain types and port.
+pub(crate) mod error;
 pub(crate) mod handler;
 pub(crate) mod handler_dispatch;
 pub(crate) mod port;
