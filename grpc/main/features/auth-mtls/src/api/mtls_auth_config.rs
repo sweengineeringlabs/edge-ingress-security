@@ -51,3 +51,21 @@ impl MtlsAuthConfig {
         toml::from_str(s)
     }
 }
+
+impl swe_edge_configbuilder::ConfigSection for MtlsAuthConfig {
+    fn section_name() -> &'static str {
+        "mtls"
+    }
+}
+
+#[cfg(test)]
+mod config_section_tests {
+    use super::*;
+    use swe_edge_configbuilder::ConfigSection as _;
+
+    /// @covers: section_name
+    #[test]
+    fn test_section_name_returns_mtls_key() {
+        assert_eq!(MtlsAuthConfig::section_name(), "mtls");
+    }
+}

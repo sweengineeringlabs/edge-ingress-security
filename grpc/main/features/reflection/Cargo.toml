@@ -18,28 +18,30 @@ service_type     = "processor"
 path = "src/lib.rs"
 
 [dependencies]
-serde.workspace          = true
-thiserror.workspace      = true
-futures.workspace        = true
-tokio.workspace          = true
-parking_lot.workspace    = true
-tracing.workspace        = true
+serde        = { version = "1.0", features = ["derive"] }
+thiserror    = "2"
+futures      = "0.3"
+tokio        = { version = "1.0", features = ["rt-multi-thread", "rt", "sync", "macros", "time"] }
+parking_lot  = "0.12"
+tracing      = { version = "0.1", default-features = false }
 
 # Cross-workspace path dep on the inbound port + dispatcher.
-swe-edge-ingress-grpc.workspace = true
-edge-domain.workspace           = true
+swe-edge-ingress-grpc = { package = "swe-edge-ingress-grpc-transport", path = "../transport" }
+edge-domain            = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.3.4" }
+swe-edge-configbuilder = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.4.2" }
 
 [dev-dependencies]
-async-trait.workspace = true
-tokio          = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
-bytes.workspace          = true
-tracing.workspace        = true
-http                     = "1"
-http-body-util.workspace = true
-hyper                    = { version = "1", features = ["http2", "client", "server"] }
-hyper-util               = { version = "0.1", features = ["tokio"] }
-swe-edge-ingress-grpc.workspace = true
-edge-domain.workspace           = true
+async-trait    = "0.1"
+serde_json     = "1.0"
+tokio          = { version = "1.0", features = ["rt-multi-thread", "macros", "time"] }
+bytes          = "1"
+tracing        = { version = "0.1", default-features = false }
+http           = "1"
+http-body-util = "0.1"
+hyper          = { version = "1", features = ["http2", "client", "server"] }
+hyper-util     = { version = "0.1", features = ["tokio"] }
+swe-edge-ingress-grpc = { package = "swe-edge-ingress-grpc-transport", path = "../transport" }
+edge-domain           = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.3.4" }
 
 [lints]
 workspace = true

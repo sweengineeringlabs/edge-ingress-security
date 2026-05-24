@@ -73,9 +73,16 @@ impl MethodAclConfig {
     }
 }
 
+impl swe_edge_configbuilder::ConfigSection for MethodAclConfig {
+    fn section_name() -> &'static str {
+        "acl"
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use swe_edge_configbuilder::ConfigSection as _;
 
     /// @covers: deny_all
     #[test]
@@ -134,5 +141,11 @@ mod tests {
         let cfg = MethodAclConfig::from_toml(toml_src).expect("toml parses");
         assert!(cfg.allows(Some("alice"), "/svc/Read"));
         assert!(cfg.allows(Some("bob"), "/health"));
+    }
+
+    /// @covers: section_name
+    #[test]
+    fn test_section_name_returns_acl_key() {
+        assert_eq!(MethodAclConfig::section_name(), "acl");
     }
 }

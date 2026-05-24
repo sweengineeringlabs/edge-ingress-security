@@ -1,4 +1,6 @@
 //! Public facade — re-exports from `api/`.
 
+mod verifier_svc;
+
 pub use crate::api::bearer_interceptor::BearerTokenInterceptor;
-pub use swe_edge_configbuilder::create_config_builder;
+pub use verifier_svc::create_config_builder;

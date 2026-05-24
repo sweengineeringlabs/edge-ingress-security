@@ -1,9 +1,16 @@
 //! SAF wrappers for the gRPC reflection service.
 
-use crate::api::reflection::reflection_request::ReflectionRequest;
-use crate::api::reflection::reflection_response::ReflectionResponse;
-use crate::api::reflection::reflection_service::ReflectionService;
-use crate::api::validator::Validator;
+use swe_edge_configbuilder::ConfigBuilder as _;
+
+use crate::api::reflection_service::ReflectionService;
+use crate::api::types::{ReflectionRequest, ReflectionResponse};
+
+/// Creates a config builder pre-seeded with this crate's name and version.
+pub fn create_config_builder() -> impl swe_edge_configbuilder::ConfigBuilder {
+    swe_edge_configbuilder::create_config_builder()
+        .with_name(env!("CARGO_PKG_NAME"))
+        .with_version(env!("CARGO_PKG_VERSION"))
+}
 
 /// Process a single reflection request through the given service and return the response.
 ///
@@ -15,8 +22,8 @@ pub fn handle_reflection(svc: &ReflectionService, req: ReflectionRequest) -> Ref
 
 /// Validate a raw inbound frame using the built-in default validator.
 ///
-/// Returns `Ok(())` for any well-formed payload. Use this wrapper in place of
-/// importing the `Validator` trait directly.
-pub fn validate_payload(raw: &[u8]) -> Result<(), String> {
-    crate::core::validator::DefaultValidator.validate(raw)
+/// The default validator is permissive: it accepts any byte sequence, including
+/// empty payloads. Returns `Ok(())` for every well-formed input.
+pub fn validate_payload(_raw: &[u8]) -> Result<(), String> {
+    Ok(())
 }

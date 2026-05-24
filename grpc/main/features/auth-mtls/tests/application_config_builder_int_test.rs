@@ -1,29 +1,25 @@
-//! Integration tests for [`ApplicationConfigBuilder`].
+//! Integration tests for [`create_config_builder`].
 
-use swe_edge_ingress_grpc_auth_mtls::ApplicationConfigBuilder;
+use swe_edge_configbuilder::ConfigBuilder as _;
+use swe_edge_ingress_grpc_auth_mtls::create_config_builder;
 
-/// @covers: new
+/// @covers: create_config_builder
 #[test]
-fn test_new_creates_builder_with_empty_config() {
-    let cfg = ApplicationConfigBuilder::new().build();
-    assert!(cfg.allowed_cns.is_empty());
-    assert!(!cfg.allow_unauthenticated_methods);
+fn test_create_config_builder_is_pre_seeded_with_package_name() {
+    let b = create_config_builder();
+    assert_eq!(b.name(), env!("CARGO_PKG_NAME"));
 }
 
-/// @covers: allowed_cns
+/// @covers: create_config_builder
 #[test]
-fn test_allowed_cns_sets_cn_allowlist() {
-    let cfg = ApplicationConfigBuilder::new()
-        .allowed_cns(vec!["svc-a".to_string()])
-        .build();
-    assert_eq!(cfg.allowed_cns, vec!["svc-a".to_string()]);
+fn test_create_config_builder_version_matches_package_version() {
+    let b = create_config_builder();
+    assert_eq!(b.version(), env!("CARGO_PKG_VERSION"));
 }
 
-/// @covers: require_peer_cert
+/// @covers: create_config_builder
 #[test]
-fn test_require_peer_cert_false_enables_unauthenticated_methods() {
-    let cfg = ApplicationConfigBuilder::new()
-        .require_peer_cert(false)
-        .build();
-    assert!(cfg.allow_unauthenticated_methods);
+fn test_create_config_builder_with_name_overrides_preset() {
+    let b = create_config_builder().with_name("override-name");
+    assert_eq!(b.name(), "override-name");
 }

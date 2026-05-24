@@ -18,18 +18,19 @@ service_type = "processor"
 path = "src/lib.rs"
 
 [dependencies]
-swe-edge-ingress-grpc.workspace = true
-thiserror    = { workspace = true }
-serde        = { workspace = true }
-tracing      = { workspace = true }
-jsonwebtoken = { workspace = true }
-subtle       = { workspace = true }
+swe-edge-ingress-grpc = { package = "swe-edge-ingress-grpc-transport", path = "../transport" }
+thiserror    = "2"
+serde        = { version = "1.0", features = ["derive"] }
+tracing      = { version = "0.1", default-features = false }
+jsonwebtoken = "9"
+subtle       = "2"
+swe-edge-configbuilder = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.4.2" }
 
 [dev-dependencies]
-tokio   = { workspace = true, features = ["macros", "rt", "rt-multi-thread"] }
-futures = { workspace = true }
-toml    = { workspace = true }
-subtle  = { workspace = true }
+tokio   = { version = "1.0", features = ["macros", "rt", "rt-multi-thread"] }
+futures = "0.3"
+toml    = "0.8"
+subtle  = "2"
 
 [[test]]
 name = "jwt_claims_int_test"

@@ -17,15 +17,16 @@ application_type = "lib"
 path = "src/lib.rs"
 
 [dependencies]
-thiserror.workspace   = true
-tracing.workspace     = true
+thiserror = "2"
+tracing   = { version = "0.1", default-features = false }
 
-swe-edge-ingress-verifier.workspace       = true
-swe-edge-ingress-grpc-transport.workspace = true
+swe-edge-ingress-verifier       = { path = "../../../../verifier" }
+swe-edge-ingress-grpc-transport = { path = "../transport" }
+swe-edge-configbuilder          = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.4.2" }
 
 [dev-dependencies]
-tokio      = { workspace = true, features = ["rt", "macros"] }
-serde_json = { workspace = true }
+tokio      = { version = "1.0", features = ["rt", "macros"] }
+serde_json = "1.0"
 
 [lints]
 workspace = true

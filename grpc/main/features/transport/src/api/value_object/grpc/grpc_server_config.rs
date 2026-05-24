@@ -110,6 +110,12 @@ impl GrpcServerConfig {
     }
 }
 
+impl swe_edge_configbuilder::ConfigSection for GrpcServerConfig {
+    fn section_name() -> &'static str {
+        "grpc"
+    }
+}
+
 impl Default for GrpcServerConfig {
     /// Defaults: bind to `0.0.0.0:0`, TLS required, no TLS material,
     /// 4 MiB message cap, 100 concurrent streams, authenticated,
@@ -265,5 +271,12 @@ mod tests {
     fn test_with_compression_sets_compression_mode() {
         let cfg = GrpcServerConfig::new(addr()).with_compression(CompressionMode::Gzip);
         assert!(matches!(cfg.compression, CompressionMode::Gzip));
+    }
+
+    /// @covers: section_name
+    #[test]
+    fn test_section_name_returns_grpc_key() {
+        use swe_edge_configbuilder::ConfigSection as _;
+        assert_eq!(GrpcServerConfig::section_name(), "grpc");
     }
 }

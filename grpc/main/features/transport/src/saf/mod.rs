@@ -3,7 +3,6 @@
 mod edge_ingress_grpc_transport_svc;
 
 pub use crate::api::application_config::ApplicationConfig;
-pub use swe_edge_configbuilder::create_config_builder;
 pub use crate::api::audit_sink::{AuditEvent, AuditEventBuilder, AuditSink, NoopAuditSink};
 pub use crate::api::grpc_timeout::{parse_grpc_timeout, DEFAULT_DEADLINE};
 pub use crate::api::handler::{
@@ -38,5 +37,5 @@ pub use crate::api::value_object::{
     PEER_CN, PEER_IDENTITY, PEER_SAN_DNS, PEER_SAN_URI, RESERVED_PEER_PREFIXES,
 };
 pub use edge_domain::RequestContext;
-pub use edge_ingress_grpc_transport_svc::validate;
+pub use edge_ingress_grpc_transport_svc::{create_config_builder, validate};
 pub use swe_edge_ingress_tls::{IngressTlsConfig, IngressTlsError};

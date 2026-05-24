@@ -5,7 +5,7 @@
 //! compile and hold at runtime.
 
 use swe_edge_ingress_grpc_auth_bearer::{
-    ApplicationConfigBuilder, BearerIngressConfig, BearerIngressInterceptor, BearerSecret,
+    BearerIngressConfig, BearerIngressInterceptor, BearerSecret,
 };
 
 /// @covers: Processor trait — BearerIngressInterceptor is Send + Sync (Processor's super-bounds)
@@ -33,18 +33,4 @@ fn test_validator_accepts_config_with_non_empty_issuer_and_audience() {
     // The Validator impl is crate-internal; we verify indirectly that
     // a well-formed config can be passed to from_config without panic.
     let _interceptor = BearerIngressInterceptor::from_config(cfg);
-}
-
-/// @covers: ApplicationConfigBuilder — new() and build() do not panic
-#[test]
-fn test_application_config_builder_new_and_build_succeed() {
-    let _cfg = ApplicationConfigBuilder::new().build();
-}
-
-/// @covers: ApplicationConfigBuilder — Debug impl
-#[test]
-fn test_application_config_builder_debug_does_not_panic() {
-    let cfg = ApplicationConfigBuilder::new();
-    let dbg = format!("{cfg:?}");
-    assert!(dbg.contains("ApplicationConfigBuilder"));
 }
