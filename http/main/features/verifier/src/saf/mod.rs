@@ -9,6 +9,6 @@ pub fn create_config_builder() -> impl swe_edge_configbuilder::ConfigBuilder {
         .with_version(env!("CARGO_PKG_VERSION"))
 }
 
-pub use crate::api::auth_error::HttpAuthError;
 pub use crate::api::bearer_layer::BearerLayer;
+pub use crate::api::error::HttpAuthError;
 pub use crate::api::verified_claims::VerifiedClaims;

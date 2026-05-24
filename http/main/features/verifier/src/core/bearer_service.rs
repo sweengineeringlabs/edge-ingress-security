@@ -15,9 +15,9 @@ use tower::{Layer, Service};
 
 use edge_domain::RequestContext;
 
-use crate::api::auth_error::HttpAuthError;
 use crate::api::bearer_layer::BearerLayer;
 use crate::api::bearer_service::BearerService;
+use crate::api::error::HttpAuthError;
 use crate::api::verified_claims::VerifiedClaims;
 
 impl<S> Layer<S> for BearerLayer {
