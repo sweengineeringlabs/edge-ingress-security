@@ -8,7 +8,7 @@ pub type GrpcIngressResult<T> = Result<T, GrpcIngressError>;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::api::port::grpc_ingress::GrpcIngressError;
+    use crate::api::port::grpc::GrpcIngressError;
 
     #[test]
     fn test_grpc_ingress_result_is_result_alias() {

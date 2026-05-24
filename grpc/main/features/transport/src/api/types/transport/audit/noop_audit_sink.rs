@@ -1,7 +1,7 @@
 //! Default no-op audit sink.
 
 use super::audit_event::AuditEvent;
-use crate::api::audit_sink::audit::audit_sink::AuditSink;
+use crate::api::audit::audit::AuditSink;
 
 /// Default no-op sink — drops every event.
 ///

@@ -2,7 +2,7 @@
 
 use swe_edge_configbuilder::ConfigBuilder as _;
 
-use crate::api::application_config::ApplicationConfig;
+use crate::api::application::ApplicationConfig;
 use crate::api::traits::{Processor, Validator};
 
 /// Creates a config builder pre-seeded with this crate's name and version.

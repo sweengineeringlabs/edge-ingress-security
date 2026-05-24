@@ -1,7 +1,7 @@
 //! gRPC inbound port.
 
-pub(crate) mod grpc_ingress;
+pub(crate) mod grpc;
 
-pub use grpc_ingress::{
+pub use grpc::{
     GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream,
 };

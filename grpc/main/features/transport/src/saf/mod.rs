@@ -2,14 +2,14 @@
 
 mod edge_ingress_grpc_transport_svc;
 
-pub use crate::api::application_config::ApplicationConfig;
-pub use crate::api::audit_sink::{AuditEvent, AuditEventBuilder, AuditSink, NoopAuditSink};
+pub use crate::api::application::ApplicationConfig;
+pub use crate::api::audit::{AuditEvent, AuditEventBuilder, AuditSink, NoopAuditSink};
 pub use crate::api::grpc_timeout::{GrpcTimeoutParser, DEFAULT_DEADLINE};
 pub use crate::api::handler::{
     DecodeFn as GrpcDecodeFn, EncodeFn as GrpcEncodeFn, GrpcHandlerAdapter,
     GrpcHandlerRegistryDispatcher,
 };
-pub use crate::api::health_service::{
+pub use crate::api::health::{
     HealthAggregate, HealthService, ServingStatus, HEALTH_CHECK_METHOD, HEALTH_WATCH_METHOD,
     WATCH_CHANNEL_CAPACITY,
 };
@@ -20,7 +20,7 @@ pub use crate::api::interceptor::{
     TraceContextInterceptor, EXTRACTED_TRACEPARENT, EXTRACTED_TRACESTATE, TRACEPARENT, TRACESTATE,
 };
 pub use crate::api::peer_identity::PeerIdentityExtractor;
-pub use crate::api::port::grpc_ingress::{
+pub use crate::api::port::grpc::{
     GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream,
 };
 pub use crate::api::server::{

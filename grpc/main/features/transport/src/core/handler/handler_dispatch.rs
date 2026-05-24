@@ -15,9 +15,7 @@ use std::time::Instant;
 use edge_domain::{HandlerError, RequestContext};
 use futures::future::BoxFuture;
 
-use crate::api::port::grpc_ingress::{
-    GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult,
-};
+use crate::api::port::grpc::{GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult};
 use crate::api::types::grpc::GrpcHandlerRegistryDispatcher;
 use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
@@ -117,7 +115,7 @@ mod tests {
 
     use edge_domain::{HandlerError, HandlerRegistry, RequestContext};
 
-    use crate::api::port::grpc_ingress::{GrpcIngress, GrpcIngressError};
+    use crate::api::port::grpc::{GrpcIngress, GrpcIngressError};
     use crate::api::types::grpc::GrpcHandlerRegistryDispatcher;
     use crate::api::value::GrpcRequest;
 
@@ -152,7 +150,7 @@ mod tests {
     #[test]
     fn test_handle_unary_is_available_on_dispatcher() {
         // Verifies GrpcIngress is implemented for GrpcHandlerRegistryDispatcher.
-        fn _assert(_: &dyn crate::api::port::grpc_ingress::GrpcIngress) {}
+        fn _assert(_: &dyn crate::api::port::grpc::GrpcIngress) {}
         let d = fresh_dispatcher();
         _assert(&d);
     }

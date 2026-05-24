@@ -5,9 +5,9 @@ use std::sync::Arc;
 use swe_edge_ingress_tls::IngressTlsConfig;
 
 use super::tonic_grpc_server::TonicGrpcServer;
-use crate::api::audit_sink::AuditSink;
+use crate::api::audit::AuditSink;
 use crate::api::interceptor::GrpcIngressInterceptorChain;
-use crate::api::port::grpc_ingress::GrpcIngress;
+use crate::api::port::grpc::GrpcIngress;
 use crate::api::value::CompressionMode;
 
 /// Fluent builder for [`TonicGrpcServer`].
@@ -122,7 +122,7 @@ impl TonicGrpcServerBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
+    use crate::api::port::grpc::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
     use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
@@ -218,7 +218,7 @@ mod tests {
     /// @covers: with_audit_sink
     #[test]
     fn test_with_audit_sink_installs_custom_sink() {
-        use crate::api::audit_sink::NoopAuditSink;
+        use crate::api::audit::NoopAuditSink;
         let sink: Arc<dyn AuditSink> = Arc::new(NoopAuditSink);
         let _ = TonicGrpcServerBuilder::new("127.0.0.1:0", stub())
             .allow_unauthenticated()

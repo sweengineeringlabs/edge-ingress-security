@@ -18,13 +18,11 @@ use tokio_util::sync::CancellationToken;
 
 use edge_domain::RequestContext;
 
-use crate::api::audit_sink::{AuditEvent, AuditSink};
+use crate::api::audit::{AuditEvent, AuditSink};
 use crate::api::grpc_timeout::{GrpcTimeoutParser, DEFAULT_DEADLINE};
 use crate::api::interceptor::GrpcIngressInterceptorChain;
 use crate::api::peer_identity::PeerIdentityExtractor;
-use crate::api::port::grpc_ingress::{
-    GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream,
-};
+use crate::api::port::grpc::{GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream};
 use crate::api::server::{
     TonicGrpcServer, TonicServerError, MISSING_AUTHORIZATION_INTERCEPTOR_MSG,
     REFLECTION_ENABLED_WARN_MSG,
@@ -843,7 +841,7 @@ mod tests {
     use crate::api::interceptor::{
         AuthorizationInterceptor, GrpcIngressInterceptor, GrpcIngressInterceptorChain,
     };
-    use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
+    use crate::api::port::grpc::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
     use futures::future::BoxFuture;
 
     struct TonicGrpcServerFakeAuthz;
@@ -964,7 +962,7 @@ mod tests {
 #[cfg(test)]
 mod dedicated_coverage {
     use super::TonicGrpcServer;
-    use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
+    use crate::api::port::grpc::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
     use crate::api::value::{CompressionMode, GrpcRequest, GrpcResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
@@ -1063,7 +1061,7 @@ mod dedicated_coverage {
 #[cfg(test)]
 mod sync_coverage {
     use super::TonicGrpcServer;
-    use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
+    use crate::api::port::grpc::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
     use crate::api::value::{GrpcRequest, GrpcResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;

@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use crate::api::port::grpc_ingress::GrpcIngress;
+use crate::api::port::grpc::GrpcIngress;
 
 use super::super::serving_status::ServingStatus;
 use super::health_service::HealthService;
@@ -42,9 +42,9 @@ mod tests {
 
     use edge_domain::RequestContext;
 
-    use crate::api::health_service::HealthService;
-    use crate::api::health_service::ServingStatus;
-    use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
+    use crate::api::health::HealthService;
+    use crate::api::health::ServingStatus;
+    use crate::api::port::grpc::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
     use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
     use super::*;

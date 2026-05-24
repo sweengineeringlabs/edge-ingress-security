@@ -5,12 +5,10 @@ use std::time::Duration;
 use futures::future::BoxFuture;
 use futures::StreamExt;
 
-use crate::api::health_service::{
-    HealthService, ServingStatus, HEALTH_CHECK_METHOD, HEALTH_WATCH_METHOD,
-};
+use crate::api::health::{HealthService, ServingStatus, HEALTH_CHECK_METHOD, HEALTH_WATCH_METHOD};
 use edge_domain::RequestContext;
 
-use crate::api::port::grpc_ingress::{
+use crate::api::port::grpc::{
     GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream,
 };
 use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode};
@@ -216,10 +214,8 @@ mod tests {
     use edge_domain::RequestContext;
 
     use super::HealthCheckCodec;
-    use crate::api::health_service::{
-        HealthAggregate, HealthService, ServingStatus, HEALTH_CHECK_METHOD,
-    };
-    use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
+    use crate::api::health::{HealthAggregate, HealthService, ServingStatus, HEALTH_CHECK_METHOD};
+    use crate::api::port::grpc::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
     use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
     /// @covers: HealthCheckCodec::decode_request

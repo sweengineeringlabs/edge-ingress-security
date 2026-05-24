@@ -4,9 +4,9 @@ use std::sync::Arc;
 
 use swe_edge_ingress_tls::IngressTlsConfig;
 
-use crate::api::audit_sink::{AuditSink, NoopAuditSink};
+use crate::api::audit::{AuditSink, NoopAuditSink};
 use crate::api::interceptor::GrpcIngressInterceptorChain;
-use crate::api::port::grpc_ingress::GrpcIngress;
+use crate::api::port::grpc::GrpcIngress;
 use crate::api::value::{CompressionMode, GrpcServerConfig};
 
 use crate::api::server::grpc::grpc_server_config_error::GrpcServerConfigError;
@@ -136,7 +136,7 @@ impl TonicGrpcServer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
+    use crate::api::port::grpc::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
     use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
@@ -205,7 +205,7 @@ mod tests {
     /// @covers: with_audit_sink
     #[test]
     fn test_with_audit_sink_installs_provided_sink() {
-        use crate::api::audit_sink::AuditEvent;
+        use crate::api::audit::AuditEvent;
         use crate::api::value::GrpcStatusCode;
         use std::sync::Mutex;
         use std::time::SystemTime;

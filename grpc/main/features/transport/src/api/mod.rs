@@ -3,12 +3,11 @@
 pub mod error;
 pub mod types;
 
-pub(crate) mod application_config;
-pub(crate) mod audit_sink;
+pub(crate) mod application;
+pub(crate) mod audit;
 pub(crate) mod grpc_timeout;
 pub(crate) mod handler;
-pub(crate) mod handler_dispatch;
-pub(crate) mod health_service;
+pub(crate) mod health;
 pub(crate) mod interceptor;
 pub(crate) mod peer_identity;
 pub(crate) mod port;

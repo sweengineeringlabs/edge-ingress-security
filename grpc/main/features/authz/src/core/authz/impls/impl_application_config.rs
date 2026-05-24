@@ -1,6 +1,6 @@
 //! [`Validator`] implementation for [`ApplicationConfig`].
 
-use crate::api::application_config::ApplicationConfig;
+use crate::api::application::ApplicationConfig;
 use crate::api::traits::Validator;
 
 impl Validator for ApplicationConfig {

@@ -23,7 +23,7 @@ pub trait AuthorizationInterceptor: GrpcIngressInterceptor {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::api::port::grpc_ingress::GrpcIngressError;
+    use crate::api::port::grpc::GrpcIngressError;
     use crate::api::value::{GrpcRequest, GrpcResponse};
 
     #[test]

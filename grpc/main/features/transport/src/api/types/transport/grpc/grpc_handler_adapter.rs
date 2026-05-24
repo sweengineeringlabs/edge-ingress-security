@@ -5,7 +5,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use edge_domain::{Handler, HandlerError, RequestContext};
 
-use crate::api::port::grpc_ingress::GrpcIngressError;
+use crate::api::port::grpc::GrpcIngressError;
 
 use crate::api::handler::decode_fn::DecodeFn;
 use crate::api::handler::encode_fn::EncodeFn;

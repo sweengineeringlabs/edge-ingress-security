@@ -1,6 +1,6 @@
 //! Decode function pointer type for gRPC handler adapters.
 
-use crate::api::port::grpc_ingress::GrpcIngressError;
+use crate::api::port::grpc::GrpcIngressError;
 
 /// Function pointer that decodes a typed request from raw protobuf bytes.
 ///
