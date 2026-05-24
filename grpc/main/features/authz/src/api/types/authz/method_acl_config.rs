@@ -74,9 +74,9 @@ impl MethodAclConfig {
 }
 
 impl swe_edge_configbuilder::ConfigSection for MethodAclConfig {
-    #[inline(always)]
     fn section_name() -> &'static str {
-        "acl"
+        const NAME: &str = "acl";
+        NAME
     }
 }
 

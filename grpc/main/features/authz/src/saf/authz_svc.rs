@@ -31,4 +31,8 @@ pub fn validate_application_config(cfg: &ApplicationConfig) -> Result<(), String
 ///
 /// The empty body is intentional — this is a marker function that validates
 /// at compile time via trait bounds; at runtime it is a no-op.
-pub fn assert_is_processor<T: Processor>(_: &T) {}
+pub fn assert_is_processor<T: Processor>(_value: &T) {
+    // Compile-time validation only: trait bounds prove `T: Processor`.
+    // Runtime: marker function performs type-level assertion without side effects.
+    let _ = _value;
+}

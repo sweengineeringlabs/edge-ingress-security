@@ -1,10 +1,19 @@
 //! Integration tests for SAF-level authz service introspection.
 
+use swe_edge_configbuilder::ConfigBuilder as _;
 use swe_edge_ingress_grpc::PeerIdentity;
 use swe_edge_ingress_grpc_authz::{
-    assert_is_processor, is_authorization_interceptor, validate_application_config,
-    ApplicationConfig, AuthzInterceptor,
+    assert_is_processor, create_config_builder, is_authorization_interceptor,
+    validate_application_config, ApplicationConfig, AuthzInterceptor,
 };
+
+/// @covers: create_config_builder — returns builder with name and version
+#[test]
+fn test_create_config_builder_returns_builder_with_name_and_version() {
+    let builder = create_config_builder();
+    assert_eq!(builder.name(), env!("CARGO_PKG_NAME"));
+    assert_eq!(builder.version(), env!("CARGO_PKG_VERSION"));
+}
 
 /// @covers: is_authorization_interceptor
 #[test]

@@ -1,9 +1,19 @@
 //! Integration tests for [`bearer_svc`] — exercises the public SAF service
 //! functions exported from `saf/bearer_svc.rs`.
 
+use swe_edge_configbuilder::ConfigBuilder as _;
 use swe_edge_ingress_grpc_auth_bearer::{
-    extracted_bearer_subject_key, validate_bearer_config, BearerIngressConfig, BearerSecret,
+    create_config_builder, extracted_bearer_subject_key, validate_bearer_config,
+    BearerIngressConfig, BearerSecret,
 };
+
+/// @covers: create_config_builder — returns builder with name and version
+#[test]
+fn test_create_config_builder_returns_builder_with_name_and_version() {
+    let builder = create_config_builder();
+    assert_eq!(builder.name(), env!("CARGO_PKG_NAME"));
+    assert_eq!(builder.version(), env!("CARGO_PKG_VERSION"));
+}
 
 /// @covers: extracted_bearer_subject_key — returns non-empty string
 #[test]

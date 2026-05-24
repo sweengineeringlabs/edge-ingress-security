@@ -14,7 +14,10 @@ impl AuditSink for NoopAuditSink {
     /// Drop every audit event silently. This is the default sink for servers
     /// that do not configure explicit audit logging. Production deployments
     /// should replace this with a real `AuditSink` implementation.
-    fn record(&self, _event: AuditEvent) {}
+    fn record(&self, _event: AuditEvent) {
+        // No-op: events are intentionally dropped.
+        let _ = _event;
+    }
 }
 
 impl Default for NoopAuditSink {

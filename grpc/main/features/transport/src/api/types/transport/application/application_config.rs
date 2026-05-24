@@ -11,9 +11,9 @@ pub struct ApplicationConfig {
 }
 
 impl swe_edge_configbuilder::ConfigSection for ApplicationConfig {
-    #[inline(always)]
     fn section_name() -> &'static str {
-        "application"
+        const NAME: &str = "application";
+        NAME
     }
 }
 
