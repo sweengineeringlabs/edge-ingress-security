@@ -12,7 +12,7 @@ use crate::api::interceptor::{
     TraceContextInterceptor, EXTRACTED_TRACEPARENT, EXTRACTED_TRACESTATE, TRACEPARENT, TRACESTATE,
 };
 use crate::api::port::grpc_ingress::GrpcIngressError;
-use crate::api::value_object::{GrpcRequest, GrpcResponse};
+use crate::api::value::{GrpcRequest, GrpcResponse};
 
 impl TraceContextInterceptorImpl {
     fn is_valid_traceparent(value: &str) -> bool {

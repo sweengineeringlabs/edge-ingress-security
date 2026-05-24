@@ -1,1 +1,1 @@
-pub use crate::api::types::value_object::PeerIdentityExtractor;
+pub use crate::api::types::value::PeerIdentityExtractor;

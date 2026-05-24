@@ -28,7 +28,7 @@ pub use crate::api::server::{
     MAX_MESSAGE_BYTES, MISSING_AUTHORIZATION_INTERCEPTOR_MSG, REFLECTION_ENABLED_WARN_MSG,
 };
 pub use crate::api::status_codes::{StatusCodeConverter, SANITIZED_INTERNAL_MSG};
-pub use crate::api::value_object::{
+pub use crate::api::value::{
     CompressionMode, GrpcMetadata, GrpcRequest, GrpcRequestBuilder, GrpcResponse, GrpcServerConfig,
     GrpcServerConfigBuilder, GrpcStatusCode, PeerIdentity, DEFAULT_MAX_CONCURRENT_STREAMS,
     DEFAULT_MAX_MESSAGE_BYTES, PEER_CERT_FINGERPRINT_SHA256, PEER_CN, PEER_IDENTITY, PEER_SAN_DNS,

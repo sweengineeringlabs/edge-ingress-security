@@ -1,6 +1,6 @@
 //! Error type for gRPC inbound operations.
 
-use crate::api::value_object::GrpcStatusCode;
+use crate::api::value::GrpcStatusCode;
 
 /// Error type for gRPC inbound operations.
 ///

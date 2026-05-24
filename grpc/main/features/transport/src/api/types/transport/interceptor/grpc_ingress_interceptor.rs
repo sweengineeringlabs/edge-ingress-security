@@ -1,7 +1,7 @@
 //! Inbound interceptor trait.
 
 use crate::api::port::grpc_ingress::GrpcIngressError;
-use crate::api::value_object::{GrpcRequest, GrpcResponse};
+use crate::api::value::{GrpcRequest, GrpcResponse};
 
 /// An interceptor for inbound gRPC calls.
 pub trait GrpcIngressInterceptor: Send + Sync {

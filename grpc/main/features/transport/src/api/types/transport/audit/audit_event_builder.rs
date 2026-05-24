@@ -2,7 +2,7 @@
 
 use std::time::SystemTime;
 
-use crate::api::value_object::GrpcStatusCode;
+use crate::api::value::GrpcStatusCode;
 
 use super::audit_event::AuditEvent;
 

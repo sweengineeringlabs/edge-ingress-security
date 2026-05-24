@@ -9,7 +9,7 @@ pub mod interceptor;
 pub mod port;
 pub mod server;
 pub mod status_codes;
-pub mod value_object;
+pub mod value;
 
 pub(crate) mod serving_status;
 
@@ -32,7 +32,7 @@ pub use server::{
 };
 pub use serving_status::ServingStatus;
 pub use status_codes::StatusCodeConverter;
-pub use value_object::{
+pub use value::{
     CompressionMode, GrpcMetadata, GrpcRequest, GrpcRequestBuilder, GrpcResponse, GrpcServerConfig,
     GrpcServerConfigBuilder, GrpcStatusCode, PeerIdentity, DEFAULT_MAX_CONCURRENT_STREAMS,
     DEFAULT_MAX_MESSAGE_BYTES, PEER_CERT_FINGERPRINT_SHA256, PEER_CN, PEER_IDENTITY, PEER_SAN_DNS,

@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use crate::api::port::grpc_ingress::GrpcIngressError;
-use crate::api::value_object::{GrpcRequest, GrpcResponse};
+use crate::api::value::{GrpcRequest, GrpcResponse};
 
 use super::grpc_ingress_interceptor::GrpcIngressInterceptor;
 
@@ -68,7 +68,7 @@ mod tests {
     use std::time::Duration;
 
     use crate::api::port::grpc_ingress::GrpcIngressError;
-    use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode};
+    use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode};
 
     use super::*;
 

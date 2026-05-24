@@ -13,7 +13,7 @@ use edge_domain::RequestContext;
 use crate::api::port::grpc_ingress::{
     GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream,
 };
-use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode};
+use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode};
 
 /// Codec for health check messages.
 pub(crate) struct HealthCheckCodec;
@@ -220,7 +220,7 @@ mod tests {
         HealthAggregate, HealthService, ServingStatus, HEALTH_CHECK_METHOD,
     };
     use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
-    use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
+    use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
     /// @covers: HealthCheckCodec::decode_request
     #[test]

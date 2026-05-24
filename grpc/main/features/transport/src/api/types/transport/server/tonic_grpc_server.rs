@@ -7,7 +7,7 @@ use swe_edge_ingress_tls::IngressTlsConfig;
 use crate::api::audit_sink::{AuditSink, NoopAuditSink};
 use crate::api::interceptor::GrpcIngressInterceptorChain;
 use crate::api::port::grpc_ingress::GrpcIngress;
-use crate::api::value_object::{CompressionMode, GrpcServerConfig};
+use crate::api::value::{CompressionMode, GrpcServerConfig};
 
 use crate::api::server::grpc::grpc_server_config_error::GrpcServerConfigError;
 
@@ -137,7 +137,7 @@ impl TonicGrpcServer {
 mod tests {
     use super::*;
     use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
-    use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
+    use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
     use std::sync::Arc;
@@ -171,7 +171,7 @@ mod tests {
     /// @covers: from_config
     #[test]
     fn test_from_config_returns_err_when_tls_required_but_no_tls_config() {
-        use crate::api::value_object::GrpcServerConfig;
+        use crate::api::value::GrpcServerConfig;
         let cfg = GrpcServerConfig {
             tls_required: true,
             ..Default::default()
@@ -206,7 +206,7 @@ mod tests {
     #[test]
     fn test_with_audit_sink_installs_provided_sink() {
         use crate::api::audit_sink::AuditEvent;
-        use crate::api::value_object::GrpcStatusCode;
+        use crate::api::value::GrpcStatusCode;
         use std::sync::Mutex;
         use std::time::SystemTime;
         struct CountingSink(Arc<Mutex<usize>>);

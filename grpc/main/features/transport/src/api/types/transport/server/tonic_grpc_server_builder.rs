@@ -8,7 +8,7 @@ use super::tonic_grpc_server::TonicGrpcServer;
 use crate::api::audit_sink::AuditSink;
 use crate::api::interceptor::GrpcIngressInterceptorChain;
 use crate::api::port::grpc_ingress::GrpcIngress;
-use crate::api::value_object::CompressionMode;
+use crate::api::value::CompressionMode;
 
 /// Fluent builder for [`TonicGrpcServer`].
 ///
@@ -123,7 +123,7 @@ impl TonicGrpcServerBuilder {
 mod tests {
     use super::*;
     use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
-    use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
+    use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
 

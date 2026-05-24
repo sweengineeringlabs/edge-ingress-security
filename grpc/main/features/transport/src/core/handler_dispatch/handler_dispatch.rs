@@ -19,11 +19,11 @@ use crate::api::port::grpc_ingress::{
     GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult,
 };
 use crate::api::types::grpc::GrpcHandlerRegistryDispatcher;
-use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
+use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
 impl HandlerDispatch {
     pub(crate) fn map_handler_error(err: HandlerError) -> GrpcIngressError {
-        use crate::api::value_object::GrpcStatusCode;
+        use crate::api::value::GrpcStatusCode;
         match err {
             HandlerError::Unsupported(m) => GrpcIngressError::Unimplemented(m),
             HandlerError::InvalidRequest(m) => GrpcIngressError::InvalidArgument(m),
@@ -119,7 +119,7 @@ mod tests {
 
     use crate::api::port::grpc_ingress::{GrpcIngress, GrpcIngressError};
     use crate::api::types::grpc::GrpcHandlerRegistryDispatcher;
-    use crate::api::value_object::GrpcRequest;
+    use crate::api::value::GrpcRequest;
 
     use super::HandlerDispatch;
 

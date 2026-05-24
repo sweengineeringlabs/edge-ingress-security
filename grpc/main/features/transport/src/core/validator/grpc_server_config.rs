@@ -1,7 +1,7 @@
 //! Core implementation of the [`Validator`] trait for gRPC configuration types.
 
 use crate::api::traits::Validator;
-use crate::api::value_object::GrpcServerConfig;
+use crate::api::value::GrpcServerConfig;
 
 /// Marker type confirming this module provides GrpcServerConfig validation.
 ///

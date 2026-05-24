@@ -1,7 +1,7 @@
 //! gRPC status-code conversions.
 
 use crate::api::port::grpc_ingress::GrpcIngressError;
-use crate::api::value_object::GrpcStatusCode;
+use crate::api::value::GrpcStatusCode;
 
 /// Converter for gRPC status codes between representations.
 pub struct StatusCodeConverter;

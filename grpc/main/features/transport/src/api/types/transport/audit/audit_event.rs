@@ -2,7 +2,7 @@
 
 use std::time::SystemTime;
 
-use crate::api::value_object::GrpcStatusCode;
+use crate::api::value::GrpcStatusCode;
 
 /// A single audit event emitted once per dispatched gRPC call.
 ///

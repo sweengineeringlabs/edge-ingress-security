@@ -18,7 +18,7 @@ mod tests {
     use std::sync::Arc;
     use std::sync::Mutex;
 
-    use crate::api::value_object::GrpcStatusCode;
+    use crate::api::value::GrpcStatusCode;
 
     use super::*;
     use crate::api::types::audit::AuditEvent;

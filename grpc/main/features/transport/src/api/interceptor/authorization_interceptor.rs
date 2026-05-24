@@ -24,7 +24,7 @@ pub trait AuthorizationInterceptor: GrpcIngressInterceptor {}
 mod tests {
     use super::*;
     use crate::api::port::grpc_ingress::GrpcIngressError;
-    use crate::api::value_object::{GrpcRequest, GrpcResponse};
+    use crate::api::value::{GrpcRequest, GrpcResponse};
 
     #[test]
     fn test_authorization_interceptor_is_a_supertrait_of_grpc_ingress_interceptor() {

@@ -4,7 +4,7 @@ use futures::future::BoxFuture;
 
 use edge_domain::RequestContext;
 
-use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
+use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
 use super::grpc_ingress_result::GrpcIngressResult;
 use super::grpc_message_stream::GrpcMessageStream;

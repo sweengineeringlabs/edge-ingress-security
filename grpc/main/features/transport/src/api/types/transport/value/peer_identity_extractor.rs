@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use sha2::{Digest, Sha256};
 
-use crate::api::value_object::{
+use crate::api::value::{
     PEER_CERT_FINGERPRINT_SHA256, PEER_CN, PEER_IDENTITY, PEER_SAN_DNS, PEER_SAN_URI,
 };
 

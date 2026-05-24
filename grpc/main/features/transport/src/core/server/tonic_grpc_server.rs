@@ -30,7 +30,7 @@ use crate::api::server::{
     REFLECTION_ENABLED_WARN_MSG,
 };
 use crate::api::status_codes::StatusCodeConverter;
-use crate::api::value_object::{
+use crate::api::value::{
     CompressionMode, GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode, PeerIdentity, PEER_CN,
 };
 
@@ -965,7 +965,7 @@ mod tests {
 mod dedicated_coverage {
     use super::TonicGrpcServer;
     use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
-    use crate::api::value_object::{CompressionMode, GrpcRequest, GrpcResponse};
+    use crate::api::value::{CompressionMode, GrpcRequest, GrpcResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
     use std::sync::Arc;
@@ -1064,7 +1064,7 @@ mod dedicated_coverage {
 mod sync_coverage {
     use super::TonicGrpcServer;
     use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
-    use crate::api::value_object::{GrpcRequest, GrpcResponse};
+    use crate::api::value::{GrpcRequest, GrpcResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
     use std::sync::Arc;

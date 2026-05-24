@@ -27,7 +27,7 @@ impl Default for NoopAuditSink {
 mod tests {
     use std::time::SystemTime;
 
-    use crate::api::value_object::GrpcStatusCode;
+    use crate::api::value::GrpcStatusCode;
 
     use super::*;
     use crate::api::types::audit::AuditEvent;

@@ -45,7 +45,7 @@ mod tests {
     use crate::api::health_service::HealthService;
     use crate::api::health_service::ServingStatus;
     use crate::api::port::grpc_ingress::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
-    use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
+    use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
     use super::*;
 
