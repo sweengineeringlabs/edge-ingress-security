@@ -6,7 +6,7 @@ use swe_edge_ingress_grpc_transport::{
 };
 use swe_edge_ingress_verifier::VerifierError;
 
-use crate::api::bearer_interceptor::BearerTokenInterceptor;
+use crate::api::types::BearerTokenInterceptor;
 
 impl GrpcIngressInterceptor for BearerTokenInterceptor {
     fn before_dispatch(&self, req: &mut GrpcRequest) -> Result<(), GrpcIngressError> {
@@ -61,7 +61,7 @@ mod tests {
     use swe_edge_ingress_grpc_transport::{GrpcIngressInterceptor, GrpcRequest, GrpcStatusCode};
     use swe_edge_ingress_verifier::{Claims, VerifierError};
 
-    use crate::api::bearer_interceptor::BearerTokenInterceptor;
+    use crate::api::types::BearerTokenInterceptor;
 
     struct AlwaysOk;
     impl swe_edge_ingress_verifier::TokenVerifier for AlwaysOk {

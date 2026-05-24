@@ -1,3 +1,5 @@
 //! API layer — bearer interceptor type.
 
-pub mod bearer_interceptor;
+pub mod types;
+
+pub use types::BearerTokenInterceptor;
