@@ -12,7 +12,7 @@ use swe_edge_ingress_grpc::{
     GrpcMetadata, GrpcRequest, GrpcResponse,
 };
 
-use crate::api::reflection_service::{
+use crate::api::types::reflection_service::{
     ReflectionService, ERROR_CODE_INVALID_ARGUMENT, ERROR_CODE_NOT_FOUND, ERROR_CODE_UNIMPLEMENTED,
     REFLECTION_INFO_METHOD, REFLECTION_SERVICE_NAME,
 };
@@ -26,7 +26,9 @@ impl ReflectionService {
     pub(crate) fn list_services(&self) -> Vec<String> {
         let mut set: BTreeSet<String> = BTreeSet::new();
         for id in self.registry.list_ids() {
-            if let Some(name) = crate::api::reflection_service::service_name_from_method_path(&id) {
+            if let Some(name) =
+                crate::api::types::reflection_service::service_name_from_method_path(&id)
+            {
                 set.insert(name.to_string());
             }
         }

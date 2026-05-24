@@ -2,7 +2,7 @@
 
 use swe_edge_configbuilder::ConfigBuilder as _;
 
-use crate::api::reflection_service::ReflectionService;
+use crate::api::types::reflection_service::ReflectionService;
 use crate::api::types::{ReflectionRequest, ReflectionResponse};
 
 /// Creates a config builder pre-seeded with this crate's name and version.
