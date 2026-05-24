@@ -52,17 +52,22 @@ impl ReflectionService {
         }
         self
     }
+
+    /// Extract the service name from a `/pkg.Service/Method` path.
+    pub fn service_name_from_method_path(path: &str) -> Option<&str> {
+        let path = path.strip_prefix('/')?;
+        let slash = path.find('/')?;
+        let name = &path[..slash];
+        if name.is_empty() {
+            return None;
+        }
+        Some(name)
+    }
 }
 
-/// Extract the service name from a `/pkg.Service/Method` path.
+/// Backward-compatibility wrapper for service_name_from_method_path.
 pub fn service_name_from_method_path(path: &str) -> Option<&str> {
-    let path = path.strip_prefix('/')?;
-    let slash = path.find('/')?;
-    let name = &path[..slash];
-    if name.is_empty() {
-        return None;
-    }
-    Some(name)
+    ReflectionService::service_name_from_method_path(path)
 }
 
 #[cfg(test)]

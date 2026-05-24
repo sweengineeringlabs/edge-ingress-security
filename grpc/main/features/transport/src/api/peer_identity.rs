@@ -39,16 +39,16 @@ impl PeerIdentityExtractor {
 
     fn extract_impl(leaf_der: &[u8]) -> HashMap<String, String> {
         let mut out = HashMap::new();
-        let fp = hex_lower(&Sha256::digest(leaf_der));
+        let fp = Self::hex_lower(&Sha256::digest(leaf_der));
         out.insert(PEER_CERT_FINGERPRINT_SHA256.to_string(), fp);
 
-        let Some((_, cert_body)) = read_tlv(leaf_der) else {
+        let Some((_, cert_body)) = Self::read_tlv(leaf_der) else {
             return out;
         };
         if cert_body.is_empty() {
             return out;
         };
-        let Some((tag, tbs_body)) = read_tlv(cert_body) else {
+        let Some((tag, tbs_body)) = Self::read_tlv(cert_body) else {
             return out;
         };
         if tag != TAG_SEQUENCE {
@@ -58,50 +58,50 @@ impl PeerIdentityExtractor {
         let mut rest = tbs_body;
         if let Some(b) = rest.first() {
             if *b == TAG_CONTEXT_0 {
-                let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
+                let Some((_, _, after)) = Self::read_tlv_with_remainder(rest) else {
                     return out;
                 };
                 rest = after;
             }
         }
-        let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
+        let Some((_, _, after)) = Self::read_tlv_with_remainder(rest) else {
             return out;
         };
         rest = after;
-        let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
+        let Some((_, _, after)) = Self::read_tlv_with_remainder(rest) else {
             return out;
         };
         rest = after;
-        let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
+        let Some((_, _, after)) = Self::read_tlv_with_remainder(rest) else {
             return out;
         };
         rest = after;
-        let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
+        let Some((_, _, after)) = Self::read_tlv_with_remainder(rest) else {
             return out;
         };
         rest = after;
-        let Some((tag, subject_body, after)) = read_tlv_with_remainder(rest) else {
+        let Some((tag, subject_body, after)) = Self::read_tlv_with_remainder(rest) else {
             return out;
         };
         if tag == TAG_SEQUENCE {
-            let dn = render_name(subject_body);
+            let dn = Self::render_name(subject_body);
             if !dn.is_empty() {
                 out.insert(PEER_IDENTITY.to_string(), dn);
             }
-            if let Some(cn) = find_common_name(subject_body) {
+            if let Some(cn) = Self::find_common_name(subject_body) {
                 out.insert(PEER_CN.to_string(), cn);
             }
         }
         rest = after;
-        let Some((_, _, after)) = read_tlv_with_remainder(rest) else {
+        let Some((_, _, after)) = Self::read_tlv_with_remainder(rest) else {
             return out;
         };
         rest = after;
 
-        while let Some((tag, body, after)) = read_tlv_with_remainder(rest) {
+        while let Some((tag, body, after)) = Self::read_tlv_with_remainder(rest) {
             if tag == TAG_CONTEXT_3 {
-                if let Some((TAG_SEQUENCE, ext_seq)) = read_tlv(body) {
-                    if let Some((dns, uri)) = find_san_in_extensions(ext_seq) {
+                if let Some((TAG_SEQUENCE, ext_seq)) = Self::read_tlv(body) {
+                    if let Some((dns, uri)) = Self::find_san_in_extensions(ext_seq) {
                         if !dns.is_empty() {
                             out.insert(PEER_SAN_DNS.to_string(), dns.join(","));
                         }
@@ -116,196 +116,203 @@ impl PeerIdentityExtractor {
         }
         out
     }
-}
 
-/// Backward-compatibility wrapper.
-pub fn extract_peer_identity(leaf_der: &[u8]) -> HashMap<String, String> {
-    PeerIdentityExtractor::extract(leaf_der)
-}
-
-fn read_tlv_with_remainder(data: &[u8]) -> Option<(u8, &[u8], &[u8])> {
-    if data.is_empty() {
-        return None;
-    }
-    let tag = data[0];
-    let (len, header_len) = read_length(&data[1..])?;
-    let total = 1 + header_len + len;
-    if data.len() < total {
-        return None;
-    }
-    Some((tag, &data[1 + header_len..total], &data[total..]))
-}
-
-fn read_tlv(data: &[u8]) -> Option<(u8, &[u8])> {
-    read_tlv_with_remainder(data).map(|(t, b, _)| (t, b))
-}
-
-fn read_length(data: &[u8]) -> Option<(usize, usize)> {
-    let first = *data.first()?;
-    if first & 0x80 == 0 {
-        return Some((first as usize, 1));
-    }
-    let n = (first & 0x7F) as usize;
-    if n == 0 || n > 4 || data.len() < 1 + n {
-        return None;
-    }
-    let mut len = 0usize;
-    for &b in &data[1..1 + n] {
-        len = (len << 8) | b as usize;
-    }
-    Some((len, 1 + n))
-}
-
-fn render_name(name_seq: &[u8]) -> String {
-    let mut out = Vec::new();
-    let mut rest = name_seq;
-    while let Some((tag, body, after)) = read_tlv_with_remainder(rest) {
-        if tag == TAG_SET {
-            let mut atv_rest = body;
-            while let Some((atv_tag, atv_body, atv_after)) = read_tlv_with_remainder(atv_rest) {
-                if atv_tag == TAG_SEQUENCE {
-                    if let Some((kind, _key, value)) = parse_atv(atv_body) {
-                        out.push(format!("{kind}={value}"));
-                    }
-                }
-                atv_rest = atv_after;
-            }
+    fn read_tlv_with_remainder(data: &[u8]) -> Option<(u8, &[u8], &[u8])> {
+        if data.is_empty() {
+            return None;
         }
-        rest = after;
+        let tag = data[0];
+        let (len, header_len) = Self::read_length(&data[1..])?;
+        let total = 1 + header_len + len;
+        if data.len() < total {
+            return None;
+        }
+        Some((tag, &data[1 + header_len..total], &data[total..]))
     }
-    out.join(",")
-}
 
-fn parse_atv(body: &[u8]) -> Option<(&'static str, &[u8], String)> {
-    let (oid_tag, oid_body, after) = read_tlv_with_remainder(body)?;
-    if oid_tag != TAG_OID {
-        return None;
+    fn read_tlv(data: &[u8]) -> Option<(u8, &[u8])> {
+        Self::read_tlv_with_remainder(data).map(|(t, b, _)| (t, b))
     }
-    let (val_tag, val_body, _) = read_tlv_with_remainder(after)?;
-    let kind = oid_short_name(oid_body)?;
-    let value = decode_string(val_tag, val_body)?;
-    Some((kind, oid_body, value))
-}
 
-fn oid_short_name(oid: &[u8]) -> Option<&'static str> {
-    if oid == OID_COMMON_NAME {
-        return Some("CN");
+    fn read_length(data: &[u8]) -> Option<(usize, usize)> {
+        let first = *data.first()?;
+        if first & 0x80 == 0 {
+            return Some((first as usize, 1));
+        }
+        let n = (first & 0x7F) as usize;
+        if n == 0 || n > 4 || data.len() < 1 + n {
+            return None;
+        }
+        let mut len = 0usize;
+        for &b in &data[1..1 + n] {
+            len = (len << 8) | b as usize;
+        }
+        Some((len, 1 + n))
     }
-    if oid == [0x55, 0x04, 0x0A] {
-        return Some("O");
-    }
-    if oid == [0x55, 0x04, 0x0B] {
-        return Some("OU");
-    }
-    if oid == [0x55, 0x04, 0x06] {
-        return Some("C");
-    }
-    if oid == [0x55, 0x04, 0x07] {
-        return Some("L");
-    }
-    if oid == [0x55, 0x04, 0x08] {
-        return Some("ST");
-    }
-    None
-}
 
-fn decode_string(tag: u8, body: &[u8]) -> Option<String> {
-    match tag {
-        TAG_UTF8 | TAG_PRINTABLE | TAG_IA5 => std::str::from_utf8(body).ok().map(str::to_string),
-        _ => None,
-    }
-}
-
-fn find_common_name(name_seq: &[u8]) -> Option<String> {
-    let mut rest = name_seq;
-    while let Some((tag, body, after)) = read_tlv_with_remainder(rest) {
-        if tag == TAG_SET {
-            let mut atv_rest = body;
-            while let Some((atv_tag, atv_body, atv_after)) = read_tlv_with_remainder(atv_rest) {
-                if atv_tag == TAG_SEQUENCE {
-                    if let Some((kind, _oid, value)) = parse_atv(atv_body) {
-                        if kind == "CN" {
-                            return Some(value);
+    fn render_name(name_seq: &[u8]) -> String {
+        let mut out = Vec::new();
+        let mut rest = name_seq;
+        while let Some((tag, body, after)) = Self::read_tlv_with_remainder(rest) {
+            if tag == TAG_SET {
+                let mut atv_rest = body;
+                while let Some((atv_tag, atv_body, atv_after)) =
+                    Self::read_tlv_with_remainder(atv_rest)
+                {
+                    if atv_tag == TAG_SEQUENCE {
+                        if let Some((kind, _key, value)) = Self::parse_atv(atv_body) {
+                            out.push(format!("{kind}={value}"));
                         }
                     }
+                    atv_rest = atv_after;
                 }
-                atv_rest = atv_after;
             }
+            rest = after;
         }
-        rest = after;
+        out.join(",")
     }
-    None
-}
 
-fn find_san_in_extensions(extensions_seq: &[u8]) -> Option<(Vec<String>, Vec<String>)> {
-    let mut rest = extensions_seq;
-    while let Some((tag, ext_body, after)) = read_tlv_with_remainder(rest) {
-        if tag == TAG_SEQUENCE {
-            if let Some((oid_tag, oid_body, ext_rest)) = read_tlv_with_remainder(ext_body) {
-                if oid_tag == TAG_OID && oid_body == OID_SUBJECT_ALT_NAME {
-                    let mut payload_rest = ext_rest;
-                    if let Some((maybe_bool_tag, _bool_body, after_bool)) =
-                        read_tlv_with_remainder(payload_rest)
-                    {
-                        if maybe_bool_tag == TAG_BOOLEAN {
-                            payload_rest = after_bool;
+    fn parse_atv(body: &[u8]) -> Option<(&'static str, &[u8], String)> {
+        let (oid_tag, oid_body, after) = Self::read_tlv_with_remainder(body)?;
+        if oid_tag != TAG_OID {
+            return None;
+        }
+        let (val_tag, val_body, _) = Self::read_tlv_with_remainder(after)?;
+        let kind = Self::oid_short_name(oid_body)?;
+        let value = Self::decode_string(val_tag, val_body)?;
+        Some((kind, oid_body, value))
+    }
+
+    fn oid_short_name(oid: &[u8]) -> Option<&'static str> {
+        if oid == OID_COMMON_NAME {
+            return Some("CN");
+        }
+        if oid == [0x55, 0x04, 0x0A] {
+            return Some("O");
+        }
+        if oid == [0x55, 0x04, 0x0B] {
+            return Some("OU");
+        }
+        if oid == [0x55, 0x04, 0x06] {
+            return Some("C");
+        }
+        if oid == [0x55, 0x04, 0x07] {
+            return Some("L");
+        }
+        if oid == [0x55, 0x04, 0x08] {
+            return Some("ST");
+        }
+        None
+    }
+
+    fn decode_string(tag: u8, body: &[u8]) -> Option<String> {
+        match tag {
+            TAG_UTF8 | TAG_PRINTABLE | TAG_IA5 => {
+                std::str::from_utf8(body).ok().map(str::to_string)
+            }
+            _ => None,
+        }
+    }
+
+    fn find_common_name(name_seq: &[u8]) -> Option<String> {
+        let mut rest = name_seq;
+        while let Some((tag, body, after)) = Self::read_tlv_with_remainder(rest) {
+            if tag == TAG_SET {
+                let mut atv_rest = body;
+                while let Some((atv_tag, atv_body, atv_after)) =
+                    Self::read_tlv_with_remainder(atv_rest)
+                {
+                    if atv_tag == TAG_SEQUENCE {
+                        if let Some((kind, _oid, value)) = Self::parse_atv(atv_body) {
+                            if kind == "CN" {
+                                return Some(value);
+                            }
                         }
                     }
-                    if let Some((octets_tag, octets_body, _)) =
-                        read_tlv_with_remainder(payload_rest)
-                    {
-                        if octets_tag == TAG_OCTET_STRING {
-                            if let Some((TAG_SEQUENCE, gn_seq)) = read_tlv(octets_body) {
-                                return Some(parse_general_names(gn_seq));
+                    atv_rest = atv_after;
+                }
+            }
+            rest = after;
+        }
+        None
+    }
+
+    fn find_san_in_extensions(extensions_seq: &[u8]) -> Option<(Vec<String>, Vec<String>)> {
+        let mut rest = extensions_seq;
+        while let Some((tag, ext_body, after)) = Self::read_tlv_with_remainder(rest) {
+            if tag == TAG_SEQUENCE {
+                if let Some((oid_tag, oid_body, ext_rest)) = Self::read_tlv_with_remainder(ext_body)
+                {
+                    if oid_tag == TAG_OID && oid_body == OID_SUBJECT_ALT_NAME {
+                        let mut payload_rest = ext_rest;
+                        if let Some((maybe_bool_tag, _bool_body, after_bool)) =
+                            Self::read_tlv_with_remainder(payload_rest)
+                        {
+                            if maybe_bool_tag == TAG_BOOLEAN {
+                                payload_rest = after_bool;
+                            }
+                        }
+                        if let Some((octets_tag, octets_body, _)) =
+                            Self::read_tlv_with_remainder(payload_rest)
+                        {
+                            if octets_tag == TAG_OCTET_STRING {
+                                if let Some((TAG_SEQUENCE, gn_seq)) = Self::read_tlv(octets_body) {
+                                    return Some(Self::parse_general_names(gn_seq));
+                                }
                             }
                         }
                     }
                 }
             }
+            rest = after;
         }
-        rest = after;
+        None
     }
-    None
-}
 
-fn parse_general_names(data: &[u8]) -> (Vec<String>, Vec<String>) {
-    let mut dns = Vec::new();
-    let mut uri = Vec::new();
-    let mut rest = data;
-    while let Some((tag, body, after)) = read_tlv_with_remainder(rest) {
-        match tag {
-            SAN_DNS_TAG => {
-                if let Ok(s) = std::str::from_utf8(body) {
-                    dns.push(s.to_string());
+    fn parse_general_names(data: &[u8]) -> (Vec<String>, Vec<String>) {
+        let mut dns = Vec::new();
+        let mut uri = Vec::new();
+        let mut rest = data;
+        while let Some((tag, body, after)) = Self::read_tlv_with_remainder(rest) {
+            match tag {
+                SAN_DNS_TAG => {
+                    if let Ok(s) = std::str::from_utf8(body) {
+                        dns.push(s.to_string());
+                    }
                 }
-            }
-            SAN_URI_TAG => {
-                if let Ok(s) = std::str::from_utf8(body) {
-                    uri.push(s.to_string());
+                SAN_URI_TAG => {
+                    if let Ok(s) = std::str::from_utf8(body) {
+                        uri.push(s.to_string());
+                    }
                 }
+                _ => {}
             }
-            _ => {}
+            rest = after;
         }
-        rest = after;
+        (dns, uri)
     }
-    (dns, uri)
+
+    fn hex_lower(bytes: &[u8]) -> String {
+        let mut out = String::with_capacity(bytes.len() * 2);
+        for b in bytes {
+            out.push(Self::hex_char(b >> 4));
+            out.push(Self::hex_char(b & 0x0F));
+        }
+        out
+    }
+
+    fn hex_char(n: u8) -> char {
+        match n {
+            0..=9 => (b'0' + n) as char,
+            10..=15 => (b'a' + n - 10) as char,
+            _ => '?',
+        }
+    }
 }
 
-fn hex_lower(bytes: &[u8]) -> String {
-    let mut out = String::with_capacity(bytes.len() * 2);
-    for b in bytes {
-        out.push(hex_char(b >> 4));
-        out.push(hex_char(b & 0x0F));
-    }
-    out
-}
-
-fn hex_char(n: u8) -> char {
-    match n {
-        0..=9 => (b'0' + n) as char,
-        10..=15 => (b'a' + n - 10) as char,
-        _ => '?',
-    }
+/// Backward-compatibility wrapper.
+pub fn extract_peer_identity(leaf_der: &[u8]) -> HashMap<String, String> {
+    PeerIdentityExtractor::extract(leaf_der)
 }
 
 #[cfg(test)]
@@ -328,10 +335,10 @@ mod tests {
         assert_eq!(a, b);
     }
 
-    /// @covers: extract_peer_identity
+    /// @covers: PeerIdentityExtractor::read_length
     #[test]
     fn test_read_length_short_form() {
-        let (len, used) = read_length(&[0x05]).unwrap();
+        let (len, used) = PeerIdentityExtractor::read_length(&[0x05]).unwrap();
         assert_eq!(len, 5);
         assert_eq!(used, 1);
     }

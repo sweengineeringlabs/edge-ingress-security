@@ -14,26 +14,28 @@ use crate::api::interceptor::{
 use crate::api::port::grpc_ingress::GrpcIngressError;
 use crate::api::value_object::{GrpcRequest, GrpcResponse};
 
-fn is_valid_traceparent(value: &str) -> bool {
-    if value.len() != 55 {
-        return false;
+impl TraceContextInterceptorImpl {
+    fn is_valid_traceparent(value: &str) -> bool {
+        if value.len() != 55 {
+            return false;
+        }
+        let bytes = value.as_bytes();
+        if &bytes[0..2] != b"00" || bytes[2] != b'-' {
+            return false;
+        }
+        if bytes[35] != b'-' || bytes[52] != b'-' {
+            return false;
+        }
+        let hex =
+            |slice: &[u8]| -> bool { slice.iter().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f')) };
+        hex(&bytes[3..35]) && hex(&bytes[36..52]) && hex(&bytes[53..55])
     }
-    let bytes = value.as_bytes();
-    if &bytes[0..2] != b"00" || bytes[2] != b'-' {
-        return false;
-    }
-    if bytes[35] != b'-' || bytes[52] != b'-' {
-        return false;
-    }
-    let hex =
-        |slice: &[u8]| -> bool { slice.iter().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f')) };
-    hex(&bytes[3..35]) && hex(&bytes[36..52]) && hex(&bytes[53..55])
 }
 
 impl GrpcIngressInterceptor for TraceContextInterceptor {
     fn before_dispatch(&self, req: &mut GrpcRequest) -> Result<(), GrpcIngressError> {
         if let Some(tp) = req.metadata.headers.get(TRACEPARENT).cloned() {
-            if is_valid_traceparent(&tp) {
+            if TraceContextInterceptorImpl::is_valid_traceparent(&tp) {
                 req.metadata
                     .headers
                     .insert(EXTRACTED_TRACEPARENT.to_string(), tp);

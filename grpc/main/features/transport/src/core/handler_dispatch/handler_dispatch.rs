@@ -21,6 +21,27 @@ use crate::api::port::grpc_ingress::{
 };
 use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
+impl HandlerDispatch {
+    pub(crate) fn map_handler_error(err: HandlerError) -> GrpcIngressError {
+        use crate::api::value_object::GrpcStatusCode;
+        match err {
+            HandlerError::Unsupported(m) => GrpcIngressError::Unimplemented(m),
+            HandlerError::InvalidRequest(m) => GrpcIngressError::InvalidArgument(m),
+            HandlerError::NotFound(m) => GrpcIngressError::NotFound(m),
+            HandlerError::Conflict(m) => GrpcIngressError::Status(GrpcStatusCode::AlreadyExists, m),
+            HandlerError::ExecutionFailed(m) => GrpcIngressError::Internal(m),
+            HandlerError::Unhealthy => GrpcIngressError::Unavailable("handler unhealthy".into()),
+            HandlerError::FailedPrecondition(m) => {
+                GrpcIngressError::Status(GrpcStatusCode::FailedPrecondition, m)
+            }
+            HandlerError::Unauthorized(m) => {
+                GrpcIngressError::Status(GrpcStatusCode::Unauthenticated, m)
+            }
+            HandlerError::PermissionDenied(m) => GrpcIngressError::PermissionDenied(m),
+        }
+    }
+}
+
 impl GrpcIngress for GrpcHandlerRegistryDispatcher {
     fn handle_unary(
         &self,
@@ -66,7 +87,7 @@ impl GrpcIngress for GrpcHandlerRegistryDispatcher {
                     body: bytes,
                     metadata: GrpcMetadata::default(),
                 }),
-                Err(e) => Err(map_handler_error(e)),
+                Err(e) => Err(HandlerDispatch::map_handler_error(e)),
             }
         })
     }
@@ -86,25 +107,6 @@ impl GrpcIngress for GrpcHandlerRegistryDispatcher {
             }
             Ok(GrpcHealthCheck::healthy())
         })
-    }
-}
-
-pub(crate) fn map_handler_error(err: HandlerError) -> GrpcIngressError {
-    use crate::api::value_object::GrpcStatusCode;
-    match err {
-        HandlerError::Unsupported(m) => GrpcIngressError::Unimplemented(m),
-        HandlerError::InvalidRequest(m) => GrpcIngressError::InvalidArgument(m),
-        HandlerError::NotFound(m) => GrpcIngressError::NotFound(m),
-        HandlerError::Conflict(m) => GrpcIngressError::Status(GrpcStatusCode::AlreadyExists, m),
-        HandlerError::ExecutionFailed(m) => GrpcIngressError::Internal(m),
-        HandlerError::Unhealthy => GrpcIngressError::Unavailable("handler unhealthy".into()),
-        HandlerError::FailedPrecondition(m) => {
-            GrpcIngressError::Status(GrpcStatusCode::FailedPrecondition, m)
-        }
-        HandlerError::Unauthorized(m) => {
-            GrpcIngressError::Status(GrpcStatusCode::Unauthenticated, m)
-        }
-        HandlerError::PermissionDenied(m) => GrpcIngressError::PermissionDenied(m),
     }
 }
 
@@ -140,7 +142,7 @@ mod tests {
     #[test]
     fn test_map_handler_error_execution_failed_maps_to_internal() {
         assert!(matches!(
-            super::map_handler_error(HandlerError::ExecutionFailed("x".into())),
+            HandlerDispatch::map_handler_error(HandlerError::ExecutionFailed("x".into())),
             GrpcIngressError::Internal(_)
         ));
     }

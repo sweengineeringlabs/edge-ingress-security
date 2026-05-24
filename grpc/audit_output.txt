@@ -1,0 +1,731 @@
+[2m2026-05-24T12:56:30.138603Z[0m [32m INFO[0m [auto] detected L1 (workspace) — running all applicable rules
+struct-engine scan results (project layout: Workspace)
+============================================================
+
+## boundary
+  [PASS] 184: domain crates must not depend on adapter crates
+  [PASS] 185: crate names must not end with generic responsibility suffixes (-core, -utils, -api, -common, -shared, -helpers)
+  [PASS] 186: adapter crates must not define public traits — port traits belong in the domain crate
+  [PASS] 187: adapter crates must implement at least one domain port trait
+
+## cargo_metadata
+  [PASS] 178: Cargo dependencies must not use path = "..." pointing outside the workspace root — use git or registry sources instead
+  [PASS] 193: Workspace root must not define [workspace.dependencies] — hoisting couples all members to a single version and hides per-package intent
+  [PASS] 194: Workspace members must not pin the same crate at different versions — version drift causes duplicate compilations and unpredictable dependency graphs
+
+## cargo_targets
+  [PASS] 19: [lib] path matches existing file
+  [PASS] 20: [[bin]] path matches existing file
+  [PASS] 21: [[test]] targets declared for tests/ files
+  [PASS] 22: [[bench]] targets have harness = false
+  [PASS] 23: No undeclared test files
+  [PASS] 24: No undeclared bench files
+  [PASS] 25: [[example]] targets exist if examples/ present
+  [PASS] 26: [[test]] paths resolve to existing files
+
+## code_organization
+  [PASS] 108: Each public struct/trait/enum must have its own .rs file (one primary type per file)
+  [PASS] 109: Rust source file names must be nouns (no verb or assertion names like check_exists.rs)
+  [PASS] 110: mod.rs must contain only module declarations and re-exports — no struct/impl/fn logic
+  [PASS] 111: No loose .rs files directly under src/core/ — all code must live in subfolders
+  [PASS] 112: Sibling files sharing a common prefix must be grouped into a subdirectory module (e.g., check_runner.rs + check_result.rs → check/runner.rs + check/result.rs)
+  [PASS] 162: lib.rs must contain only module declarations and re-exports — no struct/impl/fn/const definitions
+
+## documentation
+  [PASS] 39: README.md exists
+  [PASS] 40: doc/ or docs/ directory exists (if library)
+  [PASS] 41: examples/ directory exists (if library)
+  [PASS] 42: CHANGELOG.md exists
+
+## gateway_isolation
+  [PASS] 104: src/gateway/ must not exist in lib/gateway crates — only binary app types may have a gateway module
+
+## hygiene
+  [PASS] 43: .gitignore exists with target/
+  [PASS] 44: No generated files committed (target/)
+  [PASS] 96: Dependencies declared in Cargo.toml must be used in src/
+  [PASS] 97: CLI projects should use dirs/directories crate for XDG-compliant paths
+  [PASS] 98: No hardcoded home directory paths in source code
+  [PASS] 150: Weak filesystem patterns — code that produces host-dependent paths (MAIN_SEPARATOR, hardcoded \\, replace-hacks, literal backslashes)
+  [PASS] 176: Library code must not use println!/eprintln! — use tracing macros (info!, warn!, error!) instead
+  [PASS] 177: Source files must not suppress the unused_imports lint via #[allow(unused_imports)]
+  [PASS] 182: include_str! embedding a config file must be paired with a runtime read — use embed as fallback, not sole source
+  [FAIL] 200: Production functions must not have stub bodies (todo!(), unimplemented!(), or empty) (8 offenders)
+    -> main\features\authz\src\api\types\authz\application_config.rs: fn `section_name` at line 21 has a stub body — implement it or remove it
+       Fix: Implement the function body or remove the function
+       Ref: see '§8 Hygiene Checks (Code Cleanliness)' in sea_project.structure
+    -> main\features\authz\src\api\types\authz\method_acl_config.rs: fn `section_name` at line 78 has a stub body — implement it or remove it
+       Fix: Implement the function body or remove the function
+       Ref: see '§8 Hygiene Checks (Code Cleanliness)' in sea_project.structure
+    -> main\features\authz\src\saf\authz_svc.rs: fn `assert_is_processor` at line 31 has a stub body — implement it or remove it
+       Fix: Implement the function body or remove the function
+       Ref: see '§8 Hygiene Checks (Code Cleanliness)' in sea_project.structure
+    -> main\features\transport\src\api\application_config\application\application_config.rs: fn `section_name` at line 15 has a stub body — implement it or remove it
+       Fix: Implement the function body or remove the function
+       Ref: see '§8 Hygiene Checks (Code Cleanliness)' in sea_project.structure
+    -> main\features\transport\src\api\types\transport\application\application_config.rs: fn `section_name` at line 15 has a stub body — implement it or remove it
+       Fix: Implement the function body or remove the function
+       Ref: see '§8 Hygiene Checks (Code Cleanliness)' in sea_project.structure
+    -> main\features\transport\src\api\types\transport\audit\noop_audit_sink.rs: fn `record` at line 15 has a stub body — implement it or remove it
+       Fix: Implement the function body or remove the function
+       Ref: see '§8 Hygiene Checks (Code Cleanliness)' in sea_project.structure
+    -> main\features\transport\src\api\types\transport\value_object\grpc_server_config.rs: fn `section_name` at line 115 has a stub body — implement it or remove it
+       Fix: Implement the function body or remove the function
+       Ref: see '§8 Hygiene Checks (Code Cleanliness)' in sea_project.structure
+    -> main\features\transport\src\api\value_object\grpc\grpc_server_config.rs: fn `section_name` at line 115 has a stub body — implement it or remove it
+       Fix: Implement the function body or remove the function
+       Ref: see '§8 Hygiene Checks (Code Cleanliness)' in sea_project.structure
+
+## interface
+  [PASS] 46: api/ layer must not import from core/ (L2 must not depend on L3)
+  [PASS] 47: saf/ must not re-export from core/ (SAF re-exports from api/ and spi/ only)
+  [PASS] 49: Core modules must implement their api traits (impl <Trait> for)
+  [PASS] 50: Core items (struct, enum, type, trait, fn, const, static) must use pub(crate) visibility, not bare pub
+  [PASS] 53: saf/ must not define new pub structs (facade layer only re-exports and wires)
+  [PASS] 55: lib.rs must not declare core as public (pub mod core is forbidden)
+  [PASS] 56: lib.rs must not declare api as public (pub mod api is forbidden — all layers must be private)
+  [PASS] 57: spi/ must not import from core/ (L2 peers must not depend on each other)
+  [PASS] 58: When spi/ exists, lib.rs must declare `mod spi` (private, not pub mod)
+  [PASS] 60: spi/ must not import from saf/ (L2 must not depend on L3)
+  [PASS] 61: core/ must not import from spi/ (L2 peers must not depend on each other)
+  [PASS] 81: Reports deprecated trait definitions in api/traits.rs for tracking
+  [PASS] 86: core/ must not define traits (L3 contains implementations only)
+  [PASS] 87: SEA layer directories must not contain crates (no Cargo.toml inside api/, core/, saf/, spi/)
+  [PASS] 113: Every core/ struct with pub/pub(crate) methods must implement a trait defined in api/ (program to the interface)
+  [PASS] 114: core/ must not import from spi/ — depend on api/ traits, receive implementations via DI from saf/
+  [PASS] 115: core/ must not import from gateway/ — depend on api/ traits, receive implementations via DI from saf/
+  [PASS] 116: api/ must not import from core/ — api/ defines abstractions, it must not depend on implementations
+  [PASS] 117: api/ must not import from spi/ — api/ defines abstractions, it must not depend on implementations
+  [PASS] 118: api/ must not import from gateway/ — api/ defines abstractions, it must not depend on implementations
+  [PASS] 119: gateway/ must not import from spi/ — gateway/ depends on saf/ only, not on SPI implementations
+  [PASS] 122: Config struct methods must be pub(crate), not pub — configs are not for public consumption
+  [PASS] 126: saf/ must not re-export traits via pub use — wrap trait methods as standalone functions instead
+  [PASS] 134: core/ must not import from saf/ — core/ depends only on api/ traits
+  [PASS] 135: spi/ must not import from gateway/ — spi/ implements api/ traits only
+  [PASS] 136: gateway/ must not import from core/ — gateway/ calls saf/, not core/ directly
+  [PASS] 137: saf/ must not import from gateway/ — gateway/ calls saf/, not the reverse
+  [PASS] 145: Free functions in saf/ or core/ taking an api-defined type as parameter should be methods on that type
+  [PASS] 159: saf/ public function signatures must not name types from core/ (signature leak)
+  [PASS] 181: A crate's saf/ or api/ must not expose another crate's error type in a Result return position
+  [FAIL] 191: SEA layer files must not contain free-standing fn — all functions must be methods on a type (OOP violation) (45 offenders)
+    -> main\features\reflection\src\api\types\reflection_service.rs: free-standing `fn service_name_from_method_path` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\reflection\src\api\wire.rs: free-standing `fn decode_request` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\reflection\src\api\wire.rs: free-standing `fn decode_extension_request` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\reflection\src\api\wire.rs: free-standing `fn encode_response` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\reflection\src\api\wire.rs: free-standing `fn decode_string` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\reflection\src\api\wire.rs: free-standing `fn skip_field` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\reflection\src\api\wire.rs: free-standing `fn decode_varint` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\reflection\src\api\wire.rs: free-standing `fn encode_varint` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\grpc_timeout.rs: free-standing `fn parse_grpc_timeout` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\peer_identity.rs: free-standing `fn extract_peer_identity` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\peer_identity.rs: free-standing `fn read_tlv_with_remainder` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\peer_identity.rs: free-standing `fn read_tlv` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\peer_identity.rs: free-standing `fn read_length` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\peer_identity.rs: free-standing `fn render_name` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\peer_identity.rs: free-standing `fn parse_atv` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\peer_identity.rs: free-standing `fn oid_short_name` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\peer_identity.rs: free-standing `fn decode_string` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\peer_identity.rs: free-standing `fn find_common_name` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\peer_identity.rs: free-standing `fn find_san_in_extensions` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\peer_identity.rs: free-standing `fn parse_general_names` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\peer_identity.rs: free-standing `fn hex_lower` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\peer_identity.rs: free-standing `fn hex_char` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\status_codes.rs: free-standing `fn from_tonic_code` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\status_codes.rs: free-standing `fn to_tonic_code` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\status_codes.rs: free-standing `fn to_wire` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\status_codes.rs: free-standing `fn from_wire` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\status_codes.rs: free-standing `fn map_inbound_error` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\types\transport\value_object\peer_identity.rs: free-standing `fn is_reserved_peer_key` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\value_object\peer_identity.rs: free-standing `fn is_reserved_peer_key` in `api/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\handler_dispatch\handler_dispatch.rs: free-standing `fn map_handler_error` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\health_service\health_service.rs: free-standing `fn decode_health_check_request` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\health_service\health_service.rs: free-standing `fn encode_health_check_response` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\health_service\health_service.rs: free-standing `fn decode_varint` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\health_service\health_service.rs: free-standing `fn encode_varint` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\interceptor\trace_context_interceptor.rs: free-standing `fn is_valid_traceparent` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\server\tonic_grpc_server.rs: free-standing `fn read_deadline` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\server\tonic_grpc_server.rs: free-standing `fn dispatch` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\server\tonic_grpc_server.rs: free-standing `fn route_dispatch` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\server\tonic_grpc_server.rs: free-standing `fn sanitize_authz_error` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\server\tonic_grpc_server.rs: free-standing `fn collect_response_payload` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\server\tonic_grpc_server.rs: free-standing `fn decode_grpc_frames` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\server\tonic_grpc_server.rs: free-standing `fn grpc_stream_response_from_payloads` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\server\tonic_grpc_server.rs: free-standing `fn grpc_stream_response` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\server\tonic_grpc_server.rs: free-standing `fn grpc_error` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\core\server\tonic_grpc_server.rs: free-standing `fn collect_metadata` in `core/` — all functions must be methods on a type
+       Fix: Move this function into an impl block on a type defined in api/
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+  [PASS] 195: saf/ public functions must return `impl Trait` or `Box<dyn Trait>` — exposing concrete types through the facade breaks programming-to-the-interface
+  [FAIL] 196: api/ layer must not contain `pub struct` outside api/error/ or api/types/ — traits and type aliases live at api/ root; error structs in api/error/; value objects in api/types/ (17 offenders)
+    -> main\features\transport\src\api\application_config\application\application_config.rs: `pub struct ApplicationConfig` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\grpc_timeout.rs: `pub struct GrpcTimeoutParser` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\handler\grpc\grpc_handler_adapter.rs: `pub struct GrpcHandlerAdapter` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\handler\grpc\grpc_handler_registry_dispatcher.rs: `pub struct GrpcHandlerRegistryDispatcher` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\health_service\health\health_aggregate.rs: `pub struct HealthAggregate` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\health_service\health\health_service.rs: `pub struct HealthService` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\interceptor\grpc\grpc_ingress_interceptor_chain.rs: `pub struct GrpcIngressInterceptorChain` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\peer_identity.rs: `pub struct PeerIdentityExtractor` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\server\tonic\tonic_grpc_server.rs: `pub struct TonicGrpcServer` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\server\tonic\tonic_grpc_server_builder.rs: `pub struct TonicGrpcServerBuilder` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\value_object\grpc\grpc_metadata.rs: `pub struct GrpcMetadata` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\value_object\grpc\grpc_request.rs: `pub struct GrpcRequest` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\value_object\grpc\grpc_request_builder.rs: `pub struct GrpcRequestBuilder` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\value_object\grpc\grpc_response.rs: `pub struct GrpcResponse` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\value_object\grpc\grpc_server_config.rs: `pub struct GrpcServerConfig` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\value_object\grpc\grpc_server_config_builder.rs: `pub struct GrpcServerConfigBuilder` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+    -> main\features\transport\src\api\value_object\peer_identity.rs: `pub struct PeerIdentity` in api/ — traits and type aliases at api/ root; error types in api/error/; value objects in api/types/; implementations in core/
+       Fix: Move to core/ behind an api/ trait; to api/error/ if an error type; or to api/types/ if a value object
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+  [FAIL] 197: api/ must contain a `traits/` subdirectory — trait definitions must live in api/traits/ to make the public interface explicit and discoverable (1 offender)
+    -> missing `main/features/verifier/src/api/traits/` — api/ must have a `traits/` subdirectory
+       Fix: Create src/api/traits/ and add a mod.rs declaring the crate's traits types
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+  [FAIL] 198: api/ must contain an `error/` subdirectory — error types must live in api/error/ to separate them from trait definitions (1 offender)
+    -> missing `main/features/verifier/src/api/error/` — api/ must have a `error/` subdirectory
+       Fix: Create src/api/error/ and add a mod.rs declaring the crate's error types
+       Ref: see '§7 Interface Checks (Layer Boundaries)' in sea_project.structure
+
+## naming
+  [PASS] 2: Workspace member package names must align with their folder names
+  [PASS] 27: Package name uses kebab-case
+  [PASS] 28: Package name has rustboot_ prefix (rustboot)
+  [PASS] 29: Source files use snake_case naming
+  [PASS] 30: No uppercase in source file names
+  [PASS] 31: Module file names match mod declarations
+  [PASS] 32: Binary names use hyphens or underscores
+  [PASS] 79: Trait names must be singular (not plural)
+  [PASS] 89: Core module filenames must match their primary struct/trait name (with suffix tolerance)
+  [PASS] 90: Types in core modules must be name-cohesive (SRP enforcement)
+  [PASS] 91: Suggest Builder pattern for complex structs (advisory)
+  [PASS] 123: Module name must not prefix the struct/trait name (e.g., config::Config not config::ConfigConfig)
+  [PASS] 138: Directory names under src/ must use snake_case
+  [PASS] 146: Package name must not use SEA layer suffixes as defined in sea_layers config
+  [FAIL] 170: Config files must map to corresponding ConfigBuilder struct names: <name>.toml → <Name>ConfigBuilder (6 offenders)
+    -> main\features\auth-bearer\config\application.toml: Config file 'application' should map to struct 'ApplicationConfigBuilder'
+       Fix: Create a struct 'ApplicationConfigBuilder' with fluent builder pattern in src/, or rename the config file to match an existing builder
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> main\features\auth-mtls\config\application.toml: Config file 'application' should map to struct 'ApplicationConfigBuilder'
+       Fix: Create a struct 'ApplicationConfigBuilder' with fluent builder pattern in src/, or rename the config file to match an existing builder
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> main\features\authz\config\application.toml: Config file 'application' should map to struct 'ApplicationConfigBuilder'
+       Fix: Create a struct 'ApplicationConfigBuilder' with fluent builder pattern in src/, or rename the config file to match an existing builder
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> main\features\reflection\config\application.toml: Config file 'application' should map to struct 'ApplicationConfigBuilder'
+       Fix: Create a struct 'ApplicationConfigBuilder' with fluent builder pattern in src/, or rename the config file to match an existing builder
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> main\features\transport\config\application.toml: Config file 'application' should map to struct 'ApplicationConfigBuilder'
+       Fix: Create a struct 'ApplicationConfigBuilder' with fluent builder pattern in src/, or rename the config file to match an existing builder
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> main\features\verifier\config\architecture.toml: Config file 'architecture' should map to struct 'ArchitectureConfigBuilder'
+       Fix: Create a struct 'ArchitectureConfigBuilder' with fluent builder pattern in src/, or rename the config file to match an existing builder
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+  [PASS] 175: all non-mod.rs files in saf/ must be named <last_segment_of_package_name>_svc.rs
+  [FAIL] 192: SEA layer directory names must not contain underscores — use nested directories instead of underscore-concatenated names (15 offenders)
+    -> core\mtls_auth_interceptor: `mtls_auth_interceptor/` directory name contains `_` — use nested directories instead of underscore-concatenated names
+       Fix: Replace `mtls_auth_interceptor/` with `mtls/` containing `auth_interceptor.rs` (or vice-versa)
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> api\application_config: `application_config/` directory name contains `_` — use nested directories instead of underscore-concatenated names
+       Fix: Replace `application_config/` with `application/` containing `config.rs` (or vice-versa)
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> api\authz_interceptor: `authz_interceptor/` directory name contains `_` — use nested directories instead of underscore-concatenated names
+       Fix: Replace `authz_interceptor/` with `authz/` containing `interceptor.rs` (or vice-versa)
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> api\method_acl_policy: `method_acl_policy/` directory name contains `_` — use nested directories instead of underscore-concatenated names
+       Fix: Replace `method_acl_policy/` with `method/` containing `acl_policy.rs` (or vice-versa)
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> core\authz_interceptor: `authz_interceptor/` directory name contains `_` — use nested directories instead of underscore-concatenated names
+       Fix: Replace `authz_interceptor/` with `authz/` containing `interceptor.rs` (or vice-versa)
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> core\method_acl_policy: `method_acl_policy/` directory name contains `_` — use nested directories instead of underscore-concatenated names
+       Fix: Replace `method_acl_policy/` with `method/` containing `acl_policy.rs` (or vice-versa)
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> api\application_config: `application_config/` directory name contains `_` — use nested directories instead of underscore-concatenated names
+       Fix: Replace `application_config/` with `application/` containing `config.rs` (or vice-versa)
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> api\audit_sink: `audit_sink/` directory name contains `_` — use nested directories instead of underscore-concatenated names
+       Fix: Replace `audit_sink/` with `audit/` containing `sink.rs` (or vice-versa)
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> api\handler_dispatch: `handler_dispatch/` directory name contains `_` — use nested directories instead of underscore-concatenated names
+       Fix: Replace `handler_dispatch/` with `handler/` containing `dispatch.rs` (or vice-versa)
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> api\health_service: `health_service/` directory name contains `_` — use nested directories instead of underscore-concatenated names
+       Fix: Replace `health_service/` with `health/` containing `service.rs` (or vice-versa)
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> api\port\grpc_ingress: `grpc_ingress/` directory name contains `_` — use nested directories instead of underscore-concatenated names
+       Fix: Replace `grpc_ingress/` with `grpc/` containing `ingress.rs` (or vice-versa)
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> api\types\transport\value_object: `value_object/` directory name contains `_` — use nested directories instead of underscore-concatenated names
+       Fix: Replace `value_object/` with `value/` containing `object.rs` (or vice-versa)
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> api\value_object: `value_object/` directory name contains `_` — use nested directories instead of underscore-concatenated names
+       Fix: Replace `value_object/` with `value/` containing `object.rs` (or vice-versa)
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> core\handler_dispatch: `handler_dispatch/` directory name contains `_` — use nested directories instead of underscore-concatenated names
+       Fix: Replace `handler_dispatch/` with `handler/` containing `dispatch.rs` (or vice-versa)
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+    -> core\health_service: `health_service/` directory name contains `_` — use nested directories instead of underscore-concatenated names
+       Fix: Replace `health_service/` with `health/` containing `service.rs` (or vice-versa)
+       Ref: see '§5 Naming Conventions' in sea_project.structure
+
+## scripts
+  [PASS] 66: scripts/ci/ directory exists (if scripts/ present)
+  [PASS] 67: scripts/ci/build.sh exists (if scripts/ci/ present)
+  [PASS] 68: scripts/ci/test.sh exists (if scripts/ci/ present)
+  [PASS] 69: scripts/ci/lint.sh exists (if scripts/ci/ present)
+
+## security
+  [PASS] 171: Source files must not contain hardcoded secrets, credentials, or API keys
+  [PASS] 172: Project must have a security policy file (SECURITY.md, SECURITY.txt, or .github/SECURITY.md)
+  [PASS] 173: Every unsafe block must be preceded by a // SAFETY: comment explaining the invariant
+  [PASS] 174: Project must configure dependency vulnerability auditing via deny.toml or cargo audit in CI
+
+## shim_detection
+  [PASS] 139: SEA layer files must contain substantive code (not just comments or empty re-exports)
+  [PASS] 140: lib.rs must be a real entry point, not a shim with only re-exports
+  [PASS] 141: SEA layer mod.rs must not be a crate-level re-export shim
+  [PASS] 142: SEA layer directories must meet minimum LOC threshold (api/>10, core/>20, saf/>5)
+  [PASS] 143: [lib] and [[bin]] paths must point inside src/
+  [PASS] 144: Non-standard [lib] path with src/ present suggests shim directory
+
+## structure
+  [PASS] 1: Cargo.toml exists at root
+  [PASS] 6: bootstrap.sh or build.sh exists at root
+  [PASS] 7: No nested src/ dirs (src/src/)
+  [PASS] 8: benches/ directory exists (if benchmarks declared)
+  [FAIL] 71: Root contains only allowed entries (whitelist enforcement) (1 offender)
+    -> audit_output.txt: Unexpected entry 'audit_output.txt' at workspace level (not in workspace whitelist)
+       Fix: Fix the issue detected by builtin check 'root_whitelist'
+       Ref: see '§4.1 Project Layout (Multi-Feature)' in sea_project.structure
+  [PASS] 75: bootstrap.ps1 or build.ps1 exists at root (Windows)
+  [PASS] 76: docs/ directory exists at root
+  [FAIL] 121: Every {implementation_layer}/ submodule must have a corresponding {interface_layer}/ submodule defining its types or traits (2 offenders)
+    -> main\features\reflection\src\core\reflection: main\features\reflection\src\core\reflection has no corresponding api interface counterpart
+       Fix: Create 'main\features\reflection\src\api\reflection' with type/trait definitions that main\features\reflection\src\core\reflection implements against
+       Ref: see '§4.1 Project Layout (Multi-Feature)' in sea_project.structure
+    -> main\features\transport\src\core\interceptor\trace_context_interceptor.rs: main\features\transport\src\core\interceptor\trace_context_interceptor.rs has no corresponding api interface counterpart
+       Fix: Create 'main\features\transport\src\api\interceptor\trace_context_interceptor.rs' with type/trait definitions that main\features\transport\src\core\interceptor\trace_context_interceptor.rs implements against
+       Ref: see '§4.1 Project Layout (Multi-Feature)' in sea_project.structure
+  [PASS] 130: Root must not have both build and bootstrap scripts
+  [PASS] 167: Only one architecture.toml location is allowed: either architecture.toml at root or main/config/architecture.toml, not both
+  [PASS] 169: Every top-level directory at the workspace root must be a declared workspace member or an ancestor of one
+
+## test_org
+  [PASS] 33: Test files use correct suffixes (_test.rs, _int_test.rs, _e2e_test.rs, etc.)
+  [PASS] 34: Test function name prefix follows location-aware convention: <feature>_<type_kind>_<fn>_<suffix> for tests/<file>.rs; <type_kind>_<fn>_<suffix> for tests/<feature>/<file>.rs (type_kind ∈ {trait,struct,type,enum})
+  [PASS] 35: Test function name uses either the conventional test_ prefix or a recognised test-category suffix (_test, _int_test, _e2e_test, _perf_test, _security_test, _stress_test, _load_test, _unit_test, _smoke_test, _contract_test)
+  [PASS] 36: Integration tests in tests/src/ (rustboot)
+  [PASS] 37: Colocated #[cfg(test)] blocks only permitted when testing private methods
+  [PASS] 38: No test code in src/ (non-#[cfg(test)])
+  [PASS] 77: All public functions have corresponding tests (name-based)
+  [PASS] 78: Tests use @covers: annotation for explicit 1:1 function linking
+  [PASS] 94: Integration tests must not use mocking libraries or mock types
+  [PASS] 95: Dependencies used in src/ must have integration or e2e test coverage
+  [PASS] 99: Test files use suffixes consistent with dependency scope (allowing integration-style *_int_test.rs / *_e2e_test.rs in tests/)
+  [FAIL] 120: Each source file in SEA layers has coverage via inline tests, a matching test file, or a layer-level test file in tests/ — reports per-layer coverage (57 offenders)
+    -> Structural test coverage is 58% (80/136 source files covered), minimum is 80%. Per-layer: [api=58%(71/121), core=100%(8/8), saf=14%(1/7)]
+       Fix: Add test files for uncovered source modules
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\bearer\bearer_auth_error.rs: [api] Source file 'main/features/auth-bearer/src/api/bearer/bearer_auth_error.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/bearer_auth_error_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\bearer\bearer_ingress_config.rs: [api] Source file 'main/features/auth-bearer/src/api/bearer/bearer_ingress_config.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/bearer_ingress_config_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\bearer\bearer_ingress_interceptor.rs: [api] Source file 'main/features/auth-bearer/src/api/bearer/bearer_ingress_interceptor.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/bearer_ingress_interceptor_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\bearer\bearer_secret.rs: [api] Source file 'main/features/auth-bearer/src/api/bearer/bearer_secret.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/bearer_secret_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\bearer\jwt\claims_builder.rs: [api] Source file 'main/features/auth-bearer/src/api/bearer/jwt/claims_builder.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/claims_builder_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\bearer\jwt\jwt_claims.rs: [api] Source file 'main/features/auth-bearer/src/api/bearer/jwt/jwt_claims.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/jwt_claims_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\bearer\jwt\jwt_claims_builder.rs: [api] Source file 'main/features/auth-bearer/src/api/bearer/jwt/jwt_claims_builder.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/jwt_claims_builder_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\bearer\jwt\jwt_claims_builder_contract.rs: [api] Source file 'main/features/auth-bearer/src/api/bearer/jwt/jwt_claims_builder_contract.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/jwt_claims_builder_contract_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\bearer\metadata_keys.rs: [api] Source file 'main/features/auth-bearer/src/api/bearer/metadata_keys.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/metadata_keys_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\error\bearer_auth_error.rs: [api] Source file 'main/features/auth-bearer/src/api/error/bearer_auth_error.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/bearer_auth_error_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\processor.rs: [api] Source file 'main/features/auth-bearer/src/api/processor.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/processor_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\traits.rs: [api] Source file 'main/features/auth-bearer/src/api/traits.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/traits_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\types\bearer\bearer_ingress_config.rs: [api] Source file 'main/features/auth-bearer/src/api/types/bearer/bearer_ingress_config.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/bearer_ingress_config_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\types\bearer\bearer_ingress_interceptor.rs: [api] Source file 'main/features/auth-bearer/src/api/types/bearer/bearer_ingress_interceptor.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/bearer_ingress_interceptor_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\types\bearer\bearer_secret.rs: [api] Source file 'main/features/auth-bearer/src/api/types/bearer/bearer_secret.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/bearer_secret_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\types\bearer\jwt\jwt_claims.rs: [api] Source file 'main/features/auth-bearer/src/api/types/bearer/jwt/jwt_claims.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/jwt_claims_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\api\types\bearer\jwt\jwt_claims_builder.rs: [api] Source file 'main/features/auth-bearer/src/api/types/bearer/jwt/jwt_claims_builder.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/jwt_claims_builder_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\saf\bearer_svc.rs: [saf] Source file 'main/features/auth-bearer/src/saf/bearer_svc.rs' has no corresponding test file in main/features/auth-bearer/test
+       Fix: Create a test file like `main/features/auth-bearer/test/bearer_svc_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\api\error\mtls_auth_error.rs: [api] Source file 'main/features/auth-mtls/src/api/error/mtls_auth_error.rs' has no corresponding test file in main/features/auth-mtls/test
+       Fix: Create a test file like `main/features/auth-mtls/test/mtls_auth_error_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\api\mtls\mtls_auth_config.rs: [api] Source file 'main/features/auth-mtls/src/api/mtls/mtls_auth_config.rs' has no corresponding test file in main/features/auth-mtls/test
+       Fix: Create a test file like `main/features/auth-mtls/test/mtls_auth_config_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\api\mtls\mtls_auth_error.rs: [api] Source file 'main/features/auth-mtls/src/api/mtls/mtls_auth_error.rs' has no corresponding test file in main/features/auth-mtls/test
+       Fix: Create a test file like `main/features/auth-mtls/test/mtls_auth_error_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\api\mtls\mtls_auth_interceptor.rs: [api] Source file 'main/features/auth-mtls/src/api/mtls/mtls_auth_interceptor.rs' has no corresponding test file in main/features/auth-mtls/test
+       Fix: Create a test file like `main/features/auth-mtls/test/mtls_auth_interceptor_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\api\mtls_auth_config.rs: [api] Source file 'main/features/auth-mtls/src/api/mtls_auth_config.rs' has no corresponding test file in main/features/auth-mtls/test
+       Fix: Create a test file like `main/features/auth-mtls/test/mtls_auth_config_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\api\mtls_auth_error.rs: [api] Source file 'main/features/auth-mtls/src/api/mtls_auth_error.rs' has no corresponding test file in main/features/auth-mtls/test
+       Fix: Create a test file like `main/features/auth-mtls/test/mtls_auth_error_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\api\mtls_auth_interceptor.rs: [api] Source file 'main/features/auth-mtls/src/api/mtls_auth_interceptor.rs' has no corresponding test file in main/features/auth-mtls/test
+       Fix: Create a test file like `main/features/auth-mtls/test/mtls_auth_interceptor_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\api\processor.rs: [api] Source file 'main/features/auth-mtls/src/api/processor.rs' has no corresponding test file in main/features/auth-mtls/test
+       Fix: Create a test file like `main/features/auth-mtls/test/processor_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\api\traits.rs: [api] Source file 'main/features/auth-mtls/src/api/traits.rs' has no corresponding test file in main/features/auth-mtls/test
+       Fix: Create a test file like `main/features/auth-mtls/test/traits_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\api\types\mtls\mtls_auth_config.rs: [api] Source file 'main/features/auth-mtls/src/api/types/mtls/mtls_auth_config.rs' has no corresponding test file in main/features/auth-mtls/test
+       Fix: Create a test file like `main/features/auth-mtls/test/mtls_auth_config_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\api\types\mtls\mtls_auth_interceptor.rs: [api] Source file 'main/features/auth-mtls/src/api/types/mtls/mtls_auth_interceptor.rs' has no corresponding test file in main/features/auth-mtls/test
+       Fix: Create a test file like `main/features/auth-mtls/test/mtls_auth_interceptor_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\api\validator.rs: [api] Source file 'main/features/auth-mtls/src/api/validator.rs' has no corresponding test file in main/features/auth-mtls/test
+       Fix: Create a test file like `main/features/auth-mtls/test/validator_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\saf\mtls_svc.rs: [saf] Source file 'main/features/auth-mtls/src/saf/mtls_svc.rs' has no corresponding test file in main/features/auth-mtls/test
+       Fix: Create a test file like `main/features/auth-mtls/test/mtls_svc_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\authz\src\api\application_config\application_config.rs: [api] Source file 'main/features/authz/src/api/application_config/application_config.rs' has no corresponding test file in main/features/authz/test
+       Fix: Create a test file like `main/features/authz/test/application_config_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\authz\src\api\authz\authz_error.rs: [api] Source file 'main/features/authz/src/api/authz/authz_error.rs' has no corresponding test file in main/features/authz/test
+       Fix: Create a test file like `main/features/authz/test/authz_error_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\authz\src\api\authz\authz_interceptor.rs: [api] Source file 'main/features/authz/src/api/authz/authz_interceptor.rs' has no corresponding test file in main/features/authz/test
+       Fix: Create a test file like `main/features/authz/test/authz_interceptor_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\authz\src\api\authz\authz_policy.rs: [api] Source file 'main/features/authz/src/api/authz/authz_policy.rs' has no corresponding test file in main/features/authz/test
+       Fix: Create a test file like `main/features/authz/test/authz_policy_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\authz\src\api\authz_error.rs: [api] Source file 'main/features/authz/src/api/authz_error.rs' has no corresponding test file in main/features/authz/test
+       Fix: Create a test file like `main/features/authz/test/authz_error_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\authz\src\api\error\authz_error.rs: [api] Source file 'main/features/authz/src/api/error/authz_error.rs' has no corresponding test file in main/features/authz/test
+       Fix: Create a test file like `main/features/authz/test/authz_error_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\authz\src\api\method\method_acl_config.rs: [api] Source file 'main/features/authz/src/api/method/method_acl_config.rs' has no corresponding test file in main/features/authz/test
+       Fix: Create a test file like `main/features/authz/test/method_acl_config_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\authz\src\api\method\method_acl_policy.rs: [api] Source file 'main/features/authz/src/api/method/method_acl_policy.rs' has no corresponding test file in main/features/authz/test
+       Fix: Create a test file like `main/features/authz/test/method_acl_policy_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\authz\src\api\processor.rs: [api] Source file 'main/features/authz/src/api/processor.rs' has no corresponding test file in main/features/authz/test
+       Fix: Create a test file like `main/features/authz/test/processor_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\authz\src\api\traits.rs: [api] Source file 'main/features/authz/src/api/traits.rs' has no corresponding test file in main/features/authz/test
+       Fix: Create a test file like `main/features/authz/test/traits_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\authz\src\saf\authz_svc.rs: [saf] Source file 'main/features/authz/src/saf/authz_svc.rs' has no corresponding test file in main/features/authz/test
+       Fix: Create a test file like `main/features/authz/test/authz_svc_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\reflection\src\api\error\reflection_error.rs: [api] Source file 'main/features/reflection/src/api/error/reflection_error.rs' has no corresponding test file in main/features/reflection/test
+       Fix: Create a test file like `main/features/reflection/test/reflection_error_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\reflection\src\api\processor.rs: [api] Source file 'main/features/reflection/src/api/processor.rs' has no corresponding test file in main/features/reflection/test
+       Fix: Create a test file like `main/features/reflection/test/processor_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\reflection\src\api\traits.rs: [api] Source file 'main/features/reflection/src/api/traits.rs' has no corresponding test file in main/features/reflection/test
+       Fix: Create a test file like `main/features/reflection/test/traits_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\reflection\src\api\types\descriptor.rs: [api] Source file 'main/features/reflection/src/api/types/descriptor.rs' has no corresponding test file in main/features/reflection/test
+       Fix: Create a test file like `main/features/reflection/test/descriptor_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\reflection\src\api\types\reflection_request.rs: [api] Source file 'main/features/reflection/src/api/types/reflection_request.rs' has no corresponding test file in main/features/reflection/test
+       Fix: Create a test file like `main/features/reflection/test/reflection_request_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\reflection\src\api\types\reflection_response.rs: [api] Source file 'main/features/reflection/src/api/types/reflection_response.rs' has no corresponding test file in main/features/reflection/test
+       Fix: Create a test file like `main/features/reflection/test/reflection_response_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\reflection\src\api\validator.rs: [api] Source file 'main/features/reflection/src/api/validator.rs' has no corresponding test file in main/features/reflection/test
+       Fix: Create a test file like `main/features/reflection/test/validator_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\reflection\src\saf\reflection_svc.rs: [saf] Source file 'main/features/reflection/src/saf/reflection_svc.rs' has no corresponding test file in main/features/reflection/test
+       Fix: Create a test file like `main/features/reflection/test/reflection_svc_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\transport\src\api\health_service\health_service.rs: [api] Source file 'main/features/transport/src/api/health_service/health_service.rs' has no corresponding test file in main/features/transport/test
+       Fix: Create a test file like `main/features/transport/test/health_service_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\transport\src\api\server\tonic_grpc_server.rs: [api] Source file 'main/features/transport/src/api/server/tonic_grpc_server.rs' has no corresponding test file in main/features/transport/test
+       Fix: Create a test file like `main/features/transport/test/tonic_grpc_server_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\transport\src\api\validator\grpc_server_config.rs: [api] Source file 'main/features/transport/src/api/validator/grpc_server_config.rs' has no corresponding test file in main/features/transport/test
+       Fix: Create a test file like `main/features/transport/test/grpc_server_config_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\transport\src\saf\transport_svc.rs: [saf] Source file 'main/features/transport/src/saf/transport_svc.rs' has no corresponding test file in main/features/transport/test
+       Fix: Create a test file like `main/features/transport/test/transport_svc_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\verifier\src\api\bearer_interceptor.rs: [api] Source file 'main/features/verifier/src/api/bearer_interceptor.rs' has no corresponding test file in main/features/verifier/test
+       Fix: Create a test file like `main/features/verifier/test/bearer_interceptor_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\verifier\src\saf\verifier_svc.rs: [saf] Source file 'main/features/verifier/src/saf/verifier_svc.rs' has no corresponding test file in main/features/verifier/test
+       Fix: Create a test file like `main/features/verifier/test/verifier_svc_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+  [PASS] 124: Every pub/pub(crate) fn in core/ must have an inline unit test (#[cfg(test)] block with #[test])
+  [FAIL] 125: Every pub fn in saf/ must have corresponding public-API test coverage (_e2e_test.rs, _int_test.rs, or a layer-level saf_* test) (20 offenders)
+    -> SAF public API test coverage: 0% (0/19 pub functions have API-level tests)
+       Fix: Create tests/<module>_e2e_test.rs or tests/saf_*_test.rs files with API-level test functions
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\saf\bearer_svc.rs: pub fn 'create_config_builder' in 'main/features/auth-bearer/src/saf/bearer_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\saf\bearer_svc.rs: pub fn 'extracted_bearer_subject_key' in 'main/features/auth-bearer/src/saf/bearer_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-bearer\src\saf\bearer_svc.rs: pub fn 'validate_bearer_config' in 'main/features/auth-bearer/src/saf/bearer_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\saf\mtls_svc.rs: pub fn 'create_config_builder' in 'main/features/auth-mtls/src/saf/mtls_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\saf\mtls_svc.rs: pub fn 'is_authorization_interceptor' in 'main/features/auth-mtls/src/saf/mtls_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\saf\mtls_svc.rs: pub fn 'is_processor' in 'main/features/auth-mtls/src/saf/mtls_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\auth-mtls\src\saf\mtls_svc.rs: pub fn 'is_validator' in 'main/features/auth-mtls/src/saf/mtls_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\authz\src\saf\authz_svc.rs: pub fn 'create_config_builder' in 'main/features/authz/src/saf/authz_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\authz\src\saf\authz_svc.rs: pub fn 'is_authorization_interceptor' in 'main/features/authz/src/saf/authz_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\authz\src\saf\authz_svc.rs: pub fn 'validate_application_config' in 'main/features/authz/src/saf/authz_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\authz\src\saf\authz_svc.rs: pub fn 'assert_is_processor' in 'main/features/authz/src/saf/authz_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\reflection\src\saf\reflection_svc.rs: pub fn 'create_config_builder' in 'main/features/reflection/src/saf/reflection_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\reflection\src\saf\reflection_svc.rs: pub fn 'handle_reflection' in 'main/features/reflection/src/saf/reflection_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\reflection\src\saf\reflection_svc.rs: pub fn 'validate_payload' in 'main/features/reflection/src/saf/reflection_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\reflection\src\saf\reflection_svc.rs: pub fn 'validate_with' in 'main/features/reflection/src/saf/reflection_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\transport\src\saf\edge_ingress_grpc_transport_svc.rs: pub fn 'create_config_builder' in 'main/features/transport/src/saf/edge_ingress_grpc_transport_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\transport\src\saf\edge_ingress_grpc_transport_svc.rs: pub fn 'validate' in 'main/features/transport/src/saf/edge_ingress_grpc_transport_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\transport\src\saf\transport_svc.rs: pub fn 'validate' in 'main/features/transport/src/saf/transport_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+    -> main\features\verifier\src\saf\verifier_svc.rs: pub fn 'create_config_builder' in 'main/features/verifier/src/saf/verifier_svc.rs' has no corresponding public API test
+       Fix: Create a public-API test in `tests/<module>_e2e_test.rs`, `tests/<module>_int_test.rs`, or `tests/saf_*_test.rs`
+       Ref: see '§9 Test Organization (File Naming)' in sea_project.structure
+  [PASS] 149: Test file prefix must match a source module name, optionally followed by a pub fn name
+  [PASS] 158: Test functions must not be placeholders (panic!/todo!/unimplemented!/unreachable!/empty body)
+
+## test_organization
+  [PASS] 199: saf/ and api/ layer files must not contain #[cfg(test)] blocks — public-layer tests must live in standalone tests/ files
+
+## workspace
+  [PASS] 62: main/{subdir}/ directory exists (workspace projects)
+  [PASS] 63: Each workspace member has Cargo.toml
+  [PASS] 64: Each workspace member has src/ directory
+  [PASS] 65: Each workspace member has src/lib.rs or src/main.rs
+  [PASS] 70: Multi-feature workspace must not have [package] at root
+  [FAIL] 82: Workspace members with SEA layers (api/ or spi/) must have tests/ directory (6 offenders)
+    -> main/features/auth-bearer: Workspace member 'main/features/auth-bearer' has api/ but missing test/ directory
+       Fix: Create test/ directory in main/features/auth-bearer/ — SEA layers require integration tests
+       Ref: see '§1 Workspace Layout (Multi-Crate)' in sea_project.structure
+    -> main/features/auth-mtls: Workspace member 'main/features/auth-mtls' has api/ but missing test/ directory
+       Fix: Create test/ directory in main/features/auth-mtls/ — SEA layers require integration tests
+       Ref: see '§1 Workspace Layout (Multi-Crate)' in sea_project.structure
+    -> main/features/authz: Workspace member 'main/features/authz' has api/ but missing test/ directory
+       Fix: Create test/ directory in main/features/authz/ — SEA layers require integration tests
+       Ref: see '§1 Workspace Layout (Multi-Crate)' in sea_project.structure
+    -> main/features/reflection: Workspace member 'main/features/reflection' has api/ but missing test/ directory
+       Fix: Create test/ directory in main/features/reflection/ — SEA layers require integration tests
+       Ref: see '§1 Workspace Layout (Multi-Crate)' in sea_project.structure
+    -> main/features/transport: Workspace member 'main/features/transport' has api/ but missing test/ directory
+       Fix: Create test/ directory in main/features/transport/ — SEA layers require integration tests
+       Ref: see '§1 Workspace Layout (Multi-Crate)' in sea_project.structure
+    -> main/features/verifier: Workspace member 'main/features/verifier' has api/ but missing test/ directory
+       Fix: Create test/ directory in main/features/verifier/ — SEA layers require integration tests
+       Ref: see '§1 Workspace Layout (Multi-Crate)' in sea_project.structure
+  [PASS] 83: Workspace members with spi/ must have *_int_test.rs and *_security_test.rs files
+  [PASS] 84: Tests must only import external crates via saf/ (test domain isolation)
+  [PASS] 85: Workspace root should not have tests/ directory (tests belong in member crates)
+  [PASS] 100: Workspace members under gateway/output/ must have *_int_test.rs files
+  [PASS] 107: In dual workspace layouts, innermost crates must be members of the root workspace (not the inner workspace as a member)
+  [PASS] 127: Workspace root should not have config/ directory (config belongs under main/)
+  [PASS] 128: Workspace root should not have scripts/ directory (scripts belongs under main/)
+  [PASS] 129: Workspace root should not have examples/ directory (examples belongs under main/)
+  [PASS] 147: Workspace root Cargo.toml must not contain [package] — workspace roots must be virtual
+  [PASS] 148: Crate name must not duplicate any other crate name or module name in the same workspace
+  [PASS] 156: Workspace member paths and crate names must not contain duplicate segments (design smell)
+  [FAIL] 157: Same directory basename must not appear at multiple paths under workspace_layout (detects orphaned legacy duplication) (1 offender)
+    -> auth-bearer/tests: Directory basename 'tests' appears at 5 distinct paths under 'main/features': auth-bearer/tests, auth-mtls/tests, authz/tests, reflection/tests, transport/tests. One is likely orphaned legacy content; pick the canonical home and remove the others.
+       Fix: Identify which copy is current (cross-reference the workspace `members` list — orphaned copies aren't members) and delete the others. If both are intentional, rename one to convey the distinction (e.g. `agents-legacy/`, `agents-experimental/`).
+       Ref: see '§1 Workspace Layout (Multi-Crate)' in sea_project.structure
+  [PASS] 166: Every crate directory with a Cargo.toml under the workspace root must be listed in [workspace].members
+  [PASS] 179: When 2+ workspace members share a common parent directory, use a glob pattern (<parent>/*) instead of explicit enumeration
+  [PASS] 183: [workspace].exclude must not be used — every crate on disk must be a member or deleted
+  [PASS] 189: every [workspace.*] section in main/config/architecture.toml must have its path listed in Cargo.toml [workspace].members
+  [PASS] 190: every path in Cargo.toml [workspace].members must have a corresponding [workspace.*] section in main/config/architecture.toml
+
+140/153 passed, 13 failed, 0 skipped (1109ms)
+[2m2026-05-24T12:56:31.281829Z[0m [32m INFO[0m Report written to: \\?\C:\phd-systems\swelabs\edge\ingress\grpc\docs\7-operations\compliance\structural_audit_report_20260524_145631.json

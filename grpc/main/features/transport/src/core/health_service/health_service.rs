@@ -15,6 +15,61 @@ use crate::api::port::grpc_ingress::{
 };
 use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode};
 
+/// Codec for health check messages.
+pub(crate) struct HealthCheckCodec;
+
+impl HealthCheckCodec {
+    pub(crate) fn decode_request(body: &[u8]) -> Option<String> {
+        if body.is_empty() {
+            return Some(String::new());
+        }
+        if body[0] != 0x0a {
+            return Some(String::new());
+        }
+        let mut idx = 1usize;
+        let (len, consumed) = Self::decode_varint(&body[idx..])?;
+        idx += consumed;
+        if idx + (len as usize) > body.len() {
+            return None;
+        }
+        std::str::from_utf8(&body[idx..idx + len as usize])
+            .ok()
+            .map(str::to_string)
+    }
+
+    pub(crate) fn encode_response(status: ServingStatus) -> Vec<u8> {
+        let value = status as i32;
+        if value == 0 {
+            return Vec::new();
+        }
+        let mut out = Vec::with_capacity(2);
+        out.push(0x08);
+        Self::encode_varint(value as u64, &mut out);
+        out
+    }
+
+    fn decode_varint(bytes: &[u8]) -> Option<(u64, usize)> {
+        let mut result = 0u64;
+        let mut shift = 0u32;
+        for (i, byte) in bytes.iter().take(10).enumerate() {
+            result |= ((byte & 0x7f) as u64) << shift;
+            if byte & 0x80 == 0 {
+                return Some((result, i + 1));
+            }
+            shift += 7;
+        }
+        None
+    }
+
+    fn encode_varint(mut value: u64, out: &mut Vec<u8>) {
+        while value >= 0x80 {
+            out.push((value as u8) | 0x80);
+            value >>= 7;
+        }
+        out.push(value as u8);
+    }
+}
+
 impl GrpcIngress for HealthService {
     fn handle_unary(
         &self,
@@ -65,7 +120,7 @@ impl GrpcIngress for HealthService {
                 Some(Err(e)) => return Err(e),
                 None => vec![],
             };
-            let service = decode_health_check_request(&body).unwrap_or_default();
+            let service = HealthCheckCodec::decode_request(&body).unwrap_or_default();
             let initial = self
                 .get_status(&service)
                 .unwrap_or(ServingStatus::ServiceUnknown);
@@ -94,7 +149,7 @@ impl GrpcIngress for HealthService {
             let stream = futures::stream::unfold(state, |mut s| async move {
                 match s.phase {
                     HealthServiceWatchPhase::Initial => {
-                        let frame = encode_health_check_response(s.snapshot);
+                        let frame = HealthCheckCodec::encode_response(s.snapshot);
                         s.phase = HealthServiceWatchPhase::Streaming;
                         Some((Ok(frame), s))
                     }
@@ -102,7 +157,10 @@ impl GrpcIngress for HealthService {
                         match s.rx.recv().await {
                             Ok((svc, status)) => {
                                 if svc == s.target {
-                                    return Some((Ok(encode_health_check_response(status)), s));
+                                    return Some((
+                                        Ok(HealthCheckCodec::encode_response(status)),
+                                        s,
+                                    ));
                                 }
                             }
                             Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
@@ -136,10 +194,10 @@ impl GrpcIngress for HealthService {
 
 impl HealthService {
     fn handle_check(&self, body: &[u8]) -> GrpcIngressResult<GrpcResponse> {
-        let service = decode_health_check_request(body).unwrap_or_default();
+        let service = HealthCheckCodec::decode_request(body).unwrap_or_default();
         match self.get_status(&service) {
             Some(status) => Ok(GrpcResponse {
-                body: encode_health_check_response(status),
+                body: HealthCheckCodec::encode_response(status),
                 metadata: GrpcMetadata::default(),
             }),
             None => Err(GrpcIngressError::NotFound(format!(
@@ -147,56 +205,6 @@ impl HealthService {
             ))),
         }
     }
-}
-
-pub(crate) fn decode_health_check_request(body: &[u8]) -> Option<String> {
-    if body.is_empty() {
-        return Some(String::new());
-    }
-    if body[0] != 0x0a {
-        return Some(String::new());
-    }
-    let mut idx = 1usize;
-    let (len, consumed) = decode_varint(&body[idx..])?;
-    idx += consumed;
-    if idx + (len as usize) > body.len() {
-        return None;
-    }
-    std::str::from_utf8(&body[idx..idx + len as usize])
-        .ok()
-        .map(str::to_string)
-}
-
-pub(crate) fn encode_health_check_response(status: ServingStatus) -> Vec<u8> {
-    let value = status as i32;
-    if value == 0 {
-        return Vec::new();
-    }
-    let mut out = Vec::with_capacity(2);
-    out.push(0x08);
-    encode_varint(value as u64, &mut out);
-    out
-}
-
-fn decode_varint(bytes: &[u8]) -> Option<(u64, usize)> {
-    let mut result = 0u64;
-    let mut shift = 0u32;
-    for (i, byte) in bytes.iter().take(10).enumerate() {
-        result |= ((byte & 0x7f) as u64) << shift;
-        if byte & 0x80 == 0 {
-            return Some((result, i + 1));
-        }
-        shift += 7;
-    }
-    None
-}
-
-fn encode_varint(mut value: u64, out: &mut Vec<u8>) {
-    while value >= 0x80 {
-        out.push((value as u8) | 0x80);
-        value >>= 7;
-    }
-    out.push(value as u8);
 }
 
 #[cfg(test)]
@@ -207,7 +215,7 @@ mod tests {
 
     use edge_domain::RequestContext;
 
-    use super::{decode_health_check_request, encode_health_check_response, encode_varint};
+    use super::HealthCheckCodec;
     use crate::api::health_service::{
         HealthAggregate, HealthService, ServingStatus, HEALTH_CHECK_METHOD,
     };
@@ -216,21 +224,27 @@ mod tests {
 
     #[test]
     fn test_decode_health_check_request_empty_body_yields_empty_service_name() {
-        assert_eq!(decode_health_check_request(&[]), Some(String::new()));
+        assert_eq!(HealthCheckCodec::decode_request(&[]), Some(String::new()));
     }
 
     #[test]
     fn test_decode_health_check_request_round_trips_service_name() {
-        let body = {
-            let b = "pkg.A".as_bytes();
-            let mut out = Vec::with_capacity(2 + b.len());
-            out.push(0x0a);
-            encode_varint(b.len() as u64, &mut out);
-            out.extend_from_slice(b);
-            out
-        };
+        let mut out = Vec::new();
+        let b = "pkg.A".as_bytes();
+        out.push(0x0a);
+        let mut enc_out = Vec::new();
+        {
+            let mut value = b.len() as u64;
+            while value >= 0x80 {
+                enc_out.push((value as u8) | 0x80);
+                value >>= 7;
+            }
+            enc_out.push(value as u8);
+        }
+        out.extend_from_slice(&enc_out);
+        out.extend_from_slice(b);
         assert_eq!(
-            decode_health_check_request(&body),
+            HealthCheckCodec::decode_request(&out),
             Some("pkg.A".to_string())
         );
     }
@@ -238,7 +252,7 @@ mod tests {
     #[test]
     fn test_encode_health_check_response_serving_yields_two_byte_payload() {
         assert_eq!(
-            encode_health_check_response(ServingStatus::Serving),
+            HealthCheckCodec::encode_response(ServingStatus::Serving),
             vec![0x08, 0x01]
         );
     }
@@ -251,7 +265,12 @@ mod tests {
             let b = "pkg.A".as_bytes();
             let mut out = Vec::with_capacity(2 + b.len());
             out.push(0x0a);
-            encode_varint(b.len() as u64, &mut out);
+            let mut value = b.len() as u64;
+            while value >= 0x80 {
+                out.push((value as u8) | 0x80);
+                value >>= 7;
+            }
+            out.push(value as u8);
             out.extend_from_slice(b);
             out
         };
@@ -262,7 +281,7 @@ mod tests {
             .expect("Check must succeed");
         assert_eq!(
             resp.body,
-            encode_health_check_response(ServingStatus::Serving)
+            HealthCheckCodec::encode_response(ServingStatus::Serving)
         );
     }
 
