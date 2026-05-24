@@ -2,4 +2,4 @@
 
 pub(crate) mod application;
 
-pub use application::{ApplicationConfig, ApplicationConfigBuilder};
+pub use application::ApplicationConfig;

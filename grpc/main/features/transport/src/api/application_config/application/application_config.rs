@@ -1,7 +1,8 @@
 //! Application-level configuration type.
 
 /// Application-level configuration.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, serde::Deserialize)]
+#[serde(default)]
 pub struct ApplicationConfig {
     /// Application name.
     pub name: String,

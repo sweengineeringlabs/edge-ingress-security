@@ -1,27 +1,25 @@
-//! Integration tests for [`ApplicationConfigBuilder`].
+//! Integration tests for [`create_config_builder`].
 
-use swe_edge_ingress_grpc_auth_bearer::ApplicationConfigBuilder;
+use swe_edge_configbuilder::ConfigBuilder as _;
+use swe_edge_ingress_grpc_auth_bearer::create_config_builder;
 
-/// @covers: ApplicationConfigBuilder::new
+/// @covers: create_config_builder
 #[test]
-fn test_new_returns_default_builder_without_panic() {
-    let _builder = ApplicationConfigBuilder::new();
+fn test_create_config_builder_is_pre_seeded_with_package_name() {
+    let b = create_config_builder();
+    assert_eq!(b.name(), env!("CARGO_PKG_NAME"));
 }
 
-/// @covers: ApplicationConfigBuilder::build
+/// @covers: create_config_builder
 #[test]
-fn test_build_consumes_builder_and_returns_value() {
-    let cfg = ApplicationConfigBuilder::new().build();
-    // Debug formatting must succeed (no panic).
-    let dbg = format!("{cfg:?}");
-    assert!(dbg.contains("ApplicationConfigBuilder"));
+fn test_create_config_builder_version_matches_package_version() {
+    let b = create_config_builder();
+    assert_eq!(b.version(), env!("CARGO_PKG_VERSION"));
 }
 
-/// @covers: ApplicationConfigBuilder — Default impl
+/// @covers: create_config_builder
 #[test]
-fn test_default_produces_same_value_as_new() {
-    let via_new = ApplicationConfigBuilder::new();
-    let via_default = ApplicationConfigBuilder::default();
-    // Both should produce the same Debug representation.
-    assert_eq!(format!("{via_new:?}"), format!("{via_default:?}"));
+fn test_create_config_builder_with_name_overrides_preset() {
+    let b = create_config_builder().with_name("override-name");
+    assert_eq!(b.name(), "override-name");
 }

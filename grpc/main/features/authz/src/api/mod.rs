@@ -1,7 +1,6 @@
 //! API layer — policy trait, error type, identity adapter.
 
 pub(crate) mod application_config;
-pub(crate) mod application_config_builder;
 pub(crate) mod authz;
 pub(crate) mod authz_interceptor;
 pub(crate) mod method;

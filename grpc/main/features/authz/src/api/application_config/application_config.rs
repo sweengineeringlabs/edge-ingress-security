@@ -1,7 +1,8 @@
 //! Authz application configuration — loaded from `config/application.toml`.
 
 /// Runtime configuration for the authz feature.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(default)]
 pub struct ApplicationConfig {
     /// The default authz policy to apply (`"deny"` or `"allow"`).
     pub default_policy: String,
