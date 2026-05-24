@@ -9,7 +9,7 @@ use swe_edge_ingress_tls::IngressTlsConfig;
 use tonic::Code as TonicCode;
 
 use swe_edge_ingress_grpc_transport::{
-    extract_peer_identity, GrpcHandlerRegistryDispatcher, GrpcRequest,
+    GrpcHandlerRegistryDispatcher, GrpcRequest, PeerIdentityExtractor,
 };
 
 // ── sha2 ──────────────────────────────────────────────────────────────────────
@@ -21,11 +21,11 @@ fn test_sha2_produces_deterministic_hash_for_known_input() {
     assert_eq!(hash.len(), 32, "SHA-256 must produce 32 bytes");
 }
 
-/// Exercises sha2 via extract_peer_identity — SHA-256 fingerprint is always present.
+/// Exercises sha2 via PeerIdentityExtractor::extract — SHA-256 fingerprint is always present.
 #[test]
-fn test_sha2_is_exercised_via_extract_peer_identity() {
+fn test_sha2_is_exercised_via_peer_identity_extractor() {
     use swe_edge_ingress_grpc_transport::PEER_CERT_FINGERPRINT_SHA256;
-    let identity = extract_peer_identity(b"test-certificate-der");
+    let identity = PeerIdentityExtractor::extract(b"test-certificate-der");
     assert!(
         identity.contains_key(PEER_CERT_FINGERPRINT_SHA256),
         "fingerprint must always be computed via sha2"
@@ -39,8 +39,8 @@ fn test_sha2_is_exercised_via_extract_peer_identity() {
 #[test]
 fn test_sha2_fingerprint_is_deterministic() {
     use swe_edge_ingress_grpc_transport::PEER_CERT_FINGERPRINT_SHA256;
-    let a = extract_peer_identity(b"hello-world");
-    let b = extract_peer_identity(b"hello-world");
+    let a = PeerIdentityExtractor::extract(b"hello-world");
+    let b = PeerIdentityExtractor::extract(b"hello-world");
     assert_eq!(
         a.get(PEER_CERT_FINGERPRINT_SHA256),
         b.get(PEER_CERT_FINGERPRINT_SHA256),
@@ -151,20 +151,20 @@ fn test_tokio_util_cancellation_token_is_exercised_via_grpc_request() {
 /// Exercises tonic via the status code conversions.
 #[test]
 fn test_tonic_code_conversion_is_exercised_via_saf_status_functions() {
-    use swe_edge_ingress_grpc_transport::{from_tonic_code, to_tonic_code, GrpcStatusCode};
+    use swe_edge_ingress_grpc_transport::{GrpcStatusCode, StatusCodeConverter};
     // Exercises the tonic::Code enum — exercising the tonic dependency.
     let code = GrpcStatusCode::NotFound;
-    let tonic_code = to_tonic_code(code);
-    let back = from_tonic_code(tonic_code);
+    let tonic_code = StatusCodeConverter::to_tonic_code(code);
+    let back = StatusCodeConverter::from_tonic_code(tonic_code);
     assert_eq!(back, GrpcStatusCode::NotFound);
 }
 
 /// Exercises tonic via map_inbound_error.
 #[test]
 fn test_tonic_map_inbound_error_exercises_tonic_dependency() {
-    use swe_edge_ingress_grpc_transport::{map_inbound_error, GrpcIngressError, GrpcStatusCode};
+    use swe_edge_ingress_grpc_transport::{GrpcIngressError, GrpcStatusCode, StatusCodeConverter};
     let err = GrpcIngressError::Status(GrpcStatusCode::Unavailable, "service down".into());
-    let (code, msg) = map_inbound_error(err);
+    let (code, msg) = StatusCodeConverter::map_inbound_error(err);
     assert_eq!(code, TonicCode::Unavailable);
     assert_eq!(msg, "service down");
 }

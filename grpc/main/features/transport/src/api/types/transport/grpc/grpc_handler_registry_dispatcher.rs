@@ -51,8 +51,8 @@ mod tests {
     use edge_domain::{Handler, HandlerError, HandlerRegistry};
     use std::sync::Arc;
 
-    use crate::api::handler::grpc::grpc_handler_adapter::GrpcHandlerAdapter;
     use crate::api::port::grpc_ingress::GrpcIngressError;
+    use crate::api::types::grpc::GrpcHandlerAdapter;
 
     #[derive(Debug, PartialEq, Eq)]
     struct TestReq {

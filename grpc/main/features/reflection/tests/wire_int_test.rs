@@ -1,10 +1,8 @@
-//! Integration tests for codec helpers `decode_request` and `encode_response`.
+//! Integration tests for codec helpers `ReflectionCodec::decode_request` and `encode_response`.
 //!
 //! Rules 77 + 78: covers the wire codec with `/// @covers:` annotations.
 
-use swe_edge_ingress_grpc_reflection::{
-    decode_request, encode_response, ReflectionRequest, ReflectionResponse,
-};
+use swe_edge_ingress_grpc_reflection::{ReflectionCodec, ReflectionRequest, ReflectionResponse};
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -23,62 +21,62 @@ fn string_field(tag: u8, value: &str) -> Vec<u8> {
     out
 }
 
-// ── decode_request ────────────────────────────────────────────────────────────
+// ── ReflectionCodec::decode_request ────────────────────────────────────────────────────────────
 
-/// @covers: decode_request — empty body decodes to Unknown variant.
+/// @covers: ReflectionCodec::decode_request — empty body decodes to Unknown variant.
 #[test]
 fn test_decode_request_empty_body_returns_unknown() {
-    let result = decode_request(&[]).expect("decode must not error on empty body");
+    let result = ReflectionCodec::decode_request(&[]).expect("decode must not error on empty body");
     assert_eq!(result, ReflectionRequest::Unknown);
 }
 
-/// @covers: decode_request — list_services field (tag 7, wire 2) decodes correctly.
+/// @covers: ReflectionCodec::decode_request — list_services field (tag 7, wire 2) decodes correctly.
 #[test]
 fn test_decode_request_list_services_field_decodes_to_list_services_variant() {
     let body = vec![0x3a, 0x00]; // field 7 wire 2, length 0
-    let result = decode_request(&body).expect("decode must succeed");
+    let result = ReflectionCodec::decode_request(&body).expect("decode must succeed");
     assert_eq!(result, ReflectionRequest::ListServices(String::new()));
 }
 
-/// @covers: decode_request — file_by_filename field (tag 3, wire 2) decodes to correct filename.
+/// @covers: ReflectionCodec::decode_request — file_by_filename field (tag 3, wire 2) decodes to correct filename.
 #[test]
 fn test_decode_request_file_by_filename_decodes_filename_correctly() {
     let body = string_field(0x1a, "google/protobuf/empty.proto");
-    let result = decode_request(&body).expect("decode must succeed");
+    let result = ReflectionCodec::decode_request(&body).expect("decode must succeed");
     assert_eq!(
         result,
         ReflectionRequest::FileByFilename("google/protobuf/empty.proto".into())
     );
 }
 
-/// @covers: decode_request — file_containing_symbol field (tag 4, wire 2) decodes symbol.
+/// @covers: ReflectionCodec::decode_request — file_containing_symbol field (tag 4, wire 2) decodes symbol.
 #[test]
 fn test_decode_request_file_containing_symbol_decodes_symbol_correctly() {
     let body = string_field(0x22, "pkg.MyService");
-    let result = decode_request(&body).expect("decode must succeed");
+    let result = ReflectionCodec::decode_request(&body).expect("decode must succeed");
     assert_eq!(
         result,
         ReflectionRequest::FileContainingSymbol("pkg.MyService".into())
     );
 }
 
-/// @covers: decode_request — all_extension_numbers_of_type field (tag 6, wire 2) decodes type name.
+/// @covers: ReflectionCodec::decode_request — all_extension_numbers_of_type field (tag 6, wire 2) decodes type name.
 #[test]
 fn test_decode_request_all_extension_numbers_decodes_type_name() {
     let body = string_field(0x32, "pkg.Extendable");
-    let result = decode_request(&body).expect("decode must succeed");
+    let result = ReflectionCodec::decode_request(&body).expect("decode must succeed");
     assert_eq!(
         result,
         ReflectionRequest::AllExtensionNumbersOfType("pkg.Extendable".into())
     );
 }
 
-/// @covers: decode_request — malformed varint (truncated body) returns Malformed error.
+/// @covers: ReflectionCodec::decode_request — malformed varint (truncated body) returns Malformed error.
 #[test]
 fn test_decode_request_truncated_varint_returns_malformed_error() {
     // 0x80 alone is an incomplete varint (continuation bit set, no next byte)
     let body = vec![0x1a, 0x80];
-    let result = decode_request(&body);
+    let result = ReflectionCodec::decode_request(&body);
     assert!(result.is_err(), "expected Err for truncated varint, got Ok");
 }
 
@@ -88,7 +86,7 @@ fn test_decode_request_truncated_varint_returns_malformed_error() {
 #[test]
 fn test_encode_response_list_services_one_name_produces_non_empty_bytes() {
     let resp = ReflectionResponse::ListServices(vec!["grpc.health.v1.Health".into()]);
-    let out = encode_response(&resp, &[]);
+    let out = ReflectionCodec::encode_response(&resp, &[]);
     assert!(!out.is_empty(), "encoded ListServices must not be empty");
 }
 
@@ -97,7 +95,7 @@ fn test_encode_response_list_services_one_name_produces_non_empty_bytes() {
 fn test_encode_response_file_descriptor_bytes_appear_verbatim_in_output() {
     let payload = vec![0xca, 0xfe, 0xba, 0xbe];
     let resp = ReflectionResponse::FileDescriptor(vec![payload.clone()]);
-    let out = encode_response(&resp, &[]);
+    let out = ReflectionCodec::encode_response(&resp, &[]);
     assert!(
         out.windows(payload.len()).any(|w| w == payload.as_slice()),
         "descriptor bytes not found verbatim in output: {out:?}"
@@ -111,7 +109,7 @@ fn test_encode_response_error_variant_encodes_error_code_field() {
         error_code: 12,
         error_message: "unimplemented".into(),
     };
-    let out = encode_response(&resp, &[]);
+    let out = ReflectionCodec::encode_response(&resp, &[]);
     // Field 1 varint tag = 0x08, value 12 = 0x0c
     assert!(
         out.windows(2).any(|w| w == [0x08, 0x0c]),
@@ -124,7 +122,7 @@ fn test_encode_response_error_variant_encodes_error_code_field() {
 fn test_encode_response_original_request_echoed_in_response_envelope() {
     let req_body = vec![0x3a, 0x00];
     let resp = ReflectionResponse::ListServices(vec![]);
-    let out = encode_response(&resp, &req_body);
+    let out = ReflectionCodec::encode_response(&resp, &req_body);
     assert!(
         out.windows(req_body.len())
             .any(|w| w == req_body.as_slice()),
@@ -136,8 +134,8 @@ fn test_encode_response_original_request_echoed_in_response_envelope() {
 #[test]
 fn test_encode_response_empty_original_request_produces_shorter_output() {
     let resp = ReflectionResponse::ListServices(vec![]);
-    let with_echo = encode_response(&resp, &[0x3a, 0x00]);
-    let without_echo = encode_response(&resp, &[]);
+    let with_echo = ReflectionCodec::encode_response(&resp, &[0x3a, 0x00]);
+    let without_echo = ReflectionCodec::encode_response(&resp, &[]);
     assert!(
         with_echo.len() > without_echo.len(),
         "output with echo ({}) must be longer than without ({})",
@@ -150,5 +148,5 @@ fn test_encode_response_empty_original_request_produces_shorter_output() {
 #[test]
 fn test_encode_response_list_services_empty_names_does_not_panic() {
     let resp = ReflectionResponse::ListServices(vec![]);
-    let _out = encode_response(&resp, &[]);
+    let _out = ReflectionCodec::encode_response(&resp, &[]);
 }

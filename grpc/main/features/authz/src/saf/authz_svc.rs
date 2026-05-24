@@ -28,4 +28,7 @@ pub fn validate_application_config(cfg: &ApplicationConfig) -> Result<(), String
 /// it accepts any type that implements `Processor` and confirms its role.
 /// Callers use this to verify that a concrete type participates in the
 /// processing pipeline before wiring it into the server.
+///
+/// The empty body is intentional — this is a marker function that validates
+/// at compile time via trait bounds; at runtime it is a no-op.
 pub fn assert_is_processor<T: Processor>(_: &T) {}

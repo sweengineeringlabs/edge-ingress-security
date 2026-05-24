@@ -17,7 +17,7 @@ use crate::api::types::reflection_service::{
     REFLECTION_INFO_METHOD, REFLECTION_SERVICE_NAME,
 };
 use crate::api::types::{ReflectionRequest, ReflectionResponse};
-use crate::api::wire::{decode_request, encode_response};
+use crate::api::wire::ReflectionCodec;
 
 #[allow(dead_code)]
 const REFLECTION_DEFAULT_DEADLINE: Duration = Duration::from_secs(5);
@@ -26,9 +26,7 @@ impl ReflectionService {
     pub(crate) fn list_services(&self) -> Vec<String> {
         let mut set: BTreeSet<String> = BTreeSet::new();
         for id in self.registry.list_ids() {
-            if let Some(name) =
-                crate::api::types::reflection_service::service_name_from_method_path(&id)
-            {
+            if let Some(name) = ReflectionService::service_name_from_method_path(&id) {
                 set.insert(name.to_string());
             }
         }
@@ -100,7 +98,7 @@ impl GrpcIngress for ReflectionService {
                     request.method
                 )));
             }
-            let parsed = match decode_request(&request.body) {
+            let parsed = match ReflectionCodec::decode_request(&request.body) {
                 Ok(p) => p,
                 Err(e) => {
                     return Err(GrpcIngressError::InvalidArgument(format!(
@@ -109,7 +107,7 @@ impl GrpcIngress for ReflectionService {
                 }
             };
             let response = self.handle_request(parsed);
-            let bytes = encode_response(&response, &request.body);
+            let bytes = ReflectionCodec::encode_response(&response, &request.body);
             Ok(GrpcResponse {
                 body: bytes,
                 metadata: GrpcMetadata::default(),
@@ -143,26 +141,26 @@ impl GrpcIngress for ReflectionService {
                     error_code: ERROR_CODE_INVALID_ARGUMENT,
                     error_message: "empty ServerReflectionInfo stream".into(),
                 };
-                let bytes = encode_response(&resp, &[]);
+                let bytes = ReflectionCodec::encode_response(&resp, &[]);
                 let out: GrpcMessageStream =
                     Box::pin(futures::stream::once(futures::future::ready(Ok(bytes))));
                 return Ok((out, GrpcMetadata::default()));
             }
             let mut responses: Vec<Vec<u8>> = Vec::with_capacity(requests.len());
             for body in requests.into_iter() {
-                let parsed = match decode_request(&body) {
+                let parsed = match ReflectionCodec::decode_request(&body) {
                     Ok(p) => p,
                     Err(e) => {
                         let resp = ReflectionResponse::Error {
                             error_code: ERROR_CODE_INVALID_ARGUMENT,
                             error_message: format!("malformed request frame: {e}"),
                         };
-                        responses.push(encode_response(&resp, &body));
+                        responses.push(ReflectionCodec::encode_response(&resp, &body));
                         continue;
                     }
                 };
                 let response = self.handle_request(parsed);
-                responses.push(encode_response(&response, &body));
+                responses.push(ReflectionCodec::encode_response(&response, &body));
             }
             let out: GrpcMessageStream = Box::pin(futures::stream::iter(
                 responses.into_iter().map(Ok::<Vec<u8>, GrpcIngressError>),
@@ -178,7 +176,7 @@ impl GrpcIngress for ReflectionService {
 
 #[cfg(test)]
 mod tests {
-    use crate::api::types::reflection_service::{service_name_from_method_path, ReflectionService};
+    use crate::api::types::reflection_service::ReflectionService;
     use edge_domain::HandlerRegistry;
     use std::sync::Arc;
 
@@ -194,7 +192,7 @@ mod tests {
     #[test]
     fn test_service_name_from_method_path_extracts_service_portion() {
         assert_eq!(
-            service_name_from_method_path("/pkg.Svc/Method"),
+            ReflectionService::service_name_from_method_path("/pkg.Svc/Method"),
             Some("pkg.Svc")
         );
     }
@@ -202,9 +200,9 @@ mod tests {
     /// @covers: service_name_from_method_path — None for malformed path.
     #[test]
     fn test_service_name_from_method_path_returns_none_for_malformed_input() {
-        assert!(service_name_from_method_path("no-leading-slash").is_none());
-        assert!(service_name_from_method_path("/").is_none());
-        assert!(service_name_from_method_path("").is_none());
+        assert!(ReflectionService::service_name_from_method_path("no-leading-slash").is_none());
+        assert!(ReflectionService::service_name_from_method_path("/").is_none());
+        assert!(ReflectionService::service_name_from_method_path("").is_none());
     }
 
     /// @covers: handle_request — ListServices returns services list.

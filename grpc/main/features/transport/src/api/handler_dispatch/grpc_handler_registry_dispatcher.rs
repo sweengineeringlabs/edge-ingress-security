@@ -2,7 +2,7 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::api::handler::grpc::grpc_handler_registry_dispatcher::GrpcHandlerRegistryDispatcher;
+    use crate::api::types::grpc::GrpcHandlerRegistryDispatcher;
     use edge_domain::HandlerRegistry;
     use std::sync::Arc;
 

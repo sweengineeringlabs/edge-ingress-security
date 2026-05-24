@@ -111,6 +111,7 @@ impl GrpcServerConfig {
 }
 
 impl swe_edge_configbuilder::ConfigSection for GrpcServerConfig {
+    #[inline(always)]
     fn section_name() -> &'static str {
         "grpc"
     }

@@ -1,26 +1,26 @@
-//! Integration tests for PeerIdentity and is_reserved_peer_key.
+//! Integration tests for PeerIdentity and is_reserved_key.
 
 use std::collections::HashMap;
-use swe_edge_ingress_grpc_transport::{is_reserved_peer_key, PeerIdentity};
+use swe_edge_ingress_grpc_transport::PeerIdentity;
 
-/// @covers: is_reserved_peer_key
+/// @covers: PeerIdentity::is_reserved_key
 #[test]
-fn test_is_reserved_peer_key_matches_x_edge_peer_prefix() {
-    assert!(is_reserved_peer_key("x-edge-peer-cn"));
-    assert!(is_reserved_peer_key("x-edge-peer-identity"));
+fn test_is_reserved_key_matches_x_edge_peer_prefix() {
+    assert!(PeerIdentity::is_reserved_key("x-edge-peer-cn"));
+    assert!(PeerIdentity::is_reserved_key("x-edge-peer-identity"));
 }
 
-/// @covers: is_reserved_peer_key
+/// @covers: PeerIdentity::is_reserved_key
 #[test]
-fn test_is_reserved_peer_key_is_case_insensitive() {
-    assert!(is_reserved_peer_key("X-Edge-Peer-Cn"));
+fn test_is_reserved_key_is_case_insensitive() {
+    assert!(PeerIdentity::is_reserved_key("X-Edge-Peer-Cn"));
 }
 
-/// @covers: is_reserved_peer_key
+/// @covers: PeerIdentity::is_reserved_key
 #[test]
-fn test_is_reserved_peer_key_does_not_match_unrelated_keys() {
-    assert!(!is_reserved_peer_key("authorization"));
-    assert!(!is_reserved_peer_key("x-edge-trace"));
+fn test_is_reserved_key_does_not_match_unrelated_keys() {
+    assert!(!PeerIdentity::is_reserved_key("authorization"));
+    assert!(!PeerIdentity::is_reserved_key("x-edge-trace"));
 }
 
 /// @covers: PeerIdentity::empty

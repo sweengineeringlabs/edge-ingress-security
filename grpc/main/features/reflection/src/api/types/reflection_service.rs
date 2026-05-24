@@ -65,11 +65,6 @@ impl ReflectionService {
     }
 }
 
-/// Backward-compatibility wrapper for service_name_from_method_path.
-pub fn service_name_from_method_path(path: &str) -> Option<&str> {
-    ReflectionService::service_name_from_method_path(path)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

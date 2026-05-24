@@ -66,6 +66,12 @@ impl PeerIdentity {
     pub fn is_empty(&self) -> bool {
         self.cn.is_none() && self.san.is_empty() && self.custom_oids.is_empty()
     }
+
+    /// Returns `true` when the key name matches a reserved peer-identity key prefix.
+    pub fn is_reserved_key(name: &str) -> bool {
+        let lower = name.to_ascii_lowercase();
+        RESERVED_PEER_PREFIXES.iter().any(|p| lower.starts_with(p))
+    }
 }
 
 /// Subject DN of the peer certificate.
@@ -87,12 +93,6 @@ pub const PEER_CERT_FINGERPRINT_SHA256: &str = "x-edge-peer-cert-fingerprint-sha
 /// incoming metadata before it injects its own values.
 pub const RESERVED_PEER_PREFIXES: &[&str] = &["x-edge-peer-"];
 
-/// Returns `true` when `name` matches a reserved peer-identity key prefix.
-pub fn is_reserved_peer_key(name: &str) -> bool {
-    let lower = name.to_ascii_lowercase();
-    RESERVED_PEER_PREFIXES.iter().any(|p| lower.starts_with(p))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -100,21 +100,21 @@ mod tests {
     /// @covers: is_reserved_peer_key
     #[test]
     fn test_is_reserved_peer_key_matches_x_edge_peer_prefix() {
-        assert!(is_reserved_peer_key("x-edge-peer-cn"));
-        assert!(is_reserved_peer_key("x-edge-peer-identity"));
+        assert!(PeerIdentity::is_reserved_key("x-edge-peer-cn"));
+        assert!(PeerIdentity::is_reserved_key("x-edge-peer-identity"));
     }
 
     /// @covers: is_reserved_peer_key
     #[test]
     fn test_is_reserved_peer_key_is_case_insensitive() {
-        assert!(is_reserved_peer_key("X-Edge-Peer-Cn"));
+        assert!(PeerIdentity::is_reserved_key("X-Edge-Peer-Cn"));
     }
 
     /// @covers: is_reserved_peer_key
     #[test]
     fn test_is_reserved_peer_key_does_not_match_unrelated_keys() {
-        assert!(!is_reserved_peer_key("authorization"));
-        assert!(!is_reserved_peer_key("x-edge-trace"));
+        assert!(!PeerIdentity::is_reserved_key("authorization"));
+        assert!(!PeerIdentity::is_reserved_key("x-edge-trace"));
     }
 
     /// @covers: empty

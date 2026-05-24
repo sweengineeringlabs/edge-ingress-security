@@ -11,6 +11,9 @@ use crate::api::audit_sink::audit::audit_sink::AuditSink;
 pub struct NoopAuditSink;
 
 impl AuditSink for NoopAuditSink {
+    /// Drop every audit event silently. This is the default sink for servers
+    /// that do not configure explicit audit logging. Production deployments
+    /// should replace this with a real `AuditSink` implementation.
     fn record(&self, _event: AuditEvent) {}
 }
 

@@ -17,6 +17,7 @@ impl Default for ApplicationConfig {
 }
 
 impl swe_edge_configbuilder::ConfigSection for ApplicationConfig {
+    #[inline(always)]
     fn section_name() -> &'static str {
         "authz"
     }

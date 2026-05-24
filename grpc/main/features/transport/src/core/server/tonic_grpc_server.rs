@@ -19,9 +19,9 @@ use tokio_util::sync::CancellationToken;
 use edge_domain::RequestContext;
 
 use crate::api::audit_sink::{AuditEvent, AuditSink};
-use crate::api::grpc_timeout::{parse_grpc_timeout, DEFAULT_DEADLINE};
+use crate::api::grpc_timeout::{GrpcTimeoutParser, DEFAULT_DEADLINE};
 use crate::api::interceptor::GrpcIngressInterceptorChain;
-use crate::api::peer_identity::extract_peer_identity;
+use crate::api::peer_identity::PeerIdentityExtractor;
 use crate::api::port::grpc_ingress::{
     GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream,
 };
@@ -29,10 +29,9 @@ use crate::api::server::{
     TonicGrpcServer, TonicServerError, MISSING_AUTHORIZATION_INTERCEPTOR_MSG,
     REFLECTION_ENABLED_WARN_MSG,
 };
-use crate::api::status_codes::{from_tonic_code, map_inbound_error};
+use crate::api::status_codes::StatusCodeConverter;
 use crate::api::value_object::{
-    is_reserved_peer_key, CompressionMode, GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode,
-    PEER_CN,
+    CompressionMode, GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode, PeerIdentity, PEER_CN,
 };
 
 type BoxBody = http_body_util::combinators::BoxBody<Bytes, Infallible>;
@@ -148,7 +147,7 @@ impl TonicGrpcServer {
                                     let peer_metadata: HashMap<String, String> = conn_state
                                         .peer_certificates()
                                         .and_then(|chain| chain.first())
-                                        .map(|leaf| extract_peer_identity(leaf.as_ref()))
+                                        .map(|leaf| PeerIdentityExtractor::extract(leaf.as_ref()))
                                         .unwrap_or_default();
 
                                     let io = TokioIo::new(tls);
@@ -163,7 +162,7 @@ impl TonicGrpcServer {
                                             let peer_metadata = peer_metadata.clone();
                                             let audit_sink    = audit_sink.clone();
                                             async move {
-                                                Ok::<_, Infallible>(dispatch(
+                                                Ok::<_, Infallible>(TonicServerDispatcher::dispatch(
                                                     req,
                                                     handler,
                                                     max_bytes,
@@ -197,7 +196,7 @@ impl TonicGrpcServer {
                                     let interceptors = interceptors.clone();
                                     let audit_sink   = audit_sink.clone();
                                     async move {
-                                        Ok::<_, Infallible>(dispatch(
+                                        Ok::<_, Infallible>(TonicServerDispatcher::dispatch(
                                             req,
                                             handler,
                                             max_bytes,
@@ -229,503 +228,512 @@ impl TonicGrpcServer {
 
 // ── gRPC dispatch ─────────────────────────────────────────────────────────────
 
-/// Read the per-call deadline from the `grpc-timeout` header, falling back
-/// to [`DEFAULT_DEADLINE`] when the header is absent or malformed.
-fn read_deadline(headers: &http::HeaderMap) -> Duration {
-    headers
-        .get("grpc-timeout")
-        .and_then(|v| v.to_str().ok())
-        .and_then(parse_grpc_timeout)
-        .unwrap_or(DEFAULT_DEADLINE)
-}
+struct TonicServerDispatcher;
 
-async fn dispatch(
-    req: Request<hyper::body::Incoming>,
-    handler: Arc<dyn GrpcIngress>,
-    max_bytes: usize,
-    interceptors: GrpcIngressInterceptorChain,
-    compression: CompressionMode,
-    peer_metadata: HashMap<String, String>,
-    audit_sink: Arc<dyn AuditSink>,
-) -> Response<BoxBody> {
-    let method = req.uri().path().to_string();
-    let started = Instant::now();
-    let timestamp = SystemTime::now();
-    let metadata = collect_metadata(req.headers());
-    let deadline = read_deadline(req.headers());
+impl TonicServerDispatcher {
+    /// Read the per-call deadline from the `grpc-timeout` header, falling back
+    /// to [`DEFAULT_DEADLINE`] when the header is absent or malformed.
+    fn read_deadline(headers: &http::HeaderMap) -> Duration {
+        headers
+            .get("grpc-timeout")
+            .and_then(|v| v.to_str().ok())
+            .and_then(GrpcTimeoutParser::parse)
+            .unwrap_or(DEFAULT_DEADLINE)
+    }
 
-    // Identity for audit — drawn from the cryptographic peer
-    // metadata snapshot taken at TLS-acceptance time.  Plaintext
-    // connections see `None`, mirroring the audit-event contract.
-    let identity = peer_metadata.get(PEER_CN).cloned();
+    async fn dispatch(
+        req: Request<hyper::body::Incoming>,
+        handler: Arc<dyn GrpcIngress>,
+        max_bytes: usize,
+        interceptors: GrpcIngressInterceptorChain,
+        compression: CompressionMode,
+        peer_metadata: HashMap<String, String>,
+        audit_sink: Arc<dyn AuditSink>,
+    ) -> Response<BoxBody> {
+        let method = req.uri().path().to_string();
+        let started = Instant::now();
+        let timestamp = SystemTime::now();
+        let metadata = Self::collect_metadata(req.headers());
+        let deadline = Self::read_deadline(req.headers());
 
-    // Helper to emit a final audit event and return the wire response.
-    // Centralises every termination path so we never miss recording.
-    let emit = |code: tonic::Code, response: Response<BoxBody>| {
-        let evt = AuditEvent {
-            timestamp,
-            method: method.clone(),
-            identity: identity.clone(),
-            status: from_tonic_code(code),
-            duration_ms: started.elapsed().as_millis() as u64,
+        // Identity for audit — drawn from the cryptographic peer
+        // metadata snapshot taken at TLS-acceptance time.  Plaintext
+        // connections see `None`, mirroring the audit-event contract.
+        let identity = peer_metadata.get(PEER_CN).cloned();
+
+        // Helper to emit a final audit event and return the wire response.
+        // Centralises every termination path so we never miss recording.
+        let emit = |code: tonic::Code, response: Response<BoxBody>| {
+            let evt = AuditEvent {
+                timestamp,
+                method: method.clone(),
+                identity: identity.clone(),
+                status: StatusCodeConverter::from_tonic_code(code),
+                duration_ms: started.elapsed().as_millis() as u64,
+            };
+            audit_sink.record(evt);
+            response
         };
-        audit_sink.record(evt);
-        response
-    };
 
-    // Past-deadline calls MUST fail before the handler runs.  A zero
-    // deadline (e.g. `grpc-timeout: 0n` or `0S`) means the client gave
-    // us no time at all to do work.
-    if deadline.is_zero() {
-        return emit(
-            tonic::Code::DeadlineExceeded,
-            grpc_error(
-                tonic::Code::DeadlineExceeded,
-                "request rejected before handler dispatch: deadline has already elapsed",
-            ),
-        );
-    }
-
-    let body_bytes = match Limited::new(req.into_body(), max_bytes).collect().await {
-        Ok(collected) => collected.to_bytes(),
-        Err(_) => {
+        // Past-deadline calls MUST fail before the handler runs.  A zero
+        // deadline (e.g. `grpc-timeout: 0n` or `0S`) means the client gave
+        // us no time at all to do work.
+        if deadline.is_zero() {
             return emit(
-                tonic::Code::ResourceExhausted,
-                grpc_error(tonic::Code::ResourceExhausted, "message too large"),
-            )
+                tonic::Code::DeadlineExceeded,
+                Self::grpc_error(
+                    tonic::Code::DeadlineExceeded,
+                    "request rejected before handler dispatch: deadline has already elapsed",
+                ),
+            );
         }
-    };
 
-    // Per-request cancellation token — fired implicitly when this future is
-    // dropped (i.e. the client closed the HTTP/2 stream).  The handler
-    // observes the token via the `messages` stream's parent scope; we expose
-    // it on the bridge below.
-    let cancel = CancellationToken::new();
-    let _drop_guard = cancel.clone().drop_guard();
+        let body_bytes = match Limited::new(req.into_body(), max_bytes).collect().await {
+            Ok(collected) => collected.to_bytes(),
+            Err(_) => {
+                return emit(
+                    tonic::Code::ResourceExhausted,
+                    Self::grpc_error(tonic::Code::ResourceExhausted, "message too large"),
+                )
+            }
+        };
 
-    // Decode all gRPC length-prefix frames from the body.
-    let frames = decode_grpc_frames(&body_bytes);
-    let message_stream: GrpcMessageStream = Box::pin(futures::stream::iter(
-        frames
-            .into_iter()
-            .map(|f| Ok::<Vec<u8>, GrpcIngressError>(f.to_vec())),
-    ));
+        // Per-request cancellation token — fired implicitly when this future is
+        // dropped (i.e. the client closed the HTTP/2 stream).  The handler
+        // observes the token via the `messages` stream's parent scope; we expose
+        // it on the bridge below.
+        let cancel = CancellationToken::new();
+        let _drop_guard = cancel.clone().drop_guard();
 
-    // Build merged request metadata.  Reserved peer-identity keys
-    // supplied by the client over the wire are stripped first — the
-    // server is the only party allowed to set them, and only after a
-    // successful mTLS handshake.  Then we inject the cryptographically
-    // derived peer identity (empty for plaintext / TLS-only conns).
-    let mut headers: HashMap<String, String> = metadata
-        .iter()
-        .filter(|(k, _)| !is_reserved_peer_key(k))
-        .map(|(k, v)| (k.clone(), v.clone()))
-        .collect();
-    for (k, v) in peer_metadata.iter() {
-        headers.insert(k.clone(), v.clone());
-    }
-    headers.insert(
-        "x-edge-grpc-deadline-millis".to_string(),
-        deadline.as_millis().to_string(),
-    );
+        // Decode all gRPC length-prefix frames from the body.
+        let frames = Self::decode_grpc_frames(&body_bytes);
+        let message_stream: GrpcMessageStream = Box::pin(futures::stream::iter(
+            frames
+                .into_iter()
+                .map(|f| Ok::<Vec<u8>, GrpcIngressError>(f.to_vec())),
+        ));
 
-    // Build a synthetic GrpcRequest envelope so interceptors can
-    // observe headers + body before dispatch.
-    let mut intercept_req = GrpcRequest::new(method.clone(), body_bytes.to_vec(), deadline);
-    intercept_req.metadata = GrpcMetadata {
-        headers: headers.clone(),
-    };
+        // Build merged request metadata.  Reserved peer-identity keys
+        // supplied by the client over the wire are stripped first — the
+        // server is the only party allowed to set them, and only after a
+        // successful mTLS handshake.  Then we inject the cryptographically
+        // derived peer identity (empty for plaintext / TLS-only conns).
+        let mut headers: HashMap<String, String> = metadata
+            .iter()
+            .filter(|(k, _)| !PeerIdentity::is_reserved_key(k))
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        for (k, v) in peer_metadata.iter() {
+            headers.insert(k.clone(), v.clone());
+        }
+        headers.insert(
+            "x-edge-grpc-deadline-millis".to_string(),
+            deadline.as_millis().to_string(),
+        );
 
-    // Run before_dispatch — first failure short-circuits and the
-    // handler never runs.
-    if let Err(e) = interceptors.run_before(&mut intercept_req) {
-        let (code, msg) = map_inbound_error(sanitize_authz_error(e));
-        return emit(code, grpc_error(code, msg));
-    }
-    // Interceptors may have mutated headers; pull them back.
-    let merged_headers = intercept_req.metadata.headers.clone();
+        // Build a synthetic GrpcRequest envelope so interceptors can
+        // observe headers + body before dispatch.
+        let mut intercept_req = GrpcRequest::new(method.clone(), body_bytes.to_vec(), deadline);
+        intercept_req.metadata = GrpcMetadata {
+            headers: headers.clone(),
+        };
 
-    // Build per-request auth context from what the interceptors resolved.
-    // For mTLS the peer CN lands in merged_headers[PEER_CN]; JWT-based
-    // interceptors may inject x-edge-subject / x-edge-issuer / x-edge-tenant-id.
-    let ctx = if interceptors.contains_authorization() {
-        let subject = merged_headers
-            .get(PEER_CN)
-            .or_else(|| merged_headers.get("x-edge-subject"))
+        // Run before_dispatch — first failure short-circuits and the
+        // handler never runs.
+        if let Err(e) = interceptors.run_before(&mut intercept_req) {
+            let (code, msg) = StatusCodeConverter::map_inbound_error(Self::sanitize_authz_error(e));
+            return emit(code, Self::grpc_error(code, msg));
+        }
+        // Interceptors may have mutated headers; pull them back.
+        let merged_headers = intercept_req.metadata.headers.clone();
+
+        // Build per-request auth context from what the interceptors resolved.
+        // For mTLS the peer CN lands in merged_headers[PEER_CN]; JWT-based
+        // interceptors may inject x-edge-subject / x-edge-issuer / x-edge-tenant-id.
+        let ctx = if interceptors.contains_authorization() {
+            let subject = merged_headers
+                .get(PEER_CN)
+                .or_else(|| merged_headers.get("x-edge-subject"))
+                .cloned()
+                .unwrap_or_default();
+            RequestContext::authenticated(
+                subject,
+                merged_headers.get("x-edge-issuer").cloned(),
+                merged_headers.get("x-edge-tenant-id").cloned(),
+                merged_headers
+                    .iter()
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .collect(),
+            )
+        } else {
+            RequestContext::unauthenticated()
+        };
+
+        // Route to the named streaming variant indicated by the client,
+        // falling back to `handle_stream` for backward compatibility.
+        let stream_type = merged_headers
+            .get("x-grpc-stream-type")
             .cloned()
             .unwrap_or_default();
-        RequestContext::authenticated(
-            subject,
-            merged_headers.get("x-edge-issuer").cloned(),
-            merged_headers.get("x-edge-tenant-id").cloned(),
-            merged_headers
-                .iter()
-                .map(|(k, v)| (k.clone(), v.clone()))
-                .collect(),
-        )
-    } else {
-        RequestContext::unauthenticated()
-    };
+        let handler_fut = Self::route_dispatch(
+            handler.clone(),
+            stream_type.as_str(),
+            method.clone(),
+            GrpcMetadata {
+                headers: merged_headers,
+            },
+            message_stream,
+            ctx,
+            deadline,
+        );
+        let cancel_fut = cancel.cancelled();
 
-    // Route to the named streaming variant indicated by the client,
-    // falling back to `handle_stream` for backward compatibility.
-    let stream_type = merged_headers
-        .get("x-grpc-stream-type")
-        .cloned()
-        .unwrap_or_default();
-    let handler_fut = route_dispatch(
-        handler.clone(),
-        stream_type.as_str(),
-        method.clone(),
-        GrpcMetadata {
-            headers: merged_headers,
-        },
-        message_stream,
-        ctx,
-        deadline,
-    );
-    let cancel_fut = cancel.cancelled();
+        let result = tokio::select! {
+            biased;
+            // Cancellation: client disconnected — abort and never produce a body.
+            _ = cancel_fut => {
+                return emit(
+                    tonic::Code::Cancelled,
+                    Self::grpc_error(tonic::Code::Cancelled, "client disconnected"),
+                );
+            }
+            // Deadline: timer fired before the handler returned.
+            _ = tokio::time::sleep(deadline) => {
+                return emit(
+                    tonic::Code::DeadlineExceeded,
+                    Self::grpc_error(tonic::Code::DeadlineExceeded, "handler deadline exceeded"),
+                );
+            }
+            r = handler_fut => r,
+        };
 
-    let result = tokio::select! {
-        biased;
-        // Cancellation: client disconnected — abort and never produce a body.
-        _ = cancel_fut => {
-            return emit(
-                tonic::Code::Cancelled,
-                grpc_error(tonic::Code::Cancelled, "client disconnected"),
-            );
-        }
-        // Deadline: timer fired before the handler returned.
-        _ = tokio::time::sleep(deadline) => {
-            return emit(
-                tonic::Code::DeadlineExceeded,
-                grpc_error(tonic::Code::DeadlineExceeded, "handler deadline exceeded"),
-            );
-        }
-        r = handler_fut => r,
-    };
-
-    match result {
-        Ok((resp_stream, resp_meta)) => {
-            // Drain the handler stream so interceptors can observe the
-            // response payload + metadata before it goes out on the wire.
-            //
-            // Buffered by design: `after_dispatch` operates on a single
-            // body bag, not a stream — true streaming interceptors are
-            // a follow-up.
-            //
-            // The deadline protection from the outer select only covered
-            // `handle_stream()` setup, not the drain.  Re-arm it here so
-            // infinite / long-running streams can't bypass the per-call
-            // budget.
-            let collected_payload =
-                match tokio::time::timeout(deadline, collect_response_payload(resp_stream)).await {
+        match result {
+            Ok((resp_stream, resp_meta)) => {
+                // Drain the handler stream so interceptors can observe the
+                // response payload + metadata before it goes out on the wire.
+                //
+                // Buffered by design: `after_dispatch` operates on a single
+                // body bag, not a stream — true streaming interceptors are
+                // a follow-up.
+                //
+                // The deadline protection from the outer select only covered
+                // `handle_stream()` setup, not the drain.  Re-arm it here so
+                // infinite / long-running streams can't bypass the per-call
+                // budget.
+                let collected_payload = match tokio::time::timeout(
+                    deadline,
+                    Self::collect_response_payload(resp_stream),
+                )
+                .await
+                {
                     Ok(Ok(p)) => p,
                     Ok(Err(e)) => {
-                        let (code, msg) = map_inbound_error(e);
-                        return emit(code, grpc_error(code, msg));
+                        let (code, msg) = StatusCodeConverter::map_inbound_error(e);
+                        return emit(code, Self::grpc_error(code, msg));
                     }
                     Err(_elapsed) => {
                         return emit(
                             tonic::Code::DeadlineExceeded,
-                            grpc_error(
+                            Self::grpc_error(
                                 tonic::Code::DeadlineExceeded,
                                 "streaming deadline exceeded",
                             ),
                         );
                     }
                 };
-            // Synthesise an interceptor-visible response.  The body
-            // surface is the concatenation of all stream frames — when
-            // an after_dispatch hook mutates it we send the mutated
-            // bytes as a single frame; otherwise we preserve the
-            // original frame boundaries.
-            let original_payload = collected_payload.clone();
-            let mut response = GrpcResponse {
-                body: collected_payload.concat(),
-                metadata: resp_meta,
-            };
+                // Synthesise an interceptor-visible response.  The body
+                // surface is the concatenation of all stream frames — when
+                // an after_dispatch hook mutates it we send the mutated
+                // bytes as a single frame; otherwise we preserve the
+                // original frame boundaries.
+                let original_payload = collected_payload.clone();
+                let mut response = GrpcResponse {
+                    body: collected_payload.concat(),
+                    metadata: resp_meta,
+                };
 
-            // Advertise grpc-accept-encoding when compression is enabled.
-            if let Some(name) = compression.header_value() {
-                response
-                    .metadata
-                    .headers
-                    .entry("grpc-accept-encoding".to_string())
-                    .or_insert_with(|| name.to_string());
+                // Advertise grpc-accept-encoding when compression is enabled.
+                if let Some(name) = compression.header_value() {
+                    response
+                        .metadata
+                        .headers
+                        .entry("grpc-accept-encoding".to_string())
+                        .or_insert_with(|| name.to_string());
+                }
+
+                // after_dispatch — same short-circuit semantics as before.
+                if let Err(e) = interceptors.run_after(&mut response) {
+                    let (code, msg) = StatusCodeConverter::map_inbound_error(e);
+                    return emit(code, Self::grpc_error(code, msg));
+                }
+
+                let body_changed = response.body != original_payload.concat();
+                let payloads = if body_changed {
+                    vec![response.body]
+                } else {
+                    original_payload
+                };
+
+                let wire =
+                    Self::grpc_stream_response_from_payloads(payloads, response.metadata).await;
+                emit(tonic::Code::Ok, wire)
             }
-
-            // after_dispatch — same short-circuit semantics as before.
-            if let Err(e) = interceptors.run_after(&mut response) {
-                let (code, msg) = map_inbound_error(e);
-                return emit(code, grpc_error(code, msg));
+            Err(e) => {
+                let (code, msg) = StatusCodeConverter::map_inbound_error(e);
+                emit(code, Self::grpc_error(code, msg))
             }
-
-            let body_changed = response.body != original_payload.concat();
-            let payloads = if body_changed {
-                vec![response.body]
-            } else {
-                original_payload
-            };
-
-            let wire = grpc_stream_response_from_payloads(payloads, response.metadata).await;
-            emit(tonic::Code::Ok, wire)
-        }
-        Err(e) => {
-            let (code, msg) = map_inbound_error(e);
-            emit(code, grpc_error(code, msg))
-        }
-    }
-}
-
-/// Route a request to the correct [`GrpcIngress`] streaming variant.
-///
-/// `x-grpc-stream-type` header values and their targets:
-/// - `"server-stream"` → [`GrpcIngress::handle_server_stream`] (unary request, streaming response)
-/// - `"client-stream"` → [`GrpcIngress::handle_client_stream`] (streaming request, single response)
-/// - `"bidi-stream"`   → [`GrpcIngress::handle_bidi_stream`]   (streaming both directions)
-/// - absent / any other value → [`GrpcIngress::handle_stream`] (backward-compatible default)
-///
-/// All branches normalise to `(GrpcMessageStream, GrpcMetadata)` so the rest of the
-/// dispatch pipeline (drain → interceptors → wire encoding) is unchanged.
-async fn route_dispatch(
-    handler: Arc<dyn GrpcIngress>,
-    stream_type: &str,
-    method: String,
-    metadata: GrpcMetadata,
-    messages: GrpcMessageStream,
-    ctx: RequestContext,
-    deadline: Duration,
-) -> GrpcIngressResult<(GrpcMessageStream, GrpcMetadata)> {
-    use futures::StreamExt;
-    match stream_type {
-        "server-stream" => {
-            // Single request frame → streaming response.
-            let mut s = messages;
-            let body = match s.next().await {
-                Some(Ok(b)) => b,
-                Some(Err(e)) => return Err(e),
-                None => vec![],
-            };
-            let req = GrpcRequest::new(method, body, deadline).with_metadata(metadata);
-            let out = handler.handle_server_stream(req, ctx).await?;
-            Ok((out, GrpcMetadata::default()))
-        }
-        "client-stream" => {
-            // Streaming request → single response wrapped in a one-item stream.
-            let resp = handler
-                .handle_client_stream(method, metadata, messages, ctx)
-                .await?;
-            let out: GrpcMessageStream =
-                Box::pin(futures::stream::once(futures::future::ready(Ok(resp.body))));
-            Ok((out, resp.metadata))
-        }
-        "bidi-stream" => {
-            handler
-                .handle_bidi_stream(method, metadata, messages, ctx)
-                .await
-        }
-        _ => handler.handle_stream(method, metadata, messages, ctx).await,
-    }
-}
-
-/// Strip authz policy rationale before it reaches the wire.
-///
-/// Authorisation interceptors may attach policy-decision details to
-/// the error message — those strings could leak the server's ACL
-/// shape.  Replace any `PermissionDenied` payload with a fixed,
-/// non-revealing string.  Other errors pass through untouched.
-fn sanitize_authz_error(err: GrpcIngressError) -> GrpcIngressError {
-    match err {
-        GrpcIngressError::PermissionDenied(_) => {
-            GrpcIngressError::PermissionDenied("authorization denied".into())
-        }
-        GrpcIngressError::Status(GrpcStatusCode::PermissionDenied, _) => GrpcIngressError::Status(
-            GrpcStatusCode::PermissionDenied,
-            "authorization denied".into(),
-        ),
-        other => other,
-    }
-}
-
-/// Drain a [`GrpcMessageStream`] into a list of payloads.
-async fn collect_response_payload(
-    mut stream: GrpcMessageStream,
-) -> Result<Vec<Vec<u8>>, GrpcIngressError> {
-    use futures::StreamExt;
-    let mut out = Vec::new();
-    while let Some(item) = stream.next().await {
-        out.push(item?);
-    }
-    Ok(out)
-}
-
-/// Parse all gRPC length-prefix frames from a raw body.
-///
-/// Each frame: 1 byte compressed flag + 4 bytes big-endian message length + payload.
-/// Frames with a compressed flag != 0 are still yielded (payload returned as-is).
-fn decode_grpc_frames(data: &Bytes) -> Vec<Bytes> {
-    const HEADER: usize = 5;
-    let mut frames = Vec::new();
-    let mut offset = 0usize;
-    while offset + HEADER <= data.len() {
-        // bytes 1-4 are the big-endian message length; byte 0 is the compressed flag.
-        let len = u32::from_be_bytes([
-            data[offset + 1],
-            data[offset + 2],
-            data[offset + 3],
-            data[offset + 4],
-        ]) as usize;
-        let payload_start = offset + HEADER;
-        let payload_end = payload_start + len;
-        if payload_end > data.len() {
-            break; // truncated — stop rather than panic
-        }
-        frames.push(data.slice(payload_start..payload_end));
-        offset = payload_end;
-    }
-    // If no valid frame header was found treat the entire body as one raw payload
-    // (handles the degenerate case of an empty or header-only body gracefully).
-    if frames.is_empty() && !data.is_empty() {
-        frames.push(data.clone());
-    }
-    frames
-}
-
-/// Build an HTTP/2 response from already-buffered payloads + final metadata.
-async fn grpc_stream_response_from_payloads(
-    payloads: Vec<Vec<u8>>,
-    meta: GrpcMetadata,
-) -> Response<BoxBody> {
-    let mut frames: Vec<Bytes> = Vec::with_capacity(payloads.len());
-    for payload in payloads {
-        let mut buf = BytesMut::with_capacity(5 + payload.len());
-        buf.put_u8(0); // not compressed
-        buf.put_u32(payload.len() as u32);
-        buf.put_slice(&payload);
-        frames.push(buf.freeze());
-    }
-
-    let mut trailers = http::HeaderMap::new();
-    trailers.insert("grpc-status", http::HeaderValue::from_static("0"));
-    for (k, v) in &meta.headers {
-        if let (Ok(name), Ok(val)) = (
-            http::HeaderName::from_bytes(k.as_bytes()),
-            http::HeaderValue::from_str(v),
-        ) {
-            trailers.insert(name, val);
         }
     }
 
-    let mut http_frames: Vec<Result<http_body::Frame<Bytes>, Infallible>> = frames
-        .into_iter()
-        .map(|b| Ok(http_body::Frame::data(b)))
-        .collect();
-    http_frames.push(Ok(http_body::Frame::trailers(trailers)));
-
-    let response_body = BodyExt::boxed(StreamBody::new(futures::stream::iter(http_frames)));
-
-    Response::builder()
-        .status(200)
-        .header("content-type", "application/grpc")
-        .body(response_body)
-        .unwrap()
-}
-
-/// Collect a response stream into a single HTTP/2 response with one DATA frame
-/// per stream item plus a trailing `grpc-status=0` header and any response metadata.
-#[allow(dead_code)]
-async fn grpc_stream_response(
-    mut stream: GrpcMessageStream,
-    meta: GrpcMetadata,
-) -> Response<BoxBody> {
-    use futures::StreamExt;
-
-    // Collect all response messages.
-    let mut frames: Vec<Bytes> = Vec::new();
-    loop {
-        match stream.next().await {
-            Some(Ok(payload)) => {
-                let mut buf = BytesMut::with_capacity(5 + payload.len());
-                buf.put_u8(0); // not compressed
-                buf.put_u32(payload.len() as u32);
-                buf.put_slice(&payload);
-                frames.push(buf.freeze());
+    /// Route a request to the correct [`GrpcIngress`] streaming variant.
+    ///
+    /// `x-grpc-stream-type` header values and their targets:
+    /// - `"server-stream"` → [`GrpcIngress::handle_server_stream`] (unary request, streaming response)
+    /// - `"client-stream"` → [`GrpcIngress::handle_client_stream`] (streaming request, single response)
+    /// - `"bidi-stream"`   → [`GrpcIngress::handle_bidi_stream`]   (streaming both directions)
+    /// - absent / any other value → [`GrpcIngress::handle_stream`] (backward-compatible default)
+    ///
+    /// All branches normalise to `(GrpcMessageStream, GrpcMetadata)` so the rest of the
+    /// dispatch pipeline (drain → interceptors → wire encoding) is unchanged.
+    async fn route_dispatch(
+        handler: Arc<dyn GrpcIngress>,
+        stream_type: &str,
+        method: String,
+        metadata: GrpcMetadata,
+        messages: GrpcMessageStream,
+        ctx: RequestContext,
+        deadline: Duration,
+    ) -> GrpcIngressResult<(GrpcMessageStream, GrpcMetadata)> {
+        use futures::StreamExt;
+        match stream_type {
+            "server-stream" => {
+                // Single request frame → streaming response.
+                let mut s = messages;
+                let body = match s.next().await {
+                    Some(Ok(b)) => b,
+                    Some(Err(e)) => return Err(e),
+                    None => vec![],
+                };
+                let req = GrpcRequest::new(method, body, deadline).with_metadata(metadata);
+                let out = handler.handle_server_stream(req, ctx).await?;
+                Ok((out, GrpcMetadata::default()))
             }
-            Some(Err(e)) => {
-                let (code, msg) = map_inbound_error(e);
-                return grpc_error(code, msg);
+            "client-stream" => {
+                // Streaming request → single response wrapped in a one-item stream.
+                let resp = handler
+                    .handle_client_stream(method, metadata, messages, ctx)
+                    .await?;
+                let out: GrpcMessageStream =
+                    Box::pin(futures::stream::once(futures::future::ready(Ok(resp.body))));
+                Ok((out, resp.metadata))
             }
-            None => break,
+            "bidi-stream" => {
+                handler
+                    .handle_bidi_stream(method, metadata, messages, ctx)
+                    .await
+            }
+            _ => handler.handle_stream(method, metadata, messages, ctx).await,
         }
     }
 
-    let mut trailers = http::HeaderMap::new();
-    trailers.insert("grpc-status", http::HeaderValue::from_static("0"));
-    for (k, v) in &meta.headers {
-        if let (Ok(name), Ok(val)) = (
-            http::HeaderName::from_bytes(k.as_bytes()),
-            http::HeaderValue::from_str(v),
-        ) {
-            trailers.insert(name, val);
+    /// Strip authz policy rationale before it reaches the wire.
+    ///
+    /// Authorisation interceptors may attach policy-decision details to
+    /// the error message — those strings could leak the server's ACL
+    /// shape.  Replace any `PermissionDenied` payload with a fixed,
+    /// non-revealing string.  Other errors pass through untouched.
+    fn sanitize_authz_error(err: GrpcIngressError) -> GrpcIngressError {
+        match err {
+            GrpcIngressError::PermissionDenied(_) => {
+                GrpcIngressError::PermissionDenied("authorization denied".into())
+            }
+            GrpcIngressError::Status(GrpcStatusCode::PermissionDenied, _) => {
+                GrpcIngressError::Status(
+                    GrpcStatusCode::PermissionDenied,
+                    "authorization denied".into(),
+                )
+            }
+            other => other,
         }
     }
 
-    // Build the response body: one DATA frame per response message, then trailers.
-    let mut http_frames: Vec<Result<http_body::Frame<Bytes>, Infallible>> = frames
-        .into_iter()
-        .map(|b| Ok(http_body::Frame::data(b)))
-        .collect();
-    http_frames.push(Ok(http_body::Frame::trailers(trailers)));
-
-    let response_body = BodyExt::boxed(StreamBody::new(futures::stream::iter(http_frames)));
-
-    Response::builder()
-        .status(200)
-        .header("content-type", "application/grpc")
-        .body(response_body)
-        .unwrap()
-}
-
-// ── gRPC framing helpers ──────────────────────────────────────────────────────
-
-fn grpc_error(code: tonic::Code, message: impl Into<String>) -> Response<BoxBody> {
-    let message = message.into();
-    let mut trailers = http::HeaderMap::new();
-    trailers.insert(
-        "grpc-status",
-        http::HeaderValue::from_str(&(code as i32).to_string()).unwrap(),
-    );
-    if let Ok(val) = http::HeaderValue::from_str(&message) {
-        trailers.insert("grpc-message", val);
+    /// Drain a [`GrpcMessageStream`] into a list of payloads.
+    async fn collect_response_payload(
+        mut stream: GrpcMessageStream,
+    ) -> Result<Vec<Vec<u8>>, GrpcIngressError> {
+        use futures::StreamExt;
+        let mut out = Vec::new();
+        while let Some(item) = stream.next().await {
+            out.push(item?);
+        }
+        Ok(out)
     }
 
-    let response_body = StreamBody::new(futures::stream::iter([Ok::<
-        http_body::Frame<Bytes>,
-        Infallible,
-    >(http_body::Frame::trailers(
-        trailers,
-    ))]))
-    .boxed();
-
-    Response::builder()
-        .status(200)
-        .header("content-type", "application/grpc")
-        .body(response_body)
-        .unwrap()
-}
-
-fn collect_metadata(headers: &http::HeaderMap) -> HashMap<String, String> {
-    headers
-        .iter()
-        .filter_map(|(k, v)| match v.to_str() {
-            Ok(vs) => Some((k.to_string(), vs.to_string())),
-            Err(_) => {
-                tracing::warn!(header = %k, "dropping non-UTF-8 gRPC request header");
-                None
+    /// Parse all gRPC length-prefix frames from a raw body.
+    ///
+    /// Each frame: 1 byte compressed flag + 4 bytes big-endian message length + payload.
+    /// Frames with a compressed flag != 0 are still yielded (payload returned as-is).
+    fn decode_grpc_frames(data: &Bytes) -> Vec<Bytes> {
+        const HEADER: usize = 5;
+        let mut frames = Vec::new();
+        let mut offset = 0usize;
+        while offset + HEADER <= data.len() {
+            // bytes 1-4 are the big-endian message length; byte 0 is the compressed flag.
+            let len = u32::from_be_bytes([
+                data[offset + 1],
+                data[offset + 2],
+                data[offset + 3],
+                data[offset + 4],
+            ]) as usize;
+            let payload_start = offset + HEADER;
+            let payload_end = payload_start + len;
+            if payload_end > data.len() {
+                break; // truncated — stop rather than panic
             }
-        })
-        .collect()
+            frames.push(data.slice(payload_start..payload_end));
+            offset = payload_end;
+        }
+        // If no valid frame header was found treat the entire body as one raw payload
+        // (handles the degenerate case of an empty or header-only body gracefully).
+        if frames.is_empty() && !data.is_empty() {
+            frames.push(data.clone());
+        }
+        frames
+    }
+
+    /// Build an HTTP/2 response from already-buffered payloads + final metadata.
+    async fn grpc_stream_response_from_payloads(
+        payloads: Vec<Vec<u8>>,
+        meta: GrpcMetadata,
+    ) -> Response<BoxBody> {
+        let mut frames: Vec<Bytes> = Vec::with_capacity(payloads.len());
+        for payload in payloads {
+            let mut buf = BytesMut::with_capacity(5 + payload.len());
+            buf.put_u8(0); // not compressed
+            buf.put_u32(payload.len() as u32);
+            buf.put_slice(&payload);
+            frames.push(buf.freeze());
+        }
+
+        let mut trailers = http::HeaderMap::new();
+        trailers.insert("grpc-status", http::HeaderValue::from_static("0"));
+        for (k, v) in &meta.headers {
+            if let (Ok(name), Ok(val)) = (
+                http::HeaderName::from_bytes(k.as_bytes()),
+                http::HeaderValue::from_str(v),
+            ) {
+                trailers.insert(name, val);
+            }
+        }
+
+        let mut http_frames: Vec<Result<http_body::Frame<Bytes>, Infallible>> = frames
+            .into_iter()
+            .map(|b| Ok(http_body::Frame::data(b)))
+            .collect();
+        http_frames.push(Ok(http_body::Frame::trailers(trailers)));
+
+        let response_body = BodyExt::boxed(StreamBody::new(futures::stream::iter(http_frames)));
+
+        Response::builder()
+            .status(200)
+            .header("content-type", "application/grpc")
+            .body(response_body)
+            .unwrap()
+    }
+
+    /// Collect a response stream into a single HTTP/2 response with one DATA frame
+    /// per stream item plus a trailing `grpc-status=0` header and any response metadata.
+    #[allow(dead_code)]
+    async fn grpc_stream_response(
+        mut stream: GrpcMessageStream,
+        meta: GrpcMetadata,
+    ) -> Response<BoxBody> {
+        use futures::StreamExt;
+
+        // Collect all response messages.
+        let mut frames: Vec<Bytes> = Vec::new();
+        loop {
+            match stream.next().await {
+                Some(Ok(payload)) => {
+                    let mut buf = BytesMut::with_capacity(5 + payload.len());
+                    buf.put_u8(0); // not compressed
+                    buf.put_u32(payload.len() as u32);
+                    buf.put_slice(&payload);
+                    frames.push(buf.freeze());
+                }
+                Some(Err(e)) => {
+                    let (code, msg) = StatusCodeConverter::map_inbound_error(e);
+                    return Self::grpc_error(code, msg);
+                }
+                None => break,
+            }
+        }
+
+        let mut trailers = http::HeaderMap::new();
+        trailers.insert("grpc-status", http::HeaderValue::from_static("0"));
+        for (k, v) in &meta.headers {
+            if let (Ok(name), Ok(val)) = (
+                http::HeaderName::from_bytes(k.as_bytes()),
+                http::HeaderValue::from_str(v),
+            ) {
+                trailers.insert(name, val);
+            }
+        }
+
+        // Build the response body: one DATA frame per response message, then trailers.
+        let mut http_frames: Vec<Result<http_body::Frame<Bytes>, Infallible>> = frames
+            .into_iter()
+            .map(|b| Ok(http_body::Frame::data(b)))
+            .collect();
+        http_frames.push(Ok(http_body::Frame::trailers(trailers)));
+
+        let response_body = BodyExt::boxed(StreamBody::new(futures::stream::iter(http_frames)));
+
+        Response::builder()
+            .status(200)
+            .header("content-type", "application/grpc")
+            .body(response_body)
+            .unwrap()
+    }
+
+    fn grpc_error(code: tonic::Code, message: impl Into<String>) -> Response<BoxBody> {
+        let message = message.into();
+        let mut trailers = http::HeaderMap::new();
+        trailers.insert(
+            "grpc-status",
+            http::HeaderValue::from_str(&(code as i32).to_string()).unwrap(),
+        );
+        if let Ok(val) = http::HeaderValue::from_str(&message) {
+            trailers.insert("grpc-message", val);
+        }
+
+        let response_body = StreamBody::new(futures::stream::iter([Ok::<
+            http_body::Frame<Bytes>,
+            Infallible,
+        >(
+            http_body::Frame::trailers(trailers),
+        )]))
+        .boxed();
+
+        Response::builder()
+            .status(200)
+            .header("content-type", "application/grpc")
+            .body(response_body)
+            .unwrap()
+    }
+
+    fn collect_metadata(headers: &http::HeaderMap) -> HashMap<String, String> {
+        headers
+            .iter()
+            .filter_map(|(k, v)| match v.to_str() {
+                Ok(vs) => Some((k.to_string(), vs.to_string())),
+                Err(_) => {
+                    tracing::warn!(header = %k, "dropping non-UTF-8 gRPC request header");
+                    None
+                }
+            })
+            .collect()
+    }
 }
 
 // `map_error` was replaced by `map_inbound_error` in
@@ -743,28 +751,31 @@ mod tests {
     #[test]
     fn test_read_deadline_falls_back_to_default_when_header_absent() {
         let map = http::HeaderMap::new();
-        assert_eq!(read_deadline(&map), DEFAULT_DEADLINE);
+        assert_eq!(TonicServerDispatcher::read_deadline(&map), DEFAULT_DEADLINE);
     }
 
     #[test]
     fn test_read_deadline_parses_grpc_timeout_header() {
         let mut map = http::HeaderMap::new();
         map.insert("grpc-timeout", "500m".parse().unwrap());
-        assert_eq!(read_deadline(&map), Duration::from_millis(500));
+        assert_eq!(
+            TonicServerDispatcher::read_deadline(&map),
+            Duration::from_millis(500)
+        );
     }
 
     #[test]
     fn test_read_deadline_falls_back_on_malformed_header() {
         let mut map = http::HeaderMap::new();
         map.insert("grpc-timeout", "garbage".parse().unwrap());
-        assert_eq!(read_deadline(&map), DEFAULT_DEADLINE);
+        assert_eq!(TonicServerDispatcher::read_deadline(&map), DEFAULT_DEADLINE);
     }
 
     // ── grpc_error ────────────────────────────────────────────────────────
 
     #[test]
     fn test_grpc_error_returns_200_with_grpc_content_type() {
-        let resp = grpc_error(tonic::Code::NotFound, "missing");
+        let resp = TonicServerDispatcher::grpc_error(tonic::Code::NotFound, "missing");
         assert_eq!(resp.status(), 200);
         assert_eq!(
             resp.headers().get("content-type").unwrap(),
@@ -778,7 +789,7 @@ mod tests {
     fn test_collect_metadata_extracts_utf8_header_values() {
         let mut map = http::HeaderMap::new();
         map.insert("x-request-id", "abc-123".parse().unwrap());
-        let meta = collect_metadata(&map);
+        let meta = TonicServerDispatcher::collect_metadata(&map);
         assert_eq!(meta.get("x-request-id"), Some(&"abc-123".to_string()));
     }
 
@@ -789,7 +800,7 @@ mod tests {
         let detailed = GrpcIngressError::PermissionDenied(
             "policy ROLE_ADMIN denied subject=alice path=/svc/Drop".into(),
         );
-        let sanitized = sanitize_authz_error(detailed);
+        let sanitized = TonicServerDispatcher::sanitize_authz_error(detailed);
         match sanitized {
             GrpcIngressError::PermissionDenied(msg) => {
                 assert_eq!(msg, "authorization denied");
@@ -806,7 +817,7 @@ mod tests {
             GrpcStatusCode::PermissionDenied,
             "denied: subject=bob lacks scope=admin".into(),
         );
-        let sanitized = sanitize_authz_error(detailed);
+        let sanitized = TonicServerDispatcher::sanitize_authz_error(detailed);
         match sanitized {
             GrpcIngressError::Status(GrpcStatusCode::PermissionDenied, msg) => {
                 assert_eq!(msg, "authorization denied");
@@ -820,7 +831,7 @@ mod tests {
     #[test]
     fn test_sanitize_authz_error_passes_through_unrelated_errors() {
         let original = GrpcIngressError::NotFound("row not found".into());
-        let result = sanitize_authz_error(original);
+        let result = TonicServerDispatcher::sanitize_authz_error(original);
         match result {
             GrpcIngressError::NotFound(msg) => assert_eq!(msg, "row not found"),
             other => panic!("expected NotFound, got {other:?}"),

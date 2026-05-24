@@ -9,6 +9,7 @@ pub(crate) mod grpc_server_config;
 pub(crate) mod grpc_server_config_builder;
 pub(crate) mod grpc_status_code;
 pub(crate) mod peer_identity;
+pub mod peer_identity_extractor;
 
 pub use compression_mode::CompressionMode;
 pub use grpc_metadata::GrpcMetadata;
@@ -21,6 +22,7 @@ pub use grpc_server_config::{
 pub use grpc_server_config_builder::GrpcServerConfigBuilder;
 pub use grpc_status_code::GrpcStatusCode;
 pub use peer_identity::{
-    is_reserved_peer_key, PeerIdentity, PEER_CERT_FINGERPRINT_SHA256, PEER_CN, PEER_IDENTITY,
-    PEER_SAN_DNS, PEER_SAN_URI, RESERVED_PEER_PREFIXES,
+    PeerIdentity, PEER_CERT_FINGERPRINT_SHA256, PEER_CN, PEER_IDENTITY, PEER_SAN_DNS, PEER_SAN_URI,
+    RESERVED_PEER_PREFIXES,
 };
+pub use peer_identity_extractor::PeerIdentityExtractor;

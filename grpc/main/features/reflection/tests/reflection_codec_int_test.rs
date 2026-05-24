@@ -1,7 +1,7 @@
 //! Integration tests covering codec helpers and service builder methods that were
 //! not exercised by the inline unit tests.
 //!
-//! Rule 77: with_descriptors, service_name_from_method_path, encode_response.
+//! Rule 77: with_descriptors, ReflectionService::service_name_from_method_path, encode_response.
 //! Rule 78: @covers annotations for all test functions.
 
 use std::sync::Arc;
@@ -9,8 +9,8 @@ use std::sync::Arc;
 use edge_domain::HandlerRegistry;
 use swe_edge_ingress_grpc::{GrpcIngress, GrpcRequest};
 use swe_edge_ingress_grpc_reflection::{
-    encode_response, service_name_from_method_path, Descriptor, ReflectionRequest,
-    ReflectionResponse, ReflectionService, REFLECTION_INFO_METHOD, REFLECTION_SERVICE_NAME,
+    Descriptor, ReflectionCodec, ReflectionRequest, ReflectionResponse, ReflectionService,
+    REFLECTION_INFO_METHOD, REFLECTION_SERVICE_NAME,
 };
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -161,45 +161,45 @@ async fn test_with_descriptors_descriptor_found_by_containing_symbol() {
     );
 }
 
-// ── service_name_from_method_path ─────────────────────────────────────────────
+// ── ReflectionService::service_name_from_method_path ─────────────────────────────────────────────
 
-/// @covers: service_name_from_method_path — well-formed path extracts service portion.
+/// @covers: ReflectionService::service_name_from_method_path — well-formed path extracts service portion.
 #[test]
 fn test_service_name_from_method_path_well_formed_path_returns_service_name() {
     assert_eq!(
-        service_name_from_method_path("/pkg.MyService/Method"),
+        ReflectionService::service_name_from_method_path("/pkg.MyService/Method"),
         Some("pkg.MyService")
     );
 }
 
-/// @covers: service_name_from_method_path — path without leading slash returns None.
+/// @covers: ReflectionService::service_name_from_method_path — path without leading slash returns None.
 #[test]
 fn test_service_name_from_method_path_no_leading_slash_returns_none() {
-    assert!(service_name_from_method_path("pkg.MyService/Method").is_none());
+    assert!(ReflectionService::service_name_from_method_path("pkg.MyService/Method").is_none());
 }
 
-/// @covers: service_name_from_method_path — empty string returns None.
+/// @covers: ReflectionService::service_name_from_method_path — empty string returns None.
 #[test]
 fn test_service_name_from_method_path_empty_string_returns_none() {
-    assert!(service_name_from_method_path("").is_none());
+    assert!(ReflectionService::service_name_from_method_path("").is_none());
 }
 
-/// @covers: service_name_from_method_path — slash-only path returns None (empty service name).
+/// @covers: ReflectionService::service_name_from_method_path — slash-only path returns None (empty service name).
 #[test]
 fn test_service_name_from_method_path_slash_only_returns_none() {
-    assert!(service_name_from_method_path("/").is_none());
+    assert!(ReflectionService::service_name_from_method_path("/").is_none());
 }
 
-/// @covers: service_name_from_method_path — leading slash with no trailing slash returns None.
+/// @covers: ReflectionService::service_name_from_method_path — leading slash with no trailing slash returns None.
 #[test]
 fn test_service_name_from_method_path_no_method_segment_returns_none() {
-    assert!(service_name_from_method_path("/ServiceOnly").is_none());
+    assert!(ReflectionService::service_name_from_method_path("/ServiceOnly").is_none());
 }
 
-/// @covers: service_name_from_method_path — reflection own method path returns REFLECTION_SERVICE_NAME.
+/// @covers: ReflectionService::service_name_from_method_path — reflection own method path returns REFLECTION_SERVICE_NAME.
 #[test]
 fn test_service_name_from_method_path_reflection_own_method_returns_service_name() {
-    let name = service_name_from_method_path(
+    let name = ReflectionService::service_name_from_method_path(
         "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
     );
     assert_eq!(name, Some(REFLECTION_SERVICE_NAME));
@@ -211,7 +211,7 @@ fn test_service_name_from_method_path_reflection_own_method_returns_service_name
 #[test]
 fn test_encode_response_list_services_produces_non_empty_output() {
     let resp = ReflectionResponse::ListServices(vec!["pkg.Demo".into()]);
-    let out = encode_response(&resp, &[]);
+    let out = ReflectionCodec::encode_response(&resp, &[]);
     assert!(!out.is_empty(), "encoded ListServices must not be empty");
 }
 
@@ -220,7 +220,7 @@ fn test_encode_response_list_services_produces_non_empty_output() {
 fn test_encode_response_file_descriptor_embeds_descriptor_bytes() {
     let payload = vec![0xde, 0xad, 0xbe, 0xef];
     let resp = ReflectionResponse::FileDescriptor(vec![payload.clone()]);
-    let out = encode_response(&resp, &[]);
+    let out = ReflectionCodec::encode_response(&resp, &[]);
     assert!(
         out.windows(payload.len()).any(|w| w == payload.as_slice()),
         "descriptor bytes not found in encoded output: {out:?}"
@@ -234,7 +234,7 @@ fn test_encode_response_error_encodes_error_code_nonzero() {
         error_code: 5,
         error_message: "not found".into(),
     };
-    let out = encode_response(&resp, &[]);
+    let out = ReflectionCodec::encode_response(&resp, &[]);
     // Field 1 (varint tag = 0x08) with value 5 must be present inside the sub-message.
     assert!(
         out.windows(2).any(|w| w == [0x08, 0x05]),
@@ -247,7 +247,7 @@ fn test_encode_response_error_encodes_error_code_nonzero() {
 fn test_encode_response_echoes_original_request_in_envelope() {
     let req_body = vec![0x3a, 0x00]; // list_services request
     let resp = ReflectionResponse::ListServices(vec![]);
-    let out = encode_response(&resp, &req_body);
+    let out = ReflectionCodec::encode_response(&resp, &req_body);
     assert!(
         out.windows(req_body.len())
             .any(|w| w == req_body.as_slice()),
@@ -259,8 +259,8 @@ fn test_encode_response_echoes_original_request_in_envelope() {
 #[test]
 fn test_encode_response_empty_original_request_skips_envelope_field() {
     let resp = ReflectionResponse::ListServices(vec![]);
-    let with_req = encode_response(&resp, &[0x3a, 0x00]);
-    let without_req = encode_response(&resp, &[]);
+    let with_req = ReflectionCodec::encode_response(&resp, &[0x3a, 0x00]);
+    let without_req = ReflectionCodec::encode_response(&resp, &[]);
     assert!(
         with_req.len() > without_req.len(),
         "output with echoed request ({}) must be longer than without ({})",
@@ -274,18 +274,16 @@ fn test_encode_response_empty_original_request_skips_envelope_field() {
 /// @covers: decode_request — ListServices request decodes to ListServices variant.
 #[test]
 fn test_decode_request_list_services_round_trips() {
-    use swe_edge_ingress_grpc_reflection::decode_request;
     let body = vec![0x3a, 0x00];
-    let req = decode_request(&body).expect("decode must succeed");
+    let req = ReflectionCodec::decode_request(&body).expect("decode must succeed");
     assert_eq!(req, ReflectionRequest::ListServices(String::new()));
 }
 
 /// @covers: decode_request — FileByFilename request decodes to FileByFilename variant.
 #[test]
 fn test_decode_request_file_by_filename_round_trips() {
-    use swe_edge_ingress_grpc_reflection::decode_request;
     let body = file_by_filename_body("pkg/foo.proto");
-    let req = decode_request(&body).expect("decode must succeed");
+    let req = ReflectionCodec::decode_request(&body).expect("decode must succeed");
     assert_eq!(
         req,
         ReflectionRequest::FileByFilename("pkg/foo.proto".into())

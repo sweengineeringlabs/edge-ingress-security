@@ -1,14 +1,14 @@
 //! Integration tests for `ReflectionService` builder methods and helpers.
 //!
-//! Rules 77 + 78: covers `with_descriptors`, `service_name_from_method_path`, and
+//! Rules 77 + 78: covers `with_descriptors`, `ReflectionService::service_name_from_method_path`, and
 //! `add_descriptor` with `/// @covers:` annotations.
 
 use std::sync::Arc;
 
 use edge_domain::HandlerRegistry;
 use swe_edge_ingress_grpc_reflection::{
-    handle_reflection, service_name_from_method_path, Descriptor, ReflectionRequest,
-    ReflectionResponse, ReflectionService, REFLECTION_SERVICE_NAME,
+    handle_reflection, Descriptor, ReflectionRequest, ReflectionResponse, ReflectionService,
+    REFLECTION_SERVICE_NAME,
 };
 
 fn make_registry() -> Arc<HandlerRegistry<Vec<u8>, Vec<u8>>> {
@@ -90,39 +90,39 @@ fn test_with_descriptors_multiple_descriptors_findable_by_symbol() {
     );
 }
 
-// ── service_name_from_method_path ─────────────────────────────────────────────
+// ── ReflectionService::service_name_from_method_path ─────────────────────────────────────────────
 
-/// @covers: service_name_from_method_path — well-formed path returns service segment.
+/// @covers: ReflectionService::service_name_from_method_path — well-formed path returns service segment.
 #[test]
 fn test_service_name_from_method_path_well_formed_returns_service_segment() {
     assert_eq!(
-        service_name_from_method_path("/grpc.health.v1.Health/Check"),
+        ReflectionService::service_name_from_method_path("/grpc.health.v1.Health/Check"),
         Some("grpc.health.v1.Health")
     );
 }
 
-/// @covers: service_name_from_method_path — path without leading slash returns None.
+/// @covers: ReflectionService::service_name_from_method_path — path without leading slash returns None.
 #[test]
 fn test_service_name_from_method_path_no_leading_slash_returns_none() {
-    assert!(service_name_from_method_path("no.slash/Method").is_none());
+    assert!(ReflectionService::service_name_from_method_path("no.slash/Method").is_none());
 }
 
-/// @covers: service_name_from_method_path — empty string returns None.
+/// @covers: ReflectionService::service_name_from_method_path — empty string returns None.
 #[test]
 fn test_service_name_from_method_path_empty_string_returns_none() {
-    assert!(service_name_from_method_path("").is_none());
+    assert!(ReflectionService::service_name_from_method_path("").is_none());
 }
 
-/// @covers: service_name_from_method_path — slash-only string returns None (empty service name).
+/// @covers: ReflectionService::service_name_from_method_path — slash-only string returns None (empty service name).
 #[test]
 fn test_service_name_from_method_path_slash_only_returns_none() {
-    assert!(service_name_from_method_path("/").is_none());
+    assert!(ReflectionService::service_name_from_method_path("/").is_none());
 }
 
-/// @covers: service_name_from_method_path — reflection own method path returns REFLECTION_SERVICE_NAME.
+/// @covers: ReflectionService::service_name_from_method_path — reflection own method path returns REFLECTION_SERVICE_NAME.
 #[test]
 fn test_service_name_from_method_path_reflection_path_returns_reflection_service_name() {
-    let result = service_name_from_method_path(
+    let result = ReflectionService::service_name_from_method_path(
         "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
     );
     assert_eq!(result, Some(REFLECTION_SERVICE_NAME));

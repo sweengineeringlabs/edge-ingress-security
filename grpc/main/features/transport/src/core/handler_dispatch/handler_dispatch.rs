@@ -15,10 +15,10 @@ use std::time::Instant;
 use edge_domain::{HandlerError, RequestContext};
 use futures::future::BoxFuture;
 
-use crate::api::handler::grpc::grpc_handler_registry_dispatcher::GrpcHandlerRegistryDispatcher;
 use crate::api::port::grpc_ingress::{
     GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult,
 };
+use crate::api::types::grpc::GrpcHandlerRegistryDispatcher;
 use crate::api::value_object::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
 impl HandlerDispatch {
@@ -117,9 +117,11 @@ mod tests {
 
     use edge_domain::{HandlerError, HandlerRegistry, RequestContext};
 
-    use crate::api::handler::grpc::grpc_handler_registry_dispatcher::GrpcHandlerRegistryDispatcher;
     use crate::api::port::grpc_ingress::{GrpcIngress, GrpcIngressError};
+    use crate::api::types::grpc::GrpcHandlerRegistryDispatcher;
     use crate::api::value_object::GrpcRequest;
+
+    use super::HandlerDispatch;
 
     // Use Handler<Vec<u8>, Vec<u8>> directly to avoid struct definitions in test code.
     // Each handler below is scoped inside the function that uses it.
