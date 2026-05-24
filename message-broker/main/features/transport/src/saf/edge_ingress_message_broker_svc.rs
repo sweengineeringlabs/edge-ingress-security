@@ -1,5 +1,6 @@
 //! SAF factory functions for the ingress message consumer.
 
+use swe_edge_configbuilder::ConfigBuilder as _;
 use futures::future::BoxFuture;
 use swe_edge_runtime_message_broker::MessageStream;
 
@@ -7,6 +8,13 @@ use crate::api::port::consumer::consumer_error::ConsumerError;
 use crate::api::port::consumer::consumer_result::ConsumerResult;
 use crate::api::port::message_consumer::MessageConsumer;
 use crate::api::traits::Validator;
+
+/// Return a [`ConfigBuilder`] pre-seeded with this crate's package name and version.
+pub fn create_config_builder() -> impl swe_edge_configbuilder::ConfigBuilder {
+    swe_edge_configbuilder::create_config_builder()
+        .with_name(env!("CARGO_PKG_NAME"))
+        .with_version(env!("CARGO_PKG_VERSION"))
+}
 
 /// Validate any type that implements [`Validator`].
 pub fn validate<V: Validator>(v: &V) -> Result<(), String> {

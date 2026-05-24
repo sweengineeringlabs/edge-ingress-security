@@ -19,5 +19,5 @@ pub use crate::api::value_object::{
     WsSender,
 };
 pub use edge_domain::RequestContext;
-pub use edge_ingress_http_transport_svc::validate;
+pub use edge_ingress_http_transport_svc::{create_config_builder, validate};
 pub use swe_edge_ingress_tls::{IngressTlsConfig, IngressTlsError};
