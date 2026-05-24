@@ -4,15 +4,15 @@ use edge_domain::RequestContext;
 use futures::future::BoxFuture;
 
 use crate::api::port::http_ingress_result::HttpIngressResult;
-use crate::api::value_object::sse::SseStream;
-use crate::api::value_object::ws::WsChannel;
-use crate::api::value_object::HttpRequest;
+use crate::api::value::sse::SseStream;
+use crate::api::value::ws::WsChannel;
+use crate::api::value::HttpRequest;
 
 /// Handles HTTP transport-level streaming connections.
 ///
 /// # SSE (Server-Sent Events)
 /// The handler owns the push stream. The transport layer drives the stream
-/// and serialises each [`SseEvent`](crate::api::value_object::sse::SseEvent)
+/// and serialises each [`SseEvent`](crate::api::value::sse::SseEvent)
 /// into a `text/event-stream` wire frame.
 ///
 /// # WebSocket
@@ -22,7 +22,7 @@ use crate::api::value_object::HttpRequest;
 pub trait HttpStream: Send + Sync {
     /// Handle a Server-Sent Events upgrade request.
     ///
-    /// Returns a lazy stream of [`SseEvent`](crate::api::value_object::sse::SseEvent) frames
+    /// Returns a lazy stream of [`SseEvent`](crate::api::value::sse::SseEvent) frames
     /// that the transport will forward to the connected client.
     fn handle_sse(
         &self,

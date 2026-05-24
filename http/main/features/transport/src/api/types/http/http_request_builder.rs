@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use super::http_request::HttpRequest;
-use crate::api::value_object::http::http_body::HttpBody;
-use crate::api::value_object::http::http_method::HttpMethod;
+use crate::api::value::http::http_body::HttpBody;
+use crate::api::value::http::http_method::HttpMethod;
 
 /// Fluent builder that constructs an [`HttpRequest`].
 pub struct HttpRequestBuilder {

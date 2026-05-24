@@ -70,7 +70,7 @@ mod tests {
     use crate::api::port::http_health_check::HttpHealthCheck;
     use crate::api::port::http_ingress::HttpIngress;
     use crate::api::port::http_ingress_result::HttpIngressResult;
-    use crate::api::value_object::{HttpRequest, HttpResponse};
+    use crate::api::value::{HttpRequest, HttpResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
 

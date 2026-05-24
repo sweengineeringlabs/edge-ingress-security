@@ -20,7 +20,7 @@ pub fn validate<V: Validator>(v: &V) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::api::value_object::http::http_config::HttpConfig;
+    use crate::api::value::http::http_config::HttpConfig;
 
     /// @covers: validate
     #[test]

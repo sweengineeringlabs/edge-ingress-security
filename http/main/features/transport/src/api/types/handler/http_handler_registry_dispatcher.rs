@@ -8,7 +8,7 @@ use swe_observ_metrics::MetricsProvider;
 
 use crate::api::handler::http::http_dispatcher_error::HttpDispatcherError;
 use crate::api::handler::http::http_handler_adapter::HttpHandlerAdapter;
-use crate::api::value_object::{HttpRequest, HttpResponse};
+use crate::api::value::{HttpRequest, HttpResponse};
 
 /// Dispatcher that routes inbound HTTP requests through a
 /// [`HandlerRegistry`] keyed by handler id, using `matchit` path-pattern
@@ -102,7 +102,7 @@ mod tests {
     fn test_register_adds_handler_to_registry() {
         use crate::api::handler::http::http_handler_adapter::HttpHandlerAdapter;
         use crate::api::port::http_ingress_error::HttpIngressError;
-        use crate::api::value_object::{HttpRequest, HttpResponse};
+        use crate::api::value::{HttpRequest, HttpResponse};
         use edge_domain::{Handler, HandlerError};
 
         struct PingHandler;

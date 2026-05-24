@@ -13,13 +13,13 @@ use tokio::net::TcpListener;
 use crate::api::port::http::http_stream::HttpStream;
 use crate::api::port::http_ingress::HttpIngress;
 use crate::api::port::http_ingress_error::HttpIngressError;
-use crate::api::value_object::ws::{WsChannel, WsMessage};
+use crate::api::value::ws::{WsChannel, WsMessage};
 use edge_domain::RequestContext;
 use swe_edge_ingress_verifier::TokenVerifier;
 
 use crate::api::server::axum::axum_http_server::AxumHttpServer;
 use crate::api::server::axum::axum_server_error::AxumServerError;
-use crate::api::value_object::{HttpBody, HttpMethod, HttpRequest, HttpResponse};
+use crate::api::value::{HttpBody, HttpMethod, HttpRequest, HttpResponse};
 use swe_edge_ingress_tls::IngressTlsConfig;
 
 impl AxumHttpServer {
@@ -768,7 +768,7 @@ mod dedicated_coverage {
     use crate::api::port::http_ingress::HttpIngress;
     use crate::api::port::http_ingress_result::HttpIngressResult;
     use crate::api::server::axum::axum_http_server::MAX_BODY_BYTES;
-    use crate::api::value_object::{HttpRequest, HttpResponse};
+    use crate::api::value::{HttpRequest, HttpResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
     use std::sync::Arc;
@@ -841,7 +841,7 @@ mod sync_coverage {
     use crate::api::port::http_health_check::HttpHealthCheck;
     use crate::api::port::http_ingress::HttpIngress;
     use crate::api::port::http_ingress_result::HttpIngressResult;
-    use crate::api::value_object::{HttpRequest, HttpResponse};
+    use crate::api::value::{HttpRequest, HttpResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
     use std::sync::Arc;

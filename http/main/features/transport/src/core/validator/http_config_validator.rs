@@ -1,7 +1,7 @@
 //! `HttpConfigValidator` — validates [`HttpConfig`] instances.
 
 use crate::api::traits::Validator;
-use crate::api::value_object::http::http_config::HttpConfig;
+use crate::api::value::http::http_config::HttpConfig;
 
 /// Validates an [`HttpConfig`] by checking that required numeric fields
 /// are nonzero and other constraints are met.

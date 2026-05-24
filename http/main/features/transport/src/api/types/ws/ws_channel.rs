@@ -1,7 +1,7 @@
 //! WebSocket full-duplex channel value object.
 
-use crate::api::value_object::ws::ws_receiver::WsReceiver;
-use crate::api::value_object::ws::ws_sender::WsSender;
+use crate::api::value::ws::ws_receiver::WsReceiver;
+use crate::api::value::ws::ws_sender::WsSender;
 
 /// A full-duplex WebSocket channel returned after a successful handshake.
 ///

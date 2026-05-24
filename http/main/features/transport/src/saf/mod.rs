@@ -13,7 +13,7 @@ pub use crate::api::port::http_ingress_result::HttpIngressResult;
 pub use crate::api::server::axum::axum_http_server_builder::AxumHttpServerBuilder;
 pub use crate::api::server::axum::axum_server_error::AxumServerError;
 pub use crate::api::types::server::axum_http_server::{AxumHttpServer, MAX_BODY_BYTES};
-pub use crate::api::value_object::{
+pub use crate::api::value::{
     FormPart, HttpAuth, HttpBody, HttpConfig, HttpConfigBuilder, HttpMethod, HttpRequest,
     HttpRequestBuilder, HttpResponse, SseEvent, SseStream, WsChannel, WsMessage, WsReceiver,
     WsSender,
