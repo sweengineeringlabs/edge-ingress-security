@@ -10,5 +10,6 @@ pub mod types;
 
 pub use error::AuthzError;
 pub use types::{
-    ApplicationConfig, AuthzInterceptor, AuthzPolicy, MethodAclConfig, MethodAclPolicy,
+    ApplicationConfig, ApplicationConfigBuilder, AuthzInterceptor, AuthzPolicy, MethodAclConfig,
+    MethodAclPolicy,
 };

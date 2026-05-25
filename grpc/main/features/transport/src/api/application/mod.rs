@@ -2,4 +2,4 @@
 //!
 //! Re-exports from [`crate::api::types::application`].
 
-pub use crate::api::types::application::ApplicationConfig;
+pub use crate::api::types::application::{ApplicationConfig, ApplicationConfigBuilder};

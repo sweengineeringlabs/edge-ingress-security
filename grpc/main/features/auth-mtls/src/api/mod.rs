@@ -12,3 +12,4 @@ pub mod types;
 pub use error::MtlsAuthError;
 pub use mtls_auth_config::MtlsAuthConfig;
 pub use mtls_auth_interceptor::MtlsAuthInterceptor;
+pub use types::ApplicationConfigBuilder;

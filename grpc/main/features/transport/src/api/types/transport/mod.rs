@@ -13,7 +13,7 @@ pub mod value;
 
 pub(crate) mod serving_status;
 
-pub use application::ApplicationConfig;
+pub use application::{ApplicationConfig, ApplicationConfigBuilder};
 pub use audit::{AuditEvent, AuditEventBuilder, NoopAuditSink};
 pub use grpc::{GrpcHandlerAdapter, GrpcHandlerRegistryDispatcher};
 pub use grpc_timeout::GrpcTimeoutParser;

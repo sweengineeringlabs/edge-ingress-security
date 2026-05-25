@@ -11,3 +11,4 @@ pub use bearer::{
     EXTRACTED_BEARER_SUBJECT,
 };
 pub use error::BearerAuthError;
+pub use types::ApplicationConfigBuilder;

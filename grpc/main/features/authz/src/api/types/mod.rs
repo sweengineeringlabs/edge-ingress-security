@@ -3,5 +3,6 @@
 pub mod authz;
 
 pub use authz::{
-    ApplicationConfig, AuthzInterceptor, AuthzPolicy, MethodAclConfig, MethodAclPolicy,
+    ApplicationConfig, ApplicationConfigBuilder, AuthzInterceptor, AuthzPolicy, MethodAclConfig,
+    MethodAclPolicy,
 };
