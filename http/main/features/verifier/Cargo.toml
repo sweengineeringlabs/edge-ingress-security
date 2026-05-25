@@ -16,6 +16,10 @@ application_type = "lib"
 [lib]
 path = "src/lib.rs"
 
+[[test]]
+name    = "saf_verifier_e2e_test"
+path    = "test/saf_verifier_e2e_test.rs"
+
 [dependencies]
 thiserror = "2"
 tracing   = { version = "0.1", default-features = false }
