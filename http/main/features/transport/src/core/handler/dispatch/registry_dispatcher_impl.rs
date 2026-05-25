@@ -12,6 +12,34 @@ use crate::api::port::http_ingress_error::HttpIngressError;
 use crate::api::port::http_ingress_result::HttpIngressResult;
 use crate::api::value::{HttpRequest, HttpResponse};
 
+impl HttpHandlerRegistryDispatcher {
+    fn path_from_url(url: &str) -> String {
+        url.parse::<http::Uri>()
+            .map(|u| u.path().to_string())
+            .unwrap_or_else(|_| {
+                url.split('?')
+                    .next()
+                    .and_then(|s| s.split('#').next())
+                    .unwrap_or("/")
+                    .to_string()
+            })
+    }
+
+    fn map_handler_error(err: HandlerError) -> HttpIngressError {
+        match err {
+            HandlerError::Unsupported(m) => HttpIngressError::MethodNotAllowed(m),
+            HandlerError::InvalidRequest(m) => HttpIngressError::InvalidInput(m),
+            HandlerError::NotFound(m) => HttpIngressError::NotFound(m),
+            HandlerError::Conflict(m) => HttpIngressError::Conflict(m),
+            HandlerError::ExecutionFailed(m) => HttpIngressError::Internal(m),
+            HandlerError::Unhealthy => HttpIngressError::Unavailable("handler unhealthy".into()),
+            HandlerError::FailedPrecondition(m) => HttpIngressError::UnprocessableEntity(m),
+            HandlerError::Unauthorized(m) => HttpIngressError::Unauthorized(m),
+            HandlerError::PermissionDenied(m) => HttpIngressError::PermissionDenied(m),
+        }
+    }
+}
+
 impl HttpIngress for HttpHandlerRegistryDispatcher {
     fn handle(
         &self,
@@ -20,7 +48,7 @@ impl HttpIngress for HttpHandlerRegistryDispatcher {
     ) -> BoxFuture<'_, HttpIngressResult<HttpResponse>> {
         let metrics = self.metrics.clone();
         Box::pin(async move {
-            let path = path_from_url(&request.url);
+            let path = Self::path_from_url(&request.url);
             let id = {
                 let router = self.router.read();
                 match router.at(&path) {
@@ -62,7 +90,7 @@ impl HttpIngress for HttpHandlerRegistryDispatcher {
                     m.record_counter("edge_handler_errors_total", 1.0, labels);
                 }
             }
-            result.map_err(map_handler_error)
+            result.map_err(|e| HttpHandlerRegistryDispatcher::map_handler_error(e))
         })
     }
 
@@ -81,32 +109,6 @@ impl HttpIngress for HttpHandlerRegistryDispatcher {
             }
             Ok(HttpHealthCheck::healthy())
         })
-    }
-}
-
-pub(crate) fn path_from_url(url: &str) -> String {
-    url.parse::<http::Uri>()
-        .map(|u| u.path().to_string())
-        .unwrap_or_else(|_| {
-            url.split('?')
-                .next()
-                .and_then(|s| s.split('#').next())
-                .unwrap_or("/")
-                .to_string()
-        })
-}
-
-pub(crate) fn map_handler_error(err: HandlerError) -> HttpIngressError {
-    match err {
-        HandlerError::Unsupported(m) => HttpIngressError::MethodNotAllowed(m),
-        HandlerError::InvalidRequest(m) => HttpIngressError::InvalidInput(m),
-        HandlerError::NotFound(m) => HttpIngressError::NotFound(m),
-        HandlerError::Conflict(m) => HttpIngressError::Conflict(m),
-        HandlerError::ExecutionFailed(m) => HttpIngressError::Internal(m),
-        HandlerError::Unhealthy => HttpIngressError::Unavailable("handler unhealthy".into()),
-        HandlerError::FailedPrecondition(m) => HttpIngressError::UnprocessableEntity(m),
-        HandlerError::Unauthorized(m) => HttpIngressError::Unauthorized(m),
-        HandlerError::PermissionDenied(m) => HttpIngressError::PermissionDenied(m),
     }
 }
 
@@ -194,7 +196,7 @@ mod tests {
     #[test]
     fn test_map_handler_error_unsupported_maps_to_method_not_allowed() {
         assert!(matches!(
-            map_handler_error(HandlerError::Unsupported("x".into())),
+            HttpHandlerRegistryDispatcher::map_handler_error(HandlerError::Unsupported("x".into())),
             HttpIngressError::MethodNotAllowed(_)
         ));
     }
@@ -202,7 +204,9 @@ mod tests {
     #[test]
     fn test_map_handler_error_failed_precondition_maps_to_unprocessable_entity() {
         assert!(matches!(
-            map_handler_error(HandlerError::FailedPrecondition("x".into())),
+            HttpHandlerRegistryDispatcher::map_handler_error(HandlerError::FailedPrecondition(
+                "x".into()
+            )),
             HttpIngressError::UnprocessableEntity(_)
         ));
     }
@@ -288,19 +292,25 @@ mod tests {
 
     #[test]
     fn test_path_from_url_extracts_path_from_full_url() {
-        assert_eq!(path_from_url("https://example.com/api/v1"), "/api/v1");
+        assert_eq!(
+            HttpHandlerRegistryDispatcher::path_from_url("https://example.com/api/v1"),
+            "/api/v1"
+        );
     }
 
     #[test]
     fn test_path_from_url_strips_query_string() {
-        assert_eq!(path_from_url("https://example.com/api?foo=bar"), "/api");
+        assert_eq!(
+            HttpHandlerRegistryDispatcher::path_from_url("https://example.com/api?foo=bar"),
+            "/api"
+        );
     }
 
     #[test]
     fn test_path_from_url_returns_empty_for_empty_string() {
         // Empty string: splitn gives empty next, then empty #-split, resulting in empty string.
         // This is the correct behavior - callers must ensure URLs are non-empty.
-        let result = path_from_url("");
+        let result = HttpHandlerRegistryDispatcher::path_from_url("");
         // The function returns what it can parse from the empty string.
         assert!(result == "/" || result.is_empty(), "unexpected: {result}");
     }

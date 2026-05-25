@@ -3,10 +3,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-fn default_max_response_bytes() -> Option<usize> {
-    Some(10 * 1024 * 1024)
-}
-
 /// HTTP client configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -29,8 +25,14 @@ pub struct HttpConfig {
     /// User-Agent header value.
     pub user_agent: Option<String>,
     /// Maximum response body size to accept.
-    #[serde(default = "default_max_response_bytes")]
+    #[serde(default = "HttpConfig::default_max_response_bytes")]
     pub max_response_bytes: Option<usize>,
+}
+
+impl HttpConfig {
+    fn default_max_response_bytes() -> Option<usize> {
+        Some(10 * 1024 * 1024)
+    }
 }
 
 impl Default for HttpConfig {
@@ -44,7 +46,7 @@ impl Default for HttpConfig {
             follow_redirects: true,
             max_redirects: 10,
             user_agent: Some("swe-edge/0.1.0".to_string()),
-            max_response_bytes: default_max_response_bytes(),
+            max_response_bytes: HttpConfig::default_max_response_bytes(),
         }
     }
 }
