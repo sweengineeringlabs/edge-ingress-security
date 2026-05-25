@@ -10,7 +10,7 @@ use std::sync::Arc;
 use std::task::{Context, Poll};
 
 use axum::body::Body;
-use axum::http::{Request, Response, StatusCode};
+use axum::http::{Request, Response};
 use tower::{Layer, Service};
 
 use edge_domain::RequestContext;
@@ -18,6 +18,7 @@ use edge_domain::RequestContext;
 use crate::api::bearer_layer::BearerLayer;
 use crate::api::bearer_service::BearerService;
 use crate::api::error::HttpAuthError;
+use crate::api::types::bearer_service_helper::BearerServiceHelper;
 use crate::api::verified_claims::VerifiedClaims;
 
 impl<S> Layer<S> for BearerLayer {
@@ -53,10 +54,10 @@ where
         let mut inner = self.inner.clone();
 
         Box::pin(async move {
-            match extract_bearer(&req) {
-                Err(e) => Ok(auth_error_response(e)),
+            match BearerServiceHelper::extract_bearer(&req) {
+                Err(e) => Ok(BearerServiceHelper::auth_error_response(e)),
                 Ok(token) => match verifier.verify(token) {
-                    Err(e) => Ok(auth_error_response(HttpAuthError::from(e))),
+                    Err(e) => Ok(BearerServiceHelper::auth_error_response(HttpAuthError::from(e))),
                     Ok(claims) => {
                         // Build RequestContext from verified claims and insert for downstream.
                         let ctx = RequestContext::authenticated(
@@ -80,27 +81,6 @@ where
             }
         })
     }
-}
-
-fn extract_bearer(req: &Request<Body>) -> Result<&str, HttpAuthError> {
-    let header = req
-        .headers()
-        .get(axum::http::header::AUTHORIZATION)
-        .ok_or(HttpAuthError::MissingAuthorization)?
-        .to_str()
-        .map_err(|_| HttpAuthError::MalformedAuthorization)?;
-
-    header
-        .strip_prefix("Bearer ")
-        .ok_or(HttpAuthError::MalformedAuthorization)
-}
-
-fn auth_error_response(err: HttpAuthError) -> Response<Body> {
-    tracing::debug!(?err, "bearer auth rejected request");
-    Response::builder()
-        .status(StatusCode::UNAUTHORIZED)
-        .body(Body::from(err.to_string()))
-        .expect("response with known-good headers and status cannot fail")
 }
 
 #[cfg(test)]
