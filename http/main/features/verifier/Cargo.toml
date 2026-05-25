@@ -20,6 +20,22 @@ path = "src/lib.rs"
 name    = "saf_verifier_e2e_test"
 path    = "test/saf_verifier_e2e_test.rs"
 
+[[test]]
+name    = "auth_error_test"
+path    = "test/auth_error_test.rs"
+
+[[test]]
+name    = "bearer_layer_test"
+path    = "test/bearer_layer_test.rs"
+
+[[test]]
+name    = "bearer_service_test"
+path    = "test/bearer_service_test.rs"
+
+[[test]]
+name    = "verified_claims_test"
+path    = "test/verified_claims_test.rs"
+
 [dependencies]
 thiserror = "2"
 tracing   = { version = "0.1", default-features = false }

@@ -70,6 +70,78 @@ path    = "tests/validator_int_test.rs"
 name    = "saf_transport_e2e_test"
 path    = "test/saf_transport_e2e_test.rs"
 
+[[test]]
+name    = "http_dispatcher_error_test"
+path    = "test/http_dispatcher_error_test.rs"
+
+[[test]]
+name    = "http_handler_adapter_test"
+path    = "test/http_handler_adapter_test.rs"
+
+[[test]]
+name    = "http_handler_registry_dispatcher_test"
+path    = "test/http_handler_registry_dispatcher_test.rs"
+
+[[test]]
+name    = "http_health_check_test"
+path    = "test/http_health_check_test.rs"
+
+[[test]]
+name    = "http_ingress_error_test"
+path    = "test/http_ingress_error_test.rs"
+
+[[test]]
+name    = "axum_http_server_test"
+path    = "test/axum_http_server_test.rs"
+
+[[test]]
+name    = "axum_http_server_builder_test"
+path    = "test/axum_http_server_builder_test.rs"
+
+[[test]]
+name    = "axum_server_error_test"
+path    = "test/axum_server_error_test.rs"
+
+[[test]]
+name    = "http_config_validator_test"
+path    = "test/http_config_validator_test.rs"
+
+[[test]]
+name    = "form_part_test"
+path    = "test/form_part_test.rs"
+
+[[test]]
+name    = "http_config_test"
+path    = "test/http_config_test.rs"
+
+[[test]]
+name    = "http_config_builder_test"
+path    = "test/http_config_builder_test.rs"
+
+[[test]]
+name    = "http_request_test"
+path    = "test/http_request_test.rs"
+
+[[test]]
+name    = "http_request_builder_test"
+path    = "test/http_request_builder_test.rs"
+
+[[test]]
+name    = "http_response_test"
+path    = "test/http_response_test.rs"
+
+[[test]]
+name    = "sse_event_test"
+path    = "test/sse_event_test.rs"
+
+[[test]]
+name    = "ws_channel_test"
+path    = "test/ws_channel_test.rs"
+
+[[test]]
+name    = "ws_message_test"
+path    = "test/ws_message_test.rs"
+
 [dependencies]
 serde          = { version = "1.0", features = ["derive"] }
 serde_json     = "1.0"
