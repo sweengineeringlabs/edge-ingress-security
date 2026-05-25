@@ -49,7 +49,7 @@ impl TonicGrpcServer {
     where
         F: Future<Output = ()>,
     {
-        self.enforce_authorization_invariant();
+        self.enforce_authorization_invariant()?;
         let listener = TcpListener::bind(&self.bind)
             .await
             .map_err(|e| TonicServerError::Bind(self.bind.clone(), e))?;
@@ -58,10 +58,10 @@ impl TonicGrpcServer {
 
     /// Apply the fail-closed authorisation invariant.
     ///
-    /// Panics when no authorization interceptor is registered and
+    /// Returns an error when no authorization interceptor is registered and
     /// `allow_unauthenticated` is `false`.  Logs a WARN when the
     /// caller opted out via `allow_unauthenticated = true`.
-    pub(crate) fn enforce_authorization_invariant(&self) {
+    pub(crate) fn enforce_authorization_invariant(&self) -> Result<(), TonicServerError> {
         let has_authz = self.interceptors.contains_authorization();
         if !has_authz {
             if self.allow_unauthenticated {
@@ -70,9 +70,13 @@ impl TonicGrpcServer {
                      gRPC dispatch will accept all callers"
                 );
             } else {
-                panic!("{MISSING_AUTHORIZATION_INTERCEPTOR_MSG}");
+                tracing::error!("{MISSING_AUTHORIZATION_INTERCEPTOR_MSG}");
+                return Err(TonicServerError::AuthorizationRequired(
+                    MISSING_AUTHORIZATION_INTERCEPTOR_MSG.to_string(),
+                ));
             }
         }
+        Ok(())
     }
 
     /// Serve using a caller-supplied pre-bound listener.
@@ -90,7 +94,7 @@ impl TonicGrpcServer {
     where
         F: Future<Output = ()>,
     {
-        self.enforce_authorization_invariant();
+        self.enforce_authorization_invariant()?;
 
         let bind_addr = listener
             .local_addr()
@@ -636,7 +640,7 @@ impl TonicServerDispatcher {
             .status(200)
             .header("content-type", "application/grpc")
             .body(response_body)
-            .unwrap()
+            .expect("response with known-good headers and status 200 cannot fail")
     }
 
     /// Collect a response stream into a single HTTP/2 response with one DATA frame
@@ -691,7 +695,7 @@ impl TonicServerDispatcher {
             .status(200)
             .header("content-type", "application/grpc")
             .body(response_body)
-            .unwrap()
+            .expect("response with known-good headers and status 200 cannot fail")
     }
 
     fn grpc_error(code: tonic::Code, message: impl Into<String>) -> Response<BoxBody> {
@@ -699,7 +703,8 @@ impl TonicServerDispatcher {
         let mut trailers = http::HeaderMap::new();
         trailers.insert(
             "grpc-status",
-            http::HeaderValue::from_str(&(code as i32).to_string()).unwrap(),
+            http::HeaderValue::from_str(&(code as i32).to_string())
+                .expect("integer status code string is always valid HTTP header value"),
         );
         if let Ok(val) = http::HeaderValue::from_str(&message) {
             trailers.insert("grpc-message", val);
@@ -717,7 +722,7 @@ impl TonicServerDispatcher {
             .status(200)
             .header("content-type", "application/grpc")
             .body(response_body)
-            .unwrap()
+            .expect("response with known-good headers and status 200 cannot fail")
     }
 
     fn collect_metadata(headers: &http::HeaderMap) -> HashMap<String, String> {
@@ -882,24 +887,23 @@ mod tests {
         let chain = GrpcIngressInterceptorChain::new().push(Arc::new(TonicGrpcServerFakeAuthz));
         let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler))
             .with_interceptors(chain);
-        // Should not panic.
-        server.enforce_authorization_invariant();
+        // Should return Ok.
+        assert!(server.enforce_authorization_invariant().is_ok());
     }
 
     #[test]
     fn test_enforce_authorization_invariant_succeeds_when_allow_unauthenticated_is_set() {
         let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler))
             .allow_unauthenticated(true);
-        // Should not panic, only WARN.
-        server.enforce_authorization_invariant();
+        // Should return Ok, logs WARN.
+        assert!(server.enforce_authorization_invariant().is_ok());
     }
 
     #[test]
-    #[should_panic(expected = "AuthorizationInterceptor")]
-    fn test_enforce_authorization_invariant_panics_when_authz_missing_and_fail_closed() {
+    fn test_enforce_authorization_invariant_returns_error_when_authz_missing_and_fail_closed() {
         let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler));
-        // No authz registered, allow_unauthenticated defaults to false → panic.
-        server.enforce_authorization_invariant();
+        // No authz registered, allow_unauthenticated defaults to false → returns Err.
+        assert!(server.enforce_authorization_invariant().is_err());
     }
 
     // ── with_audit_sink / allow_unauthenticated builders ──────────────────

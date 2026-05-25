@@ -14,6 +14,9 @@ pub enum TonicServerError {
     /// Server configuration was rejected.
     #[error("server config rejected: {0}")]
     Config(#[source] GrpcServerConfigError),
+    /// Authorization interceptor validation failed.
+    #[error("{0}")]
+    AuthorizationRequired(String),
 }
 
 #[cfg(test)]
@@ -28,5 +31,12 @@ mod tests {
         );
         let msg = err.to_string();
         assert!(msg.contains("127.0.0.1:443"));
+    }
+
+    #[test]
+    fn test_tonic_server_error_authorization_required_formats_correctly() {
+        let err = TonicServerError::AuthorizationRequired("missing interceptor".into());
+        let msg = err.to_string();
+        assert!(msg.contains("missing interceptor"));
     }
 }

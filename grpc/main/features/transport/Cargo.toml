@@ -61,51 +61,51 @@ swe-edge-ingress-tls = { path = "../../../../tls" }
 
 [[test]]
 name    = "grpc_authz_audit_int_test"
-path    = "tests/grpc_authz_audit_int_test.rs"
+path    = "test/grpc_authz_audit_int_test.rs"
 
 [[test]]
 name    = "grpc_handler_adapter_int_test"
-path    = "tests/grpc_handler_adapter_int_test.rs"
+path    = "test/grpc_handler_adapter_int_test.rs"
 
 [[test]]
 name    = "grpc_health_v1_int_test"
-path    = "tests/grpc_health_v1_int_test.rs"
+path    = "test/grpc_health_v1_int_test.rs"
 
 [[test]]
 name    = "grpc_ingress_int_test"
-path    = "tests/grpc_ingress_int_test.rs"
+path    = "test/grpc_ingress_int_test.rs"
 
 [[test]]
 name    = "grpc_message_size_int_test"
-path    = "tests/grpc_message_size_int_test.rs"
+path    = "test/grpc_message_size_int_test.rs"
 
 [[test]]
 name    = "grpc_mtls_identity_int_test"
-path    = "tests/grpc_mtls_identity_int_test.rs"
+path    = "test/grpc_mtls_identity_int_test.rs"
 
 [[test]]
 name    = "grpc_server_config_int_test"
-path    = "tests/grpc_server_config_int_test.rs"
+path    = "test/grpc_server_config_int_test.rs"
 
 [[test]]
 name    = "tonic_grpc_server_int_test"
-path    = "tests/tonic_grpc_server_int_test.rs"
+path    = "test/tonic_grpc_server_int_test.rs"
 
 [[test]]
 name    = "tonic_grpc_server_tls_int_test"
-path    = "tests/tonic_grpc_server_tls_int_test.rs"
+path    = "test/tonic_grpc_server_tls_int_test.rs"
 
 [[test]]
 name    = "validator_int_test"
-path    = "tests/validator_int_test.rs"
+path    = "test/validator_int_test.rs"
 
 [[test]]
 name    = "dependency_coverage_int_test"
-path    = "tests/dependency_coverage_int_test.rs"
+path    = "test/dependency_coverage_int_test.rs"
 
 [[test]]
 name    = "health_service_int_test"
-path    = "tests/health_service_int_test.rs"
+path    = "test/health_service_int_test.rs"
 
 [lints]
 workspace = true
