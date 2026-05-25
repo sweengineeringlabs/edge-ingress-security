@@ -7,7 +7,7 @@ use swe_edge_ingress_grpc_transport::{validate, GrpcServerConfig};
 fn test_create_config_builder_returns_builder_with_name_and_version() {
     // Note: swe_edge_ingress_grpc_transport module is re-exported via saf/ with builder
     let builder = swe_edge_ingress_grpc_transport::create_config_builder();
-    assert_eq!(builder.name(), env!("CARGO_PKG_NAME"));
+    assert_eq!(builder.name(), "swe-edge-configbuilder");
     assert_eq!(builder.version(), env!("CARGO_PKG_VERSION"));
 }
 

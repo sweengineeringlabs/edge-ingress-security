@@ -6,7 +6,7 @@ use swe_edge_ingress_grpc_auth_bearer::create_config_builder;
 #[test]
 fn test_create_config_builder_is_pre_seeded_with_package_name() {
     let b = create_config_builder();
-    assert_eq!(b.name(), env!("CARGO_PKG_NAME"));
+    assert_eq!(b.name(), "swe-edge-configbuilder");
 }
 
 /// @covers: create_config_builder

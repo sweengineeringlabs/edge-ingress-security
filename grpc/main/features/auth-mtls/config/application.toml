@@ -1,3 +1,0 @@
-[mtls]
-require_peer_cert = true
-allowed_cns       = []
