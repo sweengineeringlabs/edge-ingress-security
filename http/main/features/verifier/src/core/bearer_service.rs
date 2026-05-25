@@ -100,7 +100,7 @@ fn auth_error_response(err: HttpAuthError) -> Response<Body> {
     Response::builder()
         .status(StatusCode::UNAUTHORIZED)
         .body(Body::from(err.to_string()))
-        .unwrap()
+        .expect("response with known-good headers and status cannot fail")
 }
 
 #[cfg(test)]

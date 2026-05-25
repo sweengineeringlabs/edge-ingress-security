@@ -200,7 +200,7 @@ async fn dispatch_websocket(
                 .body(axum::body::Body::from(format!(
                     "invalid websocket upgrade: {e}"
                 )))
-                .unwrap()
+                .expect("response with known-good headers and status cannot fail")
         }
     };
 
@@ -351,7 +351,7 @@ fn verify_auth(
                 .body(axum::body::Body::from(
                     "missing or malformed Authorization header",
                 ))
-                .unwrap()
+                .expect("response with known-good headers and status cannot fail")
         })?;
 
     let claims = verifier.verify(token).map_err(|e| {
@@ -359,7 +359,7 @@ fn verify_auth(
         axum::response::Response::builder()
             .status(StatusCode::UNAUTHORIZED)
             .body(axum::body::Body::from("invalid token"))
-            .unwrap()
+            .expect("response with known-good headers and status cannot fail")
     })?;
 
     let ctx = RequestContext::authenticated(
@@ -561,14 +561,14 @@ fn payload_too_large() -> axum::response::Response {
         .status(axum::http::StatusCode::PAYLOAD_TOO_LARGE)
         .header("content-type", "text/plain; charset=utf-8")
         .body(axum::body::Body::from("request body exceeds size limit"))
-        .unwrap()
+        .expect("response with known-good headers and status cannot fail")
 }
 
 fn internal_server_error(msg: &'static str) -> axum::response::Response {
     axum::response::Response::builder()
         .status(axum::http::StatusCode::INTERNAL_SERVER_ERROR)
         .body(axum::body::Body::from(msg))
-        .unwrap()
+        .expect("response with known-good headers and status cannot fail")
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -767,7 +767,7 @@ mod dedicated_coverage {
     use crate::api::port::http_health_check::HttpHealthCheck;
     use crate::api::port::http_ingress::HttpIngress;
     use crate::api::port::http_ingress_result::HttpIngressResult;
-    use crate::api::server::axum::axum_http_server::MAX_BODY_BYTES;
+    use crate::api::types::server::axum_http_server::MAX_BODY_BYTES;
     use crate::api::value::{HttpRequest, HttpResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
