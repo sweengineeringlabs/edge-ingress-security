@@ -102,7 +102,6 @@ impl AxumHttpServer {
     }
 }
 
-
 #[cfg(test)]
 mod dedicated_coverage {
     use super::AxumHttpServer;
