@@ -2,7 +2,7 @@
 
 mod edge_ingress_grpc_transport_svc;
 
-pub use crate::api::application::{ApplicationConfig, ApplicationConfigBuilder};
+pub use crate::api::application::ApplicationConfig;
 pub use crate::api::audit::{AuditEvent, AuditEventBuilder, AuditSink, NoopAuditSink};
 pub use crate::api::grpc_timeout::{GrpcTimeoutParser, DEFAULT_DEADLINE};
 pub use crate::api::handler::{

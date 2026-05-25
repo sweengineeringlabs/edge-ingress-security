@@ -3,7 +3,6 @@
 use std::sync::Arc;
 
 use edge_domain::HandlerRegistry;
-use swe_edge_configbuilder::ConfigBuilder as _;
 use swe_edge_ingress_grpc_reflection::{
     create_config_builder, handle_reflection, validate_payload, ReflectionRequest,
     ReflectionResponse, ReflectionService,

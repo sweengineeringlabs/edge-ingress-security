@@ -1,6 +1,5 @@
 //! Integration tests for SAF-level authz service introspection.
 
-use swe_edge_configbuilder::ConfigBuilder as _;
 use swe_edge_ingress_grpc::PeerIdentity;
 use swe_edge_ingress_grpc_authz::{
     assert_is_processor, create_config_builder, is_authorization_interceptor,

@@ -1,7 +1,6 @@
 //! Integration tests for [`bearer_svc`] — exercises the public SAF service
 //! functions exported from `saf/bearer_svc.rs`.
 
-use swe_edge_configbuilder::ConfigBuilder as _;
 use swe_edge_ingress_grpc_auth_bearer::{
     create_config_builder, extracted_bearer_subject_key, validate_bearer_config,
     BearerIngressConfig, BearerSecret,

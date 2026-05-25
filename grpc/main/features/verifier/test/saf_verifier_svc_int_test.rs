@@ -1,6 +1,5 @@
 //! Public API tests for verifier SAF layer.
 
-use swe_edge_configbuilder::ConfigBuilder as _;
 use swe_edge_ingress_grpc_verifier::create_config_builder;
 
 #[test]

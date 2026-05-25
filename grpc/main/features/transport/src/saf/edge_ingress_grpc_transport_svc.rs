@@ -1,11 +1,10 @@
 //! SAF wrapper for the Validator trait.
 
-use crate::api::application::ApplicationConfigBuilder;
 use crate::api::traits::Validator;
 
 /// Creates a config builder pre-seeded with this crate's name and version.
-pub fn create_config_builder() -> ApplicationConfigBuilder {
-    ApplicationConfigBuilder::default()
+pub fn create_config_builder() -> swe_edge_configbuilder::ConfigBuilderImpl {
+    swe_edge_configbuilder::create_config_builder()
 }
 
 /// Validate any value that implements the [`Validator`] trait.

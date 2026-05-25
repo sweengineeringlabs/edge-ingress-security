@@ -1,6 +1,5 @@
 //! Integration tests for [`create_config_builder`].
 
-use swe_edge_configbuilder::ConfigBuilder as _;
 use swe_edge_ingress_grpc_auth_bearer::create_config_builder;
 
 /// @covers: create_config_builder

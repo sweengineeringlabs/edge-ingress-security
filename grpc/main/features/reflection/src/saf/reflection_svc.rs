@@ -2,12 +2,11 @@
 
 use crate::api::traits::Validator;
 use crate::api::types::reflection_service::ReflectionService;
-use crate::api::types::ApplicationConfigBuilder;
 use crate::api::types::{ReflectionRequest, ReflectionResponse};
 
 /// Creates a config builder pre-seeded with this crate's name and version.
-pub fn create_config_builder() -> ApplicationConfigBuilder {
-    ApplicationConfigBuilder::default()
+pub fn create_config_builder() -> swe_edge_configbuilder::ConfigBuilderImpl {
+    swe_edge_configbuilder::create_config_builder()
 }
 
 /// Process a single reflection request through the given service and return the response.

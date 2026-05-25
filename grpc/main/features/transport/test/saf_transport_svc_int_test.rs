@@ -1,7 +1,6 @@
 //! Public API tests for transport SAF layer.
 
 use std::net::SocketAddr;
-use swe_edge_configbuilder::ConfigBuilder as _;
 use swe_edge_ingress_grpc_transport::{validate, GrpcServerConfig};
 
 #[test]

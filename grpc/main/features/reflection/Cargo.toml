@@ -28,7 +28,7 @@ tracing      = { version = "0.1", default-features = false }
 # Cross-workspace path dep on the inbound port + dispatcher.
 swe-edge-ingress-grpc = { package = "swe-edge-ingress-grpc-transport", path = "../transport" }
 edge-domain            = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.3.4" }
-swe-edge-configbuilder = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.4.2" }
+swe-edge-configbuilder = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.4.4" }
 
 [dev-dependencies]
 async-trait    = "0.1"

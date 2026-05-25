@@ -3,6 +3,15 @@
 version = 4
 
 [[package]]
+name = "aho-corasick"
+version = "1.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ddd31a130427c27518df266943a5308ed92d4b226cc639f5a8f1002816174301"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "android_system_properties"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1016,6 +1025,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "regex"
+version = "1.12.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e10754a14b9137dd7b1e3e5b0493cc9171fdd105e0ab477f51b72e7f3ac0e276"
+dependencies = [
+ "aho-corasick",
+ "memchr",
+ "regex-automata",
+ "regex-syntax",
+]
+
+[[package]]
+name = "regex-automata"
+version = "0.4.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e1dd4122fc1595e8162618945476892eefca7b88c52820e74af6262213cae8f"
+dependencies = [
+ "aho-corasick",
+ "memchr",
+ "regex-syntax",
+]
+
+[[package]]
+name = "regex-syntax"
+version = "0.8.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
+
+[[package]]
 name = "ring"
 version = "0.17.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1247,6 +1285,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "swe-edge-configbuilder"
+version = "0.1.0"
+source = "git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=v0.4.4#d9ec1f33231bd3035a90c55b27dc9d5a8fd64026"
+dependencies = [
+ "dirs",
+ "regex",
+ "serde",
+ "thiserror 2.0.18",
+ "toml",
+]
+
+[[package]]
 name = "swe-edge-ingress-grpc-auth-bearer"
 version = "0.1.0"
 dependencies = [
@@ -1254,7 +1304,7 @@ dependencies = [
  "jsonwebtoken",
  "serde",
  "subtle",
- "swe-edge-configbuilder",
+ "swe-edge-configbuilder 0.1.0 (git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=v0.4.4)",
  "swe-edge-ingress-grpc-transport",
  "thiserror 2.0.18",
  "tokio",
@@ -1267,7 +1317,7 @@ name = "swe-edge-ingress-grpc-auth-mtls"
 version = "0.1.0"
 dependencies = [
  "serde",
- "swe-edge-configbuilder",
+ "swe-edge-configbuilder 0.1.0 (git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=v0.4.4)",
  "swe-edge-ingress-grpc-transport",
  "thiserror 2.0.18",
  "tokio",
@@ -1280,7 +1330,7 @@ name = "swe-edge-ingress-grpc-authz"
 version = "0.1.0"
 dependencies = [
  "serde",
- "swe-edge-configbuilder",
+ "swe-edge-configbuilder 0.1.0 (git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=v0.4.4)",
  "swe-edge-ingress-grpc-transport",
  "thiserror 2.0.18",
  "tokio",
@@ -1303,7 +1353,7 @@ dependencies = [
  "parking_lot",
  "serde",
  "serde_json",
- "swe-edge-configbuilder",
+ "swe-edge-configbuilder 0.1.0 (git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=v0.4.4)",
  "swe-edge-ingress-grpc-transport",
  "thiserror 2.0.18",
  "tokio",
@@ -1330,7 +1380,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "swe-edge-configbuilder",
+ "swe-edge-configbuilder 0.1.0 (git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=v0.4.4)",
  "swe-edge-ingress-tls",
  "swe_justobserv_context",
  "swe_justobserv_metrics",
@@ -1348,7 +1398,7 @@ name = "swe-edge-ingress-grpc-verifier"
 version = "0.1.0"
 dependencies = [
  "serde_json",
- "swe-edge-configbuilder",
+ "swe-edge-configbuilder 0.1.0 (git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=v0.4.4)",
  "swe-edge-ingress-grpc-transport",
  "swe-edge-ingress-verifier",
  "thiserror 2.0.18",
@@ -1363,7 +1413,7 @@ dependencies = [
  "rustls",
  "rustls-pemfile",
  "serde",
- "swe-edge-configbuilder",
+ "swe-edge-configbuilder 0.1.0 (git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=v0.4.2)",
  "thiserror 2.0.18",
  "tokio-rustls",
 ]
@@ -1377,7 +1427,7 @@ dependencies = [
  "serde",
  "serde_json",
  "subtle",
- "swe-edge-configbuilder",
+ "swe-edge-configbuilder 0.1.0 (git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=v0.4.2)",
  "thiserror 2.0.18",
  "tracing",
 ]

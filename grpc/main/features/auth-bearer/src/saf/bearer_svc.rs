@@ -1,12 +1,11 @@
 //! SAF service functions for bearer auth.
 
 use crate::api::traits::Validator;
-use crate::api::ApplicationConfigBuilder;
 use crate::api::BearerIngressConfig;
 
 /// Creates a config builder pre-seeded with this crate's name and version.
-pub fn create_config_builder() -> ApplicationConfigBuilder {
-    ApplicationConfigBuilder::default()
+pub fn create_config_builder() -> swe_edge_configbuilder::ConfigBuilderImpl {
+    swe_edge_configbuilder::create_config_builder()
 }
 
 /// Returns the authorization metadata key used to carry the extracted bearer subject.

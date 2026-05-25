@@ -1,6 +1,5 @@
 //! Integration tests for SAF service functions.
 
-use swe_edge_configbuilder::ConfigBuilder as _;
 use swe_edge_ingress_grpc_auth_mtls::{
     create_config_builder, is_authorization_interceptor, is_processor, is_validator,
     MtlsAuthInterceptor,

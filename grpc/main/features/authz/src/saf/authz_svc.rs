@@ -2,11 +2,10 @@
 
 use crate::api::application::ApplicationConfig;
 use crate::api::traits::{Processor, Validator};
-use crate::api::ApplicationConfigBuilder;
 
 /// Creates a config builder pre-seeded with this crate's name and version.
-pub fn create_config_builder() -> ApplicationConfigBuilder {
-    ApplicationConfigBuilder::default()
+pub fn create_config_builder() -> swe_edge_configbuilder::ConfigBuilderImpl {
+    swe_edge_configbuilder::create_config_builder()
 }
 
 /// Returns `true` when the authz interceptor acts as an authorization gate.
