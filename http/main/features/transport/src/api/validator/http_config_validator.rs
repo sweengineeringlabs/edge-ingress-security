@@ -1,1 +1,1 @@
-pub use crate::api::types::validator::HttpConfigValidator;
+//! HTTP config validator API module.

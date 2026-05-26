@@ -1,7 +1,7 @@
 //! Public API tests for transport SAF facade functions.
 
 use swe_edge_configbuilder::ConfigBuilder;
-use swe_edge_ingress_http::{create_config_builder, validate};
+use swe_edge_ingress_http::create_config_builder;
 
 #[test]
 fn test_create_config_builder_returns_builder() {

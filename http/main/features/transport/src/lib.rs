@@ -4,5 +4,6 @@
 mod api;
 mod core;
 mod saf;
+mod spi;
 
 pub use saf::*;

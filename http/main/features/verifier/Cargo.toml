@@ -21,6 +21,14 @@ name    = "saf_verifier_e2e_test"
 path    = "test/saf_verifier_e2e_test.rs"
 
 [[test]]
+name    = "spi_int_test"
+path    = "test/spi_int_test.rs"
+
+[[test]]
+name    = "spi_security_test"
+path    = "test/spi_security_test.rs"
+
+[[test]]
 name    = "auth_error_test"
 path    = "test/auth_error_test.rs"
 

@@ -180,19 +180,28 @@ impl AxumHttpServerHelper {
 
     /// Build 413 response for request body too large.
     pub fn payload_too_large() -> axum::response::Response {
-        axum::response::Response::builder()
-            .status(axum::http::StatusCode::PAYLOAD_TOO_LARGE)
-            .header("content-type", "text/plain; charset=utf-8")
-            .body(axum::body::Body::from("request body exceeds size limit"))
-            .expect("response with known-good headers and status cannot fail")
+        Self::plain_text_response(
+            axum::http::StatusCode::PAYLOAD_TOO_LARGE,
+            "request body exceeds size limit",
+        )
     }
 
     /// Build 500 response for internal server error.
     pub fn internal_server_error(msg: &'static str) -> axum::response::Response {
-        axum::response::Response::builder()
-            .status(axum::http::StatusCode::INTERNAL_SERVER_ERROR)
-            .body(axum::body::Body::from(msg))
-            .expect("response with known-good headers and status cannot fail")
+        Self::plain_text_response(axum::http::StatusCode::INTERNAL_SERVER_ERROR, msg)
+    }
+
+    fn plain_text_response(
+        status: axum::http::StatusCode,
+        body: impl Into<String>,
+    ) -> axum::response::Response {
+        let mut response = axum::response::Response::new(axum::body::Body::from(body.into()));
+        *response.status_mut() = status;
+        response.headers_mut().insert(
+            axum::http::header::CONTENT_TYPE,
+            axum::http::HeaderValue::from_static("text/plain; charset=utf-8"),
+        );
+        response
     }
 
     /// Verify bearer token and attach RequestContext.
@@ -211,20 +220,15 @@ impl AxumHttpServerHelper {
             .and_then(|v| v.to_str().ok())
             .and_then(|s| s.strip_prefix("Bearer "))
             .ok_or_else(|| {
-                axum::response::Response::builder()
-                    .status(StatusCode::UNAUTHORIZED)
-                    .body(axum::body::Body::from(
-                        "missing or malformed Authorization header",
-                    ))
-                    .expect("response with known-good headers and status cannot fail")
+                Self::plain_text_response(
+                    StatusCode::UNAUTHORIZED,
+                    "missing or malformed Authorization header",
+                )
             })?;
 
         let claims = verifier.verify(token).map_err(|e| {
             tracing::debug!(error = %e, "bearer token rejected");
-            axum::response::Response::builder()
-                .status(StatusCode::UNAUTHORIZED)
-                .body(axum::body::Body::from("invalid token"))
-                .expect("response with known-good headers and status cannot fail")
+            Self::plain_text_response(StatusCode::UNAUTHORIZED, "invalid token")
         })?;
 
         let ctx = RequestContext::authenticated(
@@ -347,12 +351,10 @@ impl AxumHttpServerHelper {
         let ws_upgrade = match WebSocketUpgrade::from_request_parts(&mut parts, &()).await {
             Ok(u) => u,
             Err(e) => {
-                return axum::response::Response::builder()
-                    .status(StatusCode::BAD_REQUEST)
-                    .body(axum::body::Body::from(format!(
-                        "invalid websocket upgrade: {e}"
-                    )))
-                    .expect("response with known-good headers and status cannot fail")
+                return Self::plain_text_response(
+                    StatusCode::BAD_REQUEST,
+                    format!("invalid websocket upgrade: {e}"),
+                )
             }
         };
 

@@ -67,6 +67,14 @@ name    = "validator_int_test"
 path    = "tests/validator_int_test.rs"
 
 [[test]]
+name    = "spi_int_test"
+path    = "test/spi_int_test.rs"
+
+[[test]]
+name    = "spi_security_test"
+path    = "test/spi_security_test.rs"
+
+[[test]]
 name    = "saf_transport_e2e_test"
 path    = "test/saf_transport_e2e_test.rs"
 

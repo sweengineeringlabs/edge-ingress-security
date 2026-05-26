@@ -10,5 +10,6 @@ pub fn create_config_builder() -> impl swe_edge_configbuilder::ConfigBuilder {
 }
 
 pub use crate::api::bearer_layer::BearerLayer;
+pub use crate::api::bearer_service::BearerService;
 pub use crate::api::error::HttpAuthError;
 pub use crate::api::verified_claims::VerifiedClaims;

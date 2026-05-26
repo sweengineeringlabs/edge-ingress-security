@@ -25,10 +25,9 @@ impl BearerServiceHelper {
     /// Build 401 response for auth errors.
     pub fn auth_error_response(err: HttpAuthError) -> Response<Body> {
         tracing::debug!(?err, "bearer auth rejected request");
-        Response::builder()
-            .status(StatusCode::UNAUTHORIZED)
-            .body(Body::from(err.to_string()))
-            .expect("response with known-good headers and status cannot fail")
+        let mut response = Response::new(Body::from(err.to_string()));
+        *response.status_mut() = StatusCode::UNAUTHORIZED;
+        response
     }
 }
 

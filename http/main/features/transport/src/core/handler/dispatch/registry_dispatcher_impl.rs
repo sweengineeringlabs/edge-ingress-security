@@ -90,7 +90,7 @@ impl HttpIngress for HttpHandlerRegistryDispatcher {
                     m.record_counter("edge_handler_errors_total", 1.0, labels);
                 }
             }
-            result.map_err(|e| HttpHandlerRegistryDispatcher::map_handler_error(e))
+            result.map_err(HttpHandlerRegistryDispatcher::map_handler_error)
         })
     }
 
