@@ -18,6 +18,7 @@ use swe_edge_ingress_grpc_transport::{
     AuditEvent, AuditSink, AuthorizationInterceptor, GrpcHealthCheck, GrpcIngress,
     GrpcIngressError, GrpcIngressInterceptor, GrpcIngressInterceptorChain, GrpcIngressResult,
     GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode, RequestContext, TonicGrpcServer,
+    TonicServerError,
 };
 
 // ── Test fixtures ─────────────────────────────────────────────────────────────
@@ -156,19 +157,25 @@ async fn grpc_call(
 
 // ── Phase 3 default-deny acceptance gates ─────────────────────────────────────
 
-/// @covers: TonicGrpcServer — server with no authz + fail-closed default panics.
+/// @covers: TonicGrpcServer — server with no authz + fail-closed default errors.
 ///
 /// Issue #6 acceptance gate.
 #[tokio::test]
-#[should_panic(expected = "AuthorizationInterceptor")]
-async fn test_server_panics_at_startup_when_no_authz_and_fail_closed_default() {
+async fn test_server_returns_error_at_startup_when_no_authz_and_fail_closed_default() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(EchoHandler));
     // Default allow_unauthenticated = false; no authz interceptor in the
-    // empty chain → must panic before bind.
-    let _ = server
+    // empty chain must fail before serving.
+    let result = server
         .serve_with_listener(listener, std::future::pending::<()>())
         .await;
+
+    match result {
+        Err(TonicServerError::AuthorizationRequired(msg)) => {
+            assert!(msg.contains("AuthorizationInterceptor"));
+        }
+        other => panic!("expected AuthorizationRequired, got {other:?}"),
+    }
 }
 
 /// @covers: TonicGrpcServer — `allow_unauthenticated = true` lets the server
@@ -182,9 +189,8 @@ async fn test_server_starts_when_allow_unauthenticated_is_true_and_no_authz() {
         true, // allow_unauthenticated
     )
     .await;
-    // Reaching this point means the server bound successfully — the
-    // panic in `enforce_authorization_invariant` was suppressed by
-    // the WARN-and-proceed branch.
+    // Reaching this point means the server bound successfully because
+    // `enforce_authorization_invariant` took the WARN-and-proceed branch.
 }
 
 // ── PermissionDenied on-wire sanitisation ─────────────────────────────────────

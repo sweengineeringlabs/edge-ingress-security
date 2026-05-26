@@ -5,8 +5,7 @@
 //! internally during token validation.  This type is not part of the
 //! public consumer API — it is gated behind `pub(crate)` module paths.
 //!
-//! Use [`super::jwt_claims_builder::JwtClaimsBuilder`] to construct instances
-//! of [`JwtClaims`] in tests and internal fixtures.
+//! Internal tests and fixtures construct claims through the core JWT claims builder.
 
 use serde::{Deserialize, Serialize};
 
@@ -16,8 +15,7 @@ use serde::{Deserialize, Serialize};
 /// Consumers never construct this directly; they receive the verified
 /// `sub` claim via the interceptor's metadata output.
 ///
-/// Use [`super::jwt_claims_builder::JwtClaimsBuilder`] to construct instances
-/// in tests and internal fixtures.
+/// Internal tests and fixtures construct this through the core JWT claims builder.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JwtClaims {
     /// Token issuer (`iss` claim).

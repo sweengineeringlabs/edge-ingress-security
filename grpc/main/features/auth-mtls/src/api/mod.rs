@@ -3,7 +3,6 @@
 pub mod error;
 pub(crate) mod mtls;
 pub(crate) mod mtls_auth_config;
-pub(crate) mod mtls_auth_error;
 pub(crate) mod mtls_auth_interceptor;
 pub(crate) mod processor;
 pub(crate) mod traits;

@@ -127,7 +127,7 @@ impl Default for GrpcServerConfig {
     /// in production deployments.
     fn default() -> Self {
         Self {
-            bind: "0.0.0.0:0".parse().expect("static literal"),
+            bind: SocketAddr::from(([0, 0, 0, 0], 0)),
             tls_required: true,
             tls: None,
             max_message_bytes: DEFAULT_MAX_MESSAGE_BYTES,

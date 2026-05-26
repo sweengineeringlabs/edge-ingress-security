@@ -9,6 +9,4 @@ pub(crate) mod traits;
 pub mod types;
 
 pub use error::AuthzError;
-pub use types::{
-    ApplicationConfig, AuthzInterceptor, AuthzPolicy, MethodAclConfig, MethodAclPolicy,
-};
+pub use types::{AuthzInterceptor, AuthzPolicy, MethodAclConfig, MethodAclPolicy};

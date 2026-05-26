@@ -2,6 +2,4 @@
 
 pub(crate) mod grpc;
 
-pub use grpc::{
-    GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream,
-};
+pub use grpc::GrpcHealthCheck;

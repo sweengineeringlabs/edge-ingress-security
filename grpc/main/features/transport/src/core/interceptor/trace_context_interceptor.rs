@@ -2,7 +2,7 @@
 
 /// Marker confirming this module provides the W3C Trace Context interceptor implementation.
 ///
-/// The actual type is [`crate::api::interceptor::trace_context_interceptor::TraceContextInterceptor`].
+/// The actual type is [`crate::api::interceptor::TraceContextInterceptor`].
 /// This struct exists to satisfy the SEA rule requiring every core module file to define
 /// a primary type matching the filename.
 pub(crate) struct TraceContextInterceptorImpl;

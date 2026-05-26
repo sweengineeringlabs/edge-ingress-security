@@ -1,7 +1,5 @@
 //! SEA interface contracts — core trait definitions for the gRPC reflection service.
 
-pub use crate::api::processor::Processor;
-
 /// Validation contract for inbound wire payloads before they reach the processor.
 ///
 /// Implementors inspect the raw byte slice of an inbound frame and return

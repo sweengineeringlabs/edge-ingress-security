@@ -10,7 +10,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
 
 use bytes::{BufMut, Bytes, BytesMut};
-use http::{Request, Response};
+use http::{header, HeaderValue, Request, Response, StatusCode};
 use http_body_util::{BodyExt, Limited, StreamBody};
 use hyper_util::rt::{TokioExecutor, TokioIo};
 use tokio::net::TcpListener;
@@ -39,8 +39,8 @@ impl TonicGrpcServer {
     ///
     /// **Fail-closed authorisation invariant**: if no
     /// [`crate::AuthorizationInterceptor`] is registered AND
-    /// `allow_unauthenticated` is `false`, this method panics with
-    /// [`MISSING_AUTHORIZATION_INTERCEPTOR_MSG`] before binding.
+    /// `allow_unauthenticated` is `false`, this method returns
+    /// [`TonicServerError::AuthorizationRequired`] before binding.
     /// Callers that want to run unauthenticated must explicitly call
     /// [`Self::allow_unauthenticated`] (or set the flag via
     /// [`GrpcServerConfig`]) — that path logs a WARN at startup so
@@ -636,11 +636,7 @@ impl TonicServerDispatcher {
 
         let response_body = BodyExt::boxed(StreamBody::new(futures::stream::iter(http_frames)));
 
-        Response::builder()
-            .status(200)
-            .header("content-type", "application/grpc")
-            .body(response_body)
-            .expect("response with known-good headers and status 200 cannot fail")
+        Self::grpc_response(response_body)
     }
 
     /// Collect a response stream into a single HTTP/2 response with one DATA frame
@@ -691,21 +687,13 @@ impl TonicServerDispatcher {
 
         let response_body = BodyExt::boxed(StreamBody::new(futures::stream::iter(http_frames)));
 
-        Response::builder()
-            .status(200)
-            .header("content-type", "application/grpc")
-            .body(response_body)
-            .expect("response with known-good headers and status 200 cannot fail")
+        Self::grpc_response(response_body)
     }
 
     fn grpc_error(code: tonic::Code, message: impl Into<String>) -> Response<BoxBody> {
         let message = message.into();
         let mut trailers = http::HeaderMap::new();
-        trailers.insert(
-            "grpc-status",
-            http::HeaderValue::from_str(&(code as i32).to_string())
-                .expect("integer status code string is always valid HTTP header value"),
-        );
+        trailers.insert("grpc-status", Self::grpc_status_header(code));
         if let Ok(val) = http::HeaderValue::from_str(&message) {
             trailers.insert("grpc-message", val);
         }
@@ -718,11 +706,39 @@ impl TonicServerDispatcher {
         )]))
         .boxed();
 
-        Response::builder()
-            .status(200)
-            .header("content-type", "application/grpc")
-            .body(response_body)
-            .expect("response with known-good headers and status 200 cannot fail")
+        Self::grpc_response(response_body)
+    }
+
+    fn grpc_response(response_body: BoxBody) -> Response<BoxBody> {
+        let mut response = Response::new(response_body);
+        *response.status_mut() = StatusCode::OK;
+        response.headers_mut().insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("application/grpc"),
+        );
+        response
+    }
+
+    fn grpc_status_header(code: tonic::Code) -> HeaderValue {
+        match code {
+            tonic::Code::Ok => HeaderValue::from_static("0"),
+            tonic::Code::Cancelled => HeaderValue::from_static("1"),
+            tonic::Code::Unknown => HeaderValue::from_static("2"),
+            tonic::Code::InvalidArgument => HeaderValue::from_static("3"),
+            tonic::Code::DeadlineExceeded => HeaderValue::from_static("4"),
+            tonic::Code::NotFound => HeaderValue::from_static("5"),
+            tonic::Code::AlreadyExists => HeaderValue::from_static("6"),
+            tonic::Code::PermissionDenied => HeaderValue::from_static("7"),
+            tonic::Code::ResourceExhausted => HeaderValue::from_static("8"),
+            tonic::Code::FailedPrecondition => HeaderValue::from_static("9"),
+            tonic::Code::Aborted => HeaderValue::from_static("10"),
+            tonic::Code::OutOfRange => HeaderValue::from_static("11"),
+            tonic::Code::Unimplemented => HeaderValue::from_static("12"),
+            tonic::Code::Internal => HeaderValue::from_static("13"),
+            tonic::Code::Unavailable => HeaderValue::from_static("14"),
+            tonic::Code::DataLoss => HeaderValue::from_static("15"),
+            tonic::Code::Unauthenticated => HeaderValue::from_static("16"),
+        }
     }
 
     fn collect_metadata(headers: &http::HeaderMap) -> HashMap<String, String> {

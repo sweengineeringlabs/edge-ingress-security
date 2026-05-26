@@ -2,7 +2,6 @@
 
 pub(crate) mod authorization_interceptor;
 pub(crate) mod grpc;
-pub mod trace_context_interceptor;
 
 pub use crate::api::types::interceptor::{
     TraceContextInterceptor, EXTRACTED_TRACEPARENT, EXTRACTED_TRACESTATE, TRACEPARENT, TRACESTATE,

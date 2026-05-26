@@ -3,5 +3,4 @@
 pub(crate) mod acl;
 pub(crate) mod method_acl_config;
 
-pub use crate::api::types::authz::MethodAclPolicy;
 pub use method_acl_config::MethodAclConfig;

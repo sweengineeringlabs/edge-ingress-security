@@ -3,7 +3,6 @@
 //! Re-exports from [`crate::api::types::server`] and [`crate::api::error`].
 
 pub(crate) mod grpc;
-pub(crate) mod tonic;
 pub(crate) mod tonic_grpc_server;
 
 pub use crate::api::error::TonicServerError;
