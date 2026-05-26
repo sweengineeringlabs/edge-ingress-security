@@ -2,6 +2,7 @@
 
 use std::time::SystemTime;
 
+use crate::api::port::grpc::{GrpcIngressError, GrpcIngressResult};
 use crate::api::value::GrpcStatusCode;
 
 use super::audit_event::AuditEvent;
@@ -54,15 +55,27 @@ impl AuditEventBuilder {
 
     /// Build the [`AuditEvent`].
     ///
-    /// Panics if `method` or `status` was not set.
-    pub fn build(self) -> AuditEvent {
-        AuditEvent {
+    /// Returns [`GrpcIngressError::InvalidArgument`] if `method` or `status`
+    /// was not set.
+    pub fn build(self) -> GrpcIngressResult<AuditEvent> {
+        let Some(method) = self.method else {
+            return Err(GrpcIngressError::InvalidArgument(
+                "method is required".into(),
+            ));
+        };
+        let Some(status) = self.status else {
+            return Err(GrpcIngressError::InvalidArgument(
+                "status is required".into(),
+            ));
+        };
+
+        Ok(AuditEvent {
             timestamp: self.timestamp.unwrap_or_else(SystemTime::now),
-            method: self.method.expect("method is required"),
+            method,
             identity: self.identity,
-            status: self.status.expect("status is required"),
+            status,
             duration_ms: self.duration_ms.unwrap_or(0),
-        }
+        })
     }
 }
 
@@ -84,10 +97,16 @@ mod tests {
             .status(GrpcStatusCode::Ok)
             .duration_ms(5)
             .build();
-        assert_eq!(evt.method, "/svc/M");
-        assert_eq!(evt.status, GrpcStatusCode::Ok);
-        assert_eq!(evt.duration_ms, 5);
-        assert!(evt.identity.is_none());
+        assert!(matches!(
+            evt,
+            Ok(AuditEvent {
+                ref method,
+                status: GrpcStatusCode::Ok,
+                duration_ms: 5,
+                identity: None,
+                ..
+            }) if method == "/svc/M"
+        ));
     }
 
     /// @covers: identity
@@ -98,7 +117,7 @@ mod tests {
             .status(GrpcStatusCode::Ok)
             .identity("alice")
             .build();
-        assert_eq!(evt.identity, Some("alice".into()));
+        assert!(matches!(evt, Ok(AuditEvent { identity: Some(ref id), .. }) if id == "alice"));
     }
 
     /// @covers: timestamp
@@ -110,7 +129,7 @@ mod tests {
             .status(GrpcStatusCode::Ok)
             .timestamp(ts)
             .build();
-        assert_eq!(evt.timestamp, ts);
+        assert!(matches!(evt, Ok(AuditEvent { timestamp, .. }) if timestamp == ts));
     }
 
     /// @covers: duration_ms
@@ -121,7 +140,13 @@ mod tests {
             .status(GrpcStatusCode::Ok)
             .duration_ms(100)
             .build();
-        assert_eq!(evt.duration_ms, 100);
+        assert!(matches!(
+            evt,
+            Ok(AuditEvent {
+                duration_ms: 100,
+                ..
+            })
+        ));
     }
 
     /// @covers: method
@@ -131,7 +156,7 @@ mod tests {
             .method("/pkg.Svc/Call")
             .status(GrpcStatusCode::Ok)
             .build();
-        assert_eq!(evt.method, "/pkg.Svc/Call");
+        assert!(matches!(evt, Ok(AuditEvent { ref method, .. }) if method == "/pkg.Svc/Call"));
     }
 
     /// @covers: status
@@ -141,6 +166,32 @@ mod tests {
             .method("/svc/M")
             .status(GrpcStatusCode::NotFound)
             .build();
-        assert_eq!(evt.status, GrpcStatusCode::NotFound);
+        assert!(matches!(
+            evt,
+            Ok(AuditEvent {
+                status: GrpcStatusCode::NotFound,
+                ..
+            })
+        ));
+    }
+
+    /// @covers: build
+    #[test]
+    fn test_build_returns_error_when_method_missing() {
+        let err = AuditEventBuilder::new().status(GrpcStatusCode::Ok).build();
+        assert!(matches!(
+            err,
+            Err(GrpcIngressError::InvalidArgument(ref msg)) if msg == "method is required"
+        ));
+    }
+
+    /// @covers: build
+    #[test]
+    fn test_build_returns_error_when_status_missing() {
+        let err = AuditEventBuilder::new().method("/svc/M").build();
+        assert!(matches!(
+            err,
+            Err(GrpcIngressError::InvalidArgument(ref msg)) if msg == "status is required"
+        ));
     }
 }
