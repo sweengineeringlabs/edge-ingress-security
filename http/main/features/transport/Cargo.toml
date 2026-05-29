@@ -163,8 +163,8 @@ tracing        = { version = "0.1", default-features = false }
 
 swe-edge-ingress-tls      = { path = "../../../../tls" }
 swe-edge-ingress-verifier = { path = "../../../../verifier" }
-edge-domain               = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.3.4" }
-swe-edge-configbuilder    = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.4.2" }
+edge-domain               = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.4.5" }
+swe-edge-configbuilder    = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.4.5" }
 swe-observ-metrics        = { package = "swe_justobserv_metrics", git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 swe_justobserv_context    = { git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 matchit       = "0.8"
@@ -181,7 +181,7 @@ rustls       = { version = "0.23", features = ["ring"] }
 tokio-rustls = "0.26"
 tempfile     = "3"
 async-trait  = "0.1"
-edge-domain  = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.3.4" }
+edge-domain  = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.4.5" }
 hyper-util   = { version = "0.1", features = ["tokio", "server", "http1", "http2"] }
 swe-edge-ingress-tls      = { path = "../../../../tls" }
 swe-edge-ingress-verifier = { path = "../../../../verifier" }

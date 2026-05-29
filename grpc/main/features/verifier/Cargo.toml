@@ -22,7 +22,7 @@ tracing   = { version = "0.1", default-features = false }
 
 swe-edge-ingress-verifier       = { path = "../../../../verifier" }
 swe-edge-ingress-grpc-transport = { path = "../transport" }
-swe-edge-configbuilder          = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.4.4" }
+swe-edge-configbuilder          = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.4.5" }
 
 [dev-dependencies]
 tokio      = { version = "1.0", features = ["rt", "macros"] }
