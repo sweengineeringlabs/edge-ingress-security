@@ -2,8 +2,8 @@
 
 use std::sync::Arc;
 
-use async_trait::async_trait;
 use edge_domain::{Handler, HandlerError, RequestContext};
+use futures::future::BoxFuture;
 
 use crate::api::port::grpc::GrpcIngressError;
 
@@ -53,7 +53,6 @@ where
     }
 }
 
-#[async_trait]
 impl<Req, Resp> Handler<Vec<u8>, Vec<u8>> for GrpcHandlerAdapter<Req, Resp>
 where
     Req: Send + 'static,
@@ -67,33 +66,38 @@ where
         self.inner.pattern()
     }
 
-    async fn execute(&self, req: Vec<u8>) -> Result<Vec<u8>, HandlerError> {
-        self.execute_with_context(req, RequestContext::unauthenticated())
-            .await
+    fn execute(&self, req: Vec<u8>) -> BoxFuture<'_, Result<Vec<u8>, HandlerError>> {
+        Box::pin(async move {
+            self.execute_with_context(req, RequestContext::unauthenticated())
+                .await
+        })
     }
 
-    async fn execute_with_context(
+    fn execute_with_context(
         &self,
         req: Vec<u8>,
         ctx: RequestContext,
-    ) -> Result<Vec<u8>, HandlerError> {
-        let typed = (self.decode)(&req).map_err(|e| match e {
-            GrpcIngressError::InvalidArgument(msg) => HandlerError::InvalidRequest(msg),
-            GrpcIngressError::Status(_, msg) => HandlerError::InvalidRequest(msg),
-            other => HandlerError::InvalidRequest(other.to_string()),
-        })?;
-        let resp = self.inner.execute_with_context(typed, ctx).await?;
-        Ok((self.encode)(&resp))
+    ) -> BoxFuture<'_, Result<Vec<u8>, HandlerError>> {
+        Box::pin(async move {
+            let typed = (self.decode)(&req).map_err(|e| match e {
+                GrpcIngressError::InvalidArgument(msg) => HandlerError::InvalidRequest(msg),
+                GrpcIngressError::Status(_, msg) => HandlerError::InvalidRequest(msg),
+                other => HandlerError::InvalidRequest(other.to_string()),
+            })?;
+            let resp = self.inner.execute_with_context(typed, ctx).await?;
+            Ok((self.encode)(&resp))
+        })
     }
 
-    async fn health_check(&self) -> bool {
-        self.inner.health_check().await
+    fn health_check(&self) -> BoxFuture<'_, bool> {
+        Box::pin(async move { self.inner.health_check().await })
     }
 }
 
 #[cfg(test)]
 mod tests {
     use edge_domain::RequestContext;
+    use futures::future::BoxFuture;
 
     use super::*;
 
@@ -124,7 +128,6 @@ mod tests {
 
     struct DoublingHandler;
 
-    #[async_trait::async_trait]
     impl Handler<TestReq, TestResp> for DoublingHandler {
         fn id(&self) -> &str {
             "/pkg.Service/Double"
@@ -132,16 +135,17 @@ mod tests {
         fn pattern(&self) -> &str {
             "test"
         }
-        async fn execute(&self, req: TestReq) -> Result<TestResp, HandlerError> {
-            Ok(TestResp {
-                value: req.value.wrapping_mul(2),
+        fn execute(&self, req: TestReq) -> BoxFuture<'_, Result<TestResp, HandlerError>> {
+            Box::pin(async move {
+                Ok(TestResp {
+                    value: req.value.wrapping_mul(2),
+                })
             })
         }
     }
 
     struct UnhealthyHandler;
 
-    #[async_trait::async_trait]
     impl Handler<TestReq, TestResp> for UnhealthyHandler {
         fn id(&self) -> &str {
             "/pkg.Service/Sick"
@@ -149,11 +153,11 @@ mod tests {
         fn pattern(&self) -> &str {
             "test"
         }
-        async fn execute(&self, _: TestReq) -> Result<TestResp, HandlerError> {
-            Err(HandlerError::Unhealthy)
+        fn execute(&self, _: TestReq) -> BoxFuture<'_, Result<TestResp, HandlerError>> {
+            Box::pin(async move { Err(HandlerError::Unhealthy) })
         }
-        async fn health_check(&self) -> bool {
-            false
+        fn health_check(&self) -> BoxFuture<'_, bool> {
+            Box::pin(async move { false })
         }
     }
 

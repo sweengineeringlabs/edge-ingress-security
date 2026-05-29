@@ -35,7 +35,7 @@ hyper          = { version = "1", features = ["http2", "server"] }
 hyper-util     = { version = "0.1", features = ["tokio"] }
 
 swe-edge-ingress-tls   = { path = "../../../../tls" }
-edge-domain            = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.3.4" }
+edge-domain            = { path = "../../../../../domain" }
 swe-observ-metrics     = { package = "swe_justobserv_metrics", git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 swe_justobserv_context = { git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 sha2                   = "0.10"
@@ -54,7 +54,7 @@ tempfile       = "3"
 async-trait    = "0.1"
 tokio-util     = { version = "0.7", default-features = false }
 swe-observ-metrics     = { package = "swe_justobserv_metrics", git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
-edge-domain    = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.3.4" }
+edge-domain    = { path = "../../../../../domain" }
 tonic          = { version = "0.12", default-features = false, features = ["transport"] }
 sha2           = "0.10"
 swe-edge-ingress-tls = { path = "../../../../tls" }

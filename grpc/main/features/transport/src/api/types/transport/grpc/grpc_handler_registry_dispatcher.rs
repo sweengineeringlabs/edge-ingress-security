@@ -49,6 +49,7 @@ impl GrpcHandlerRegistryDispatcher {
 mod tests {
     use super::GrpcHandlerRegistryDispatcher;
     use edge_domain::{Handler, HandlerError, HandlerRegistry};
+    use futures::future::BoxFuture;
     use std::sync::Arc;
 
     use crate::api::port::grpc::GrpcIngressError;
@@ -79,7 +80,6 @@ mod tests {
     }
 
     struct DoublingHandler;
-    #[async_trait::async_trait]
     impl Handler<TestReq, TestResp> for DoublingHandler {
         fn id(&self) -> &str {
             "/pkg.Service/Double"
@@ -87,9 +87,11 @@ mod tests {
         fn pattern(&self) -> &str {
             "test"
         }
-        async fn execute(&self, req: TestReq) -> Result<TestResp, HandlerError> {
-            Ok(TestResp {
-                value: req.value.wrapping_mul(2),
+        fn execute(&self, req: TestReq) -> BoxFuture<'_, Result<TestResp, HandlerError>> {
+            Box::pin(async move {
+                Ok(TestResp {
+                    value: req.value.wrapping_mul(2),
+                })
             })
         }
     }
