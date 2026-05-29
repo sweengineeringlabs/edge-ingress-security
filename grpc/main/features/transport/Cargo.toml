@@ -39,7 +39,7 @@ edge-domain            = { path = "../../../../../domain" }
 swe-observ-metrics     = { package = "swe_justobserv_metrics", git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 swe_justobserv_context = { git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 sha2                   = "0.10"
-swe-edge-configbuilder = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.4.5" }
+swe-edge-configbuilder = { path = "../../../../../configbuilder/main/features/configbuilder" }
 
 [dev-dependencies]
 tokio          = { version = "1.0", features = ["rt-multi-thread", "macros", "time"] }

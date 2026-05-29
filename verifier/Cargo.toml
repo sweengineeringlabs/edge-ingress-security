@@ -23,8 +23,8 @@ thiserror    = "2"
 tracing      = "0.1"
 jsonwebtoken = "9"
 subtle       = "2"
-edge-domain            = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.4.5" }
-swe-edge-configbuilder = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.4.5" }
+edge-domain = { path = "../../domain" }
+swe-edge-configbuilder = { path = "../../configbuilder/main/features/configbuilder" }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros", "rt"] }
