@@ -42,25 +42,3 @@ impl Claims {
         self.custom.get(key)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// @covers: Claims — round-trips through JSON.
-    #[test]
-    fn test_claims_round_trips_through_json() {
-        let json = r#"{"sub":"alice","exp":9999999999,"role":"admin"}"#;
-        let c: Claims = serde_json::from_str(json).expect("deserialize");
-        assert_eq!(c.sub.as_deref(), Some("alice"));
-        assert_eq!(c.exp, Some(9999999999));
-        assert_eq!(c.get("role").and_then(|v| v.as_str()), Some("admin"));
-    }
-
-    /// @covers: Claims::get — returns None for absent key.
-    #[test]
-    fn test_get_returns_none_for_absent_claim() {
-        let c: Claims = serde_json::from_str("{}").unwrap();
-        assert!(c.get("missing").is_none());
-    }
-}

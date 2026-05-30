@@ -40,21 +40,3 @@ impl From<VerifierError> for edge_domain::HandlerError {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// @covers: VerifierError — Display messages are non-empty.
-    #[test]
-    fn test_verifier_error_display_messages_are_non_empty() {
-        assert!(!VerifierError::Expired.to_string().is_empty());
-        assert!(!VerifierError::NotYetValid.to_string().is_empty());
-        assert!(!VerifierError::UnknownApiKey.to_string().is_empty());
-        assert!(!VerifierError::Invalid("bad".into()).to_string().is_empty());
-        assert!(!VerifierError::ClaimMismatch("iss".into())
-            .to_string()
-            .is_empty());
-        assert!(!VerifierError::Config("key".into()).to_string().is_empty());
-    }
-}

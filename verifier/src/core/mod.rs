@@ -1,1 +1,3 @@
-pub(crate) mod jwt_verifier;
+//! Verifier core implementations.
+
+pub(crate) mod jwt;
