@@ -1,6 +1,5 @@
 //! Integration tests for VerifierSvc factory methods.
 
-use swe_edge_configbuilder::ConfigBuilder as _;
 use swe_edge_ingress_verifier::VerifierSvc;
 
 /// @covers: create_config_builder

@@ -1,6 +1,5 @@
 //! Contract tests for ApplicationConfigBuilder type alias.
 
-use swe_edge_configbuilder::ConfigBuilder as _;
 use swe_edge_ingress_tls::TlsSvc;
 
 /// @covers: create_config_builder

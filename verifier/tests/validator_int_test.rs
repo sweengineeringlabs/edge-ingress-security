@@ -1,6 +1,5 @@
 //! Integration tests for the Validator trait.
 
-use swe_edge_configbuilder::ConfigBuilder as _;
 use swe_edge_ingress_verifier::VerifierSvc;
 
 /// @covers: Validator

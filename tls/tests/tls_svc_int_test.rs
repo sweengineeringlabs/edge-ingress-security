@@ -1,6 +1,5 @@
 //! Integration tests for TlsSvc factory methods.
 
-use swe_edge_configbuilder::ConfigBuilder as _;
 use swe_edge_ingress_tls::TlsSvc;
 
 /// @covers: create_config_builder
