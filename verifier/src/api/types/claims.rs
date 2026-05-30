@@ -41,4 +41,9 @@ impl Claims {
     pub fn get(&self, key: &str) -> Option<&serde_json::Value> {
         self.custom.get(key)
     }
+
+    /// Start building a [`Claims`] value with fluent setters.
+    pub fn builder() -> super::claims_builder::ClaimsBuilder {
+        super::claims_builder::ClaimsBuilder::default()
+    }
 }

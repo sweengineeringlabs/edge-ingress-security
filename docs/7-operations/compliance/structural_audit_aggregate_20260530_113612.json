@@ -1,0 +1,21 @@
+{
+  "members": [
+    {
+      "failed": 24,
+      "member": "tls",
+      "passed": 136,
+      "skipped": 0
+    },
+    {
+      "failed": 28,
+      "member": "verifier",
+      "passed": 132,
+      "skipped": 0
+    }
+  ],
+  "mode": "package",
+  "timestamp": "2026-05-30T11:36:12.845017600+02:00",
+  "total_failed": 52,
+  "total_members": 2,
+  "total_passed": 268
+}

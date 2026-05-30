@@ -13,6 +13,10 @@ rust-version = "1.95"
 authors      = ["SWE Engineering Labs"]
 repository   = "https://github.com/sweengineeringlabs/edge"
 
+[workspace.dependencies]
+swe-edge-configbuilder = { path = "../configbuilder/main/features/configbuilder" }
+edge-domain            = { path = "../domain" }
+
 [workspace.lints.rust]
 unsafe_code  = "deny"
 missing_docs = "warn"
