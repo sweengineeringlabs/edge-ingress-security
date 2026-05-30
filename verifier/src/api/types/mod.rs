@@ -13,3 +13,6 @@ pub use claims_builder::ClaimsBuilder;
 pub use jwt::{JwtConfig, JwtKey, JwtVerifier};
 pub use noop_verifier_extension::NoopVerifierExtension;
 pub use verifier_svc::VerifierSvc;
+
+pub mod application_config_builder;
+pub use application_config_builder::ApplicationConfigBuilder;
