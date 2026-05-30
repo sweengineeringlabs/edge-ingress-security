@@ -1,6 +1,9 @@
-//! TLS API types.
+//! TLS API — error types and value objects.
 
-pub(crate) mod ingress_tls_error;
-pub(crate) mod value_object;
+pub(crate) mod error;
+pub(crate) mod types;
 
-pub(crate) mod server_config;
+pub(crate) use error::IngressTlsError;
+pub(crate) use types::IngressTlsConfig;
+pub(crate) mod acceptor;
+pub(crate) mod traits;

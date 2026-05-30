@@ -1,1 +1,5 @@
-//! TLS core — all public items moved to api/.
+//! TLS core implementations.
+
+pub(crate) mod acceptor;
+
+pub(crate) use acceptor::DefaultAcceptorBuilder;
