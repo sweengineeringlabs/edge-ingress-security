@@ -10,6 +10,7 @@ rust-version = "1.95"
 authors      = ["SWE Engineering Labs"]
 repository   = "https://github.com/sweengineeringlabs/edge"
 
+
 [workspace.lints.rust]
 unsafe_code  = "deny"
 missing_docs = "warn"
