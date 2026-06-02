@@ -5,7 +5,6 @@ use std::collections::HashMap;
 use super::http_config::HttpConfig;
 
 /// Fluent builder that constructs an [`HttpConfig`].
-#[allow(dead_code)]
 pub struct HttpConfigBuilder {
     base_url: Option<String>,
     timeout_secs: u64,
@@ -84,73 +83,5 @@ impl HttpConfigBuilder {
 impl Default for HttpConfigBuilder {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// @covers: with_base_url
-    #[test]
-    fn test_new_creates_builder_with_defaults() {
-        let cfg = HttpConfigBuilder::new().build();
-        assert_eq!(cfg.timeout_secs, 30);
-        assert_eq!(cfg.connect_timeout_secs, 10);
-    }
-
-    /// @covers: with_base_url
-    #[test]
-    fn test_with_base_url_sets_url() {
-        let cfg = HttpConfigBuilder::new()
-            .with_base_url("https://api.example.com")
-            .build();
-        assert_eq!(cfg.base_url.as_deref(), Some("https://api.example.com"));
-    }
-
-    /// @covers: with_timeout_secs
-    #[test]
-    fn test_with_timeout_secs_overrides_default() {
-        let cfg = HttpConfigBuilder::new().with_timeout_secs(60).build();
-        assert_eq!(cfg.timeout_secs, 60);
-    }
-
-    /// @covers: with_connect_timeout_secs
-    #[test]
-    fn test_with_connect_timeout_secs_overrides_default() {
-        let cfg = HttpConfigBuilder::new()
-            .with_connect_timeout_secs(5)
-            .build();
-        assert_eq!(cfg.connect_timeout_secs, 5);
-    }
-
-    /// @covers: with_max_retries
-    #[test]
-    fn test_with_max_retries_sets_retry_count() {
-        let cfg = HttpConfigBuilder::new().with_max_retries(0).build();
-        assert_eq!(cfg.max_retries, 0);
-    }
-
-    /// @covers: with_header
-    #[test]
-    fn test_with_header_adds_default_header() {
-        let cfg = HttpConfigBuilder::new()
-            .with_header("X-Api-Key", "secret")
-            .build();
-        assert_eq!(
-            cfg.default_headers.get("X-Api-Key").map(|s| s.as_str()),
-            Some("secret")
-        );
-    }
-
-    /// @covers: build
-    #[test]
-    fn test_build_returns_http_config_with_set_values() {
-        let cfg = HttpConfigBuilder::new()
-            .with_base_url("https://x.com")
-            .with_timeout_secs(5)
-            .build();
-        assert_eq!(cfg.base_url.as_deref(), Some("https://x.com"));
-        assert_eq!(cfg.timeout_secs, 5);
     }
 }

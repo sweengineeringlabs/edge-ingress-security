@@ -12,15 +12,3 @@ use crate::api::value::sse::sse_event::SseEvent;
 /// The server drives this stream; the transport layer converts each item into
 /// a `text/event-stream` frame and flushes it to the wire.
 pub type SseStream = Pin<Box<dyn Stream<Item = Result<SseEvent, HttpIngressError>> + Send>>;
-
-#[cfg(test)]
-mod tests {
-    use futures::stream;
-
-    use super::*;
-
-    #[test]
-    fn test_sse_stream_empty_stream_is_valid() {
-        let _s: SseStream = Box::pin(stream::empty());
-    }
-}

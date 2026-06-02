@@ -11,25 +11,3 @@ pub trait HttpConfigValidatorPort: Send + Sync {
     /// Returns `Ok(())` when the config is valid, or a human-readable error.
     fn validate_config(&self) -> Result<(), String>;
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    struct AlwaysValidConfig;
-    impl HttpConfigValidatorPort for AlwaysValidConfig {
-        fn validate_config(&self) -> Result<(), String> {
-            Ok(())
-        }
-    }
-
-    #[test]
-    fn test_http_config_validator_is_object_safe() {
-        fn _assert(_: &dyn HttpConfigValidatorPort) {}
-    }
-
-    #[test]
-    fn test_http_config_validator_ok_returns_unit() {
-        assert!(AlwaysValidConfig.validate_config().is_ok());
-    }
-}

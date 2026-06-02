@@ -54,29 +54,3 @@ impl HttpAuth {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// @covers: bearer
-    #[test]
-    fn test_bearer_creates_bearer_token_auth() {
-        let auth = HttpAuth::bearer("tok");
-        assert!(matches!(auth, HttpAuth::Bearer { ref token } if token == "tok"));
-    }
-
-    /// @covers: basic
-    #[test]
-    fn test_basic_creates_basic_auth_with_credentials() {
-        let auth = HttpAuth::basic("user", "pass");
-        assert!(matches!(auth, HttpAuth::Basic { ref username, .. } if username == "user"));
-    }
-
-    /// @covers: api_key
-    #[test]
-    fn test_api_key_creates_api_key_auth() {
-        let auth = HttpAuth::api_key("X-Api-Key", "secret");
-        assert!(matches!(auth, HttpAuth::ApiKey { ref header, .. } if header == "X-Api-Key"));
-    }
-}

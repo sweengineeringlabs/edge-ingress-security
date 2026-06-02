@@ -28,24 +28,3 @@ impl WsMessage {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// @covers: text
-    #[test]
-    fn test_ws_message_text_sets_binary_false() {
-        let m = WsMessage::text("hello");
-        assert!(!m.binary);
-        assert_eq!(m.data.as_ref(), b"hello");
-    }
-
-    /// @covers: binary
-    #[test]
-    fn test_ws_message_binary_sets_binary_true() {
-        let m = WsMessage::binary(vec![1u8, 2, 3]);
-        assert!(m.binary);
-        assert_eq!(m.data.as_ref(), &[1, 2, 3]);
-    }
-}

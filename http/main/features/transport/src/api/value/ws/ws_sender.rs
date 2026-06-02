@@ -9,14 +9,3 @@ use crate::api::value::ws::ws_message::WsMessage;
 /// The server implementation pushes [`WsMessage`] frames into this sender;
 /// the transport layer forwards them to the connected WebSocket peer.
 pub type WsSender = mpsc::UnboundedSender<WsMessage>;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_ws_sender_can_be_constructed_from_mpsc_channel() {
-        let (tx, _rx) = mpsc::unbounded_channel::<WsMessage>();
-        let _: WsSender = tx;
-    }
-}

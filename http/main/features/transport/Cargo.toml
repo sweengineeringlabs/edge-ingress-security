@@ -68,87 +68,87 @@ path    = "tests/validator_int_test.rs"
 
 [[test]]
 name    = "spi_int_test"
-path    = "test/spi_int_test.rs"
+path    = "tests/spi_int_test.rs"
 
 [[test]]
 name    = "spi_security_test"
-path    = "test/spi_security_test.rs"
+path    = "tests/spi_security_int_test.rs"
 
 [[test]]
 name    = "saf_transport_e2e_test"
-path    = "test/saf_transport_e2e_test.rs"
+path    = "tests/saf_transport_e2e_int_test.rs"
 
 [[test]]
 name    = "http_dispatcher_error_test"
-path    = "test/http_dispatcher_error_test.rs"
+path    = "tests/http_dispatcher_error_int_test.rs"
 
 [[test]]
 name    = "http_handler_adapter_test"
-path    = "test/http_handler_adapter_test.rs"
+path    = "tests/http_handler_adapter_int_test.rs"
 
 [[test]]
 name    = "http_handler_registry_dispatcher_test"
-path    = "test/http_handler_registry_dispatcher_test.rs"
+path    = "tests/http_handler_registry_dispatcher_int_test.rs"
 
 [[test]]
 name    = "http_health_check_test"
-path    = "test/http_health_check_test.rs"
+path    = "tests/http_health_check_int_test.rs"
 
 [[test]]
 name    = "http_ingress_error_test"
-path    = "test/http_ingress_error_test.rs"
+path    = "tests/http_ingress_error_int_test.rs"
 
 [[test]]
 name    = "axum_http_server_test"
-path    = "test/axum_http_server_test.rs"
+path    = "tests/axum_http_server_int_test.rs"
 
 [[test]]
 name    = "axum_http_server_builder_test"
-path    = "test/axum_http_server_builder_test.rs"
+path    = "tests/axum_http_server_builder_int_test.rs"
 
 [[test]]
 name    = "axum_server_error_test"
-path    = "test/axum_server_error_test.rs"
+path    = "tests/axum_server_error_int_test.rs"
 
 [[test]]
 name    = "http_config_validator_test"
-path    = "test/http_config_validator_test.rs"
+path    = "tests/http_config_validator_int_test.rs"
 
 [[test]]
 name    = "form_part_test"
-path    = "test/form_part_test.rs"
+path    = "tests/form_part_int_test.rs"
 
 [[test]]
 name    = "http_config_test"
-path    = "test/http_config_test.rs"
+path    = "tests/http_config_int_test.rs"
 
 [[test]]
 name    = "http_config_builder_test"
-path    = "test/http_config_builder_test.rs"
+path    = "tests/http_config_builder_int_test.rs"
 
 [[test]]
 name    = "http_request_test"
-path    = "test/http_request_test.rs"
+path    = "tests/http_request_int_test.rs"
 
 [[test]]
 name    = "http_request_builder_test"
-path    = "test/http_request_builder_test.rs"
+path    = "tests/http_request_builder_int_test.rs"
 
 [[test]]
 name    = "http_response_test"
-path    = "test/http_response_test.rs"
+path    = "tests/http_response_int_test.rs"
 
 [[test]]
 name    = "sse_event_test"
-path    = "test/sse_event_test.rs"
+path    = "tests/sse_event_int_test.rs"
 
 [[test]]
 name    = "ws_channel_test"
-path    = "test/ws_channel_test.rs"
+path    = "tests/ws_channel_int_test.rs"
 
 [[test]]
 name    = "ws_message_test"
-path    = "test/ws_message_test.rs"
+path    = "tests/ws_message_int_test.rs"
 
 [dependencies]
 serde          = { version = "1.0", features = ["derive"] }
@@ -188,5 +188,74 @@ swe-edge-ingress-verifier = { git = "ssh://git@github.com/sweengineeringlabs/edg
 swe-observ-metrics        = { package = "swe_justobserv_metrics", git = "ssh://git@github.com/sweengineeringlabs/justobserv.git", tag = "v0.2.1" }
 http         = "1"
 
-[lints]
-workspace = true
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "warn"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+
+[[test]]
+name = "http_transport_config_section_int_test"
+path = "tests/http_transport_config_section_int_test.rs"
+
+[[test]]
+name = "transport_svc_int_test"
+path = "tests/transport_svc_int_test.rs"
+
+[[test]]
+name = "axum_http_server_helper_int_test"
+path = "tests/axum_http_server_helper_int_test.rs"
+
+[[test]]
+name = "http_encode_fn_int_test"
+path = "tests/http_encode_fn_int_test.rs"
+
+[[test]]
+name = "registry_dispatcher_impl_int_test"
+path = "tests/registry_dispatcher_impl_int_test.rs"
+
+[[test]]
+name = "http_config_validator_contract_int_test"
+path = "tests/http_config_validator_contract_int_test.rs"
+
+[[test]]
+name = "http_stream_int_test"
+path = "tests/http_stream_int_test.rs"
+
+[[test]]
+name = "http_body_int_test"
+path = "tests/http_body_int_test.rs"
+
+[[test]]
+name = "http_ingress_result_int_test"
+path = "tests/http_ingress_result_int_test.rs"
+
+[[test]]
+name = "http_decode_fn_int_test"
+path = "tests/http_decode_fn_int_test.rs"
+
+[[test]]
+name = "http_config_validator_port_int_test"
+path = "tests/http_config_validator_port_int_test.rs"
+
+[[test]]
+name = "http_auth_int_test"
+path = "tests/http_auth_int_test.rs"
+
+[[test]]
+name = "http_method_int_test"
+path = "tests/http_method_int_test.rs"
+
+[[test]]
+name = "sse_stream_int_test"
+path = "tests/sse_stream_int_test.rs"
+
+[[test]]
+name = "ws_receiver_int_test"
+path = "tests/ws_receiver_int_test.rs"
+
+[[test]]
+name = "ws_sender_int_test"
+path = "tests/ws_sender_int_test.rs"

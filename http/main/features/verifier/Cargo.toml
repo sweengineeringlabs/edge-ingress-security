@@ -12,43 +12,43 @@ categories   = ["authentication", "web-programming"]
 
 [package.metadata.struct-engine]
 application_type = "lib"
+service_type     = "processor"
 
 [lib]
 path = "src/lib.rs"
 
 [[test]]
 name    = "saf_verifier_e2e_test"
-path    = "test/saf_verifier_e2e_test.rs"
+path    = "tests/saf_verifier_e2e_int_test.rs"
 
 [[test]]
 name    = "spi_int_test"
-path    = "test/spi_int_test.rs"
+path    = "tests/spi_int_int_test.rs"
 
 [[test]]
 name    = "spi_security_test"
-path    = "test/spi_security_test.rs"
+path    = "tests/spi_security_int_test.rs"
 
 [[test]]
 name    = "auth_error_test"
-path    = "test/auth_error_test.rs"
+path    = "tests/auth_error_int_test.rs"
 
 [[test]]
 name    = "bearer_layer_test"
-path    = "test/bearer_layer_test.rs"
+path    = "tests/bearer_layer_int_test.rs"
 
 [[test]]
 name    = "bearer_service_test"
-path    = "test/bearer_service_test.rs"
+path    = "tests/bearer_service_int_test.rs"
 
 [[test]]
 name    = "verified_claims_test"
-path    = "test/verified_claims_test.rs"
+path    = "tests/verified_claims_int_test.rs"
 
 [dependencies]
 thiserror = "2"
 tracing   = { version = "0.1", default-features = false }
 axum      = "0.8"
-bytes     = "1"
 http      = "1"
 tower     = { version = "0.5", features = ["util"] }
 
@@ -61,5 +61,47 @@ tokio      = { version = "1.0", features = ["rt-multi-thread", "macros"] }
 axum       = "0.8"
 serde_json = "1.0"
 
-[lints]
-workspace = true
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "warn"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+
+[[test]]
+name = "http_auth_error_int_test"
+path = "tests/http_auth_error_int_test.rs"
+[[test]]
+name = "verifier_svc_int_test"
+path = "tests/verifier_svc_int_test.rs"
+
+[[test]]
+name = "processor_int_test"
+path = "tests/processor_int_test.rs"
+[[test]]
+name = "validator_int_test"
+path = "tests/validator_int_test.rs"
+[[test]]
+name = "verifier_error_int_test"
+path = "tests/verifier_error_int_test.rs"
+[[test]]
+name = "axum_dep_int_test"
+path = "tests/axum_dep_int_test.rs"
+[[test]]
+name = "edge_domain_dep_int_test"
+path = "tests/edge_domain_dep_int_test.rs"
+
+[[test]]
+name = "ingress_verifier_dep_int_test"
+path = "tests/ingress_verifier_dep_int_test.rs"
+[[test]]
+name = "tower_dep_int_test"
+path = "tests/tower_dep_int_test.rs"
+[[test]]
+name = "bearer_service_helper_int_test"
+path = "tests/bearer_service_helper_int_test.rs"
+
+[[test]]
+name = "verifier_processor_int_test"
+path = "tests/verifier_processor_int_test.rs"

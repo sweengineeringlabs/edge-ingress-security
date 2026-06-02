@@ -17,14 +17,3 @@ impl Validator for HttpConfigValidator {
         Ok(())
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_http_config_validator_is_a_marker_type() {
-        let v = HttpConfigValidator;
-        assert!(v.validate().is_ok());
-    }
-}

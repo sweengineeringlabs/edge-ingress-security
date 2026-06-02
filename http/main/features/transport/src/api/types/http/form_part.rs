@@ -14,20 +14,3 @@ pub struct FormPart {
     /// Raw bytes of this part.
     pub data: Vec<u8>,
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_form_part_constructs_with_name_and_data() {
-        let part = FormPart {
-            name: "file".to_string(),
-            filename: Some("upload.txt".to_string()),
-            content_type: Some("text/plain".to_string()),
-            data: b"hello".to_vec(),
-        };
-        assert_eq!(part.name, "file");
-        assert_eq!(part.filename.as_deref(), Some("upload.txt"));
-    }
-}

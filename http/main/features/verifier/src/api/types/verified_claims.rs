@@ -15,16 +15,3 @@ impl VerifiedClaims {
         &self.0
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// @covers: VerifiedClaims — claims() returns the wrapped claims.
-    #[test]
-    fn test_verified_claims_returns_inner_claims() {
-        let claims: Claims = serde_json::from_str(r#"{"sub":"alice"}"#).unwrap();
-        let vc = VerifiedClaims(claims.clone());
-        assert_eq!(vc.claims().sub, claims.sub);
-    }
-}

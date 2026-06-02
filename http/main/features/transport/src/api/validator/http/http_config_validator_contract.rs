@@ -9,16 +9,3 @@
 /// The `HttpConfigValidator` in `core/` must implement this trait
 /// to satisfy the SEA interface–implementation pairing.
 pub trait HttpConfigValidatorContract: Send + Sync {}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    struct Dummy;
-    impl HttpConfigValidatorContract for Dummy {}
-
-    #[test]
-    fn test_http_config_validator_contract_is_object_safe() {
-        fn _assert(_: &dyn HttpConfigValidatorContract) {}
-    }
-}

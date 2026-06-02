@@ -13,26 +13,3 @@ pub enum AxumServerError {
     #[error("TLS: {0}")]
     Tls(#[source] swe_edge_ingress_tls::IngressTlsError),
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_axum_server_error_bind_formats_with_address() {
-        let e = AxumServerError::Bind(
-            "0.0.0.0:8080".into(),
-            std::io::Error::new(std::io::ErrorKind::AddrInUse, "in use"),
-        );
-        assert!(e.to_string().contains("0.0.0.0:8080"), "{e}");
-    }
-
-    #[test]
-    fn test_axum_server_error_serve_formats_correctly() {
-        let e = AxumServerError::Serve(std::io::Error::new(
-            std::io::ErrorKind::BrokenPipe,
-            "broken",
-        ));
-        assert!(e.to_string().contains("server error"), "{e}");
-    }
-}

@@ -21,29 +21,3 @@ impl SseEvent {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// @covers: data
-    #[test]
-    fn test_sse_event_data_sets_payload_and_leaves_optional_fields_none() {
-        let ev = SseEvent::data("hello");
-        assert_eq!(ev.data, "hello");
-        assert!(ev.event.is_none());
-        assert!(ev.id.is_none());
-    }
-
-    #[test]
-    fn test_sse_event_full_round_trip_preserves_all_fields() {
-        let ev = SseEvent {
-            event: Some("ping".into()),
-            data: "{}".into(),
-            id: Some("1".into()),
-        };
-        assert_eq!(ev.event.as_deref(), Some("ping"));
-        assert_eq!(ev.data, "{}");
-        assert_eq!(ev.id.as_deref(), Some("1"));
-    }
-}

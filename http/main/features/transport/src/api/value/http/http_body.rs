@@ -18,21 +18,3 @@ pub enum HttpBody {
     /// Multipart form body.
     Multipart(Vec<FormPart>),
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_http_body_json_variant_holds_value() {
-        let v = serde_json::json!({"key": "val"});
-        let body = HttpBody::Json(v.clone());
-        assert!(matches!(body, HttpBody::Json(_)));
-    }
-
-    #[test]
-    fn test_http_body_raw_variant_holds_bytes() {
-        let body = HttpBody::Raw(vec![1, 2, 3]);
-        assert!(matches!(body, HttpBody::Raw(ref b) if b == &[1, 2, 3]));
-    }
-}

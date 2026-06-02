@@ -21,13 +21,3 @@ pub trait HttpIngress: Send + Sync {
     /// Perform a health check of this handler.
     fn health_check(&self) -> BoxFuture<'_, HttpIngressResult<HttpHealthCheck>>;
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_http_ingress_is_object_safe() {
-        fn _assert_object_safe(_: &dyn HttpIngress) {}
-    }
-}

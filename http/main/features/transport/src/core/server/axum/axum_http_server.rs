@@ -5,7 +5,7 @@ use tokio::net::TcpListener;
 
 use crate::api::server::axum::axum_http_server::AxumHttpServer;
 use crate::api::server::axum::axum_server_error::AxumServerError;
-use crate::api::types::server::axum_http_server_helper::AxumHttpServerHelper;
+use crate::api::types::server::axum::axum_http_server_helper::AxumHttpServerHelper;
 
 impl AxumHttpServer {
     /// Bind and serve until `shutdown` resolves.
@@ -108,7 +108,7 @@ mod dedicated_coverage {
     use crate::api::port::http_health_check::HttpHealthCheck;
     use crate::api::port::http_ingress::HttpIngress;
     use crate::api::port::http_ingress_result::HttpIngressResult;
-    use crate::api::types::server::axum_http_server::MAX_BODY_BYTES;
+    use crate::api::types::server::axum::axum_http_server::MAX_BODY_BYTES;
     use crate::api::value::{HttpRequest, HttpResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;

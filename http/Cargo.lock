@@ -1469,7 +1469,6 @@ name = "swe-edge-ingress-http-verifier"
 version = "0.1.0"
 dependencies = [
  "axum",
- "bytes",
  "edge-domain",
  "http",
  "serde_json",

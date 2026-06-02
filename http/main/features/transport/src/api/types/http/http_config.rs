@@ -72,29 +72,3 @@ impl HttpConfig {
         self
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// @covers: with_base_url
-    #[test]
-    fn test_with_base_url_sets_base_url() {
-        let cfg = HttpConfig::with_base_url("http://x.com");
-        assert_eq!(cfg.base_url, Some("http://x.com".to_string()));
-    }
-
-    /// @covers: with_header
-    #[test]
-    fn test_with_header_inserts_default_header() {
-        let cfg = HttpConfig::default().with_header("X-Key", "val");
-        assert_eq!(cfg.default_headers.get("X-Key"), Some(&"val".to_string()));
-    }
-
-    /// @covers: with_timeout
-    #[test]
-    fn test_with_timeout_sets_timeout_secs() {
-        let cfg = HttpConfig::default().with_timeout(60);
-        assert_eq!(cfg.timeout_secs, 60);
-    }
-}

@@ -16,20 +16,3 @@ pub struct WsChannel {
     /// Receive frames from the connected WebSocket peer.
     pub receiver: WsReceiver,
 }
-
-#[cfg(test)]
-mod tests {
-    use futures::stream;
-    use tokio::sync::mpsc;
-
-    use super::*;
-
-    #[test]
-    fn test_ws_channel_can_be_constructed() {
-        let (tx, _rx) = mpsc::unbounded_channel();
-        let _ch = WsChannel {
-            sender: tx,
-            receiver: Box::pin(stream::empty()),
-        };
-    }
-}
