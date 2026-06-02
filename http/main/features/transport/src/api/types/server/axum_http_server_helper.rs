@@ -427,7 +427,7 @@ impl AxumHttpServerHelper {
     {
         use hyper_util::rt::{TokioExecutor, TokioIo};
 
-        let acceptor = swe_edge_ingress_tls::build_tls_acceptor(tls_cfg)
+        let acceptor = swe_edge_ingress_tls::TlsSvc::build_tls_acceptor(tls_cfg)
             .map_err(crate::api::server::axum::axum_server_error::AxumServerError::Tls)?;
 
         let mut shutdown = std::pin::pin!(shutdown);
