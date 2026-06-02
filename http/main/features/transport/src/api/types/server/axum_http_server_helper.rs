@@ -419,7 +419,6 @@ impl AxumHttpServerHelper {
         handler: Arc<dyn HttpIngress>,
         body_limit: usize,
         verifier: Option<Arc<dyn TokenVerifier>>,
-        stream_handler: Option<Arc<dyn crate::api::port::http::http_stream::HttpStream>>,
         tls_cfg: &IngressTlsConfig,
         shutdown: F,
     ) -> Result<(), crate::api::server::axum::axum_server_error::AxumServerError>
@@ -440,10 +439,9 @@ impl AxumHttpServerHelper {
                         Ok(s)  => s,
                         Err(e) => { tracing::warn!("TLS accept error: {e}"); continue; }
                     };
-                    let acceptor       = acceptor.clone();
-                    let handler        = handler.clone();
-                    let verifier       = verifier.clone();
-                    let stream_handler = stream_handler.clone();
+                    let acceptor = acceptor.clone();
+                    let handler  = handler.clone();
+                    let verifier = verifier.clone();
                     tokio::spawn(async move {
                         let tls = match acceptor.accept(stream).await {
                             Ok(s)  => s,
@@ -451,31 +449,14 @@ impl AxumHttpServerHelper {
                         };
                         let io  = TokioIo::new(tls);
                         let svc = hyper::service::service_fn(move |req: http::Request<hyper::body::Incoming>| {
-                            let handler        = handler.clone();
-                            let verifier       = verifier.clone();
-                            let stream_handler = stream_handler.clone();
+                            let handler  = handler.clone();
+                            let verifier = verifier.clone();
                             async move {
-                                let req = req.map(axum::body::Body::new);
-                                let req = match AxumHttpServerHelper::verify_auth(req, verifier.as_deref()) {
+                                let req  = req.map(axum::body::Body::new);
+                                let req  = match AxumHttpServerHelper::verify_auth(req, verifier.as_deref()) {
                                     Ok(r)    => r,
                                     Err(rsp) => return Ok::<_, Infallible>(rsp),
                                 };
-
-                                // Streaming: WebSocket upgrade
-                                if AxumHttpServerHelper::is_websocket_upgrade(req.headers()) {
-                                    if let Some(sh) = stream_handler {
-                                        return Ok(AxumHttpServerHelper::dispatch_websocket(req, sh).await);
-                                    }
-                                }
-
-                                // Streaming: SSE
-                                if AxumHttpServerHelper::is_sse_request(req.headers()) {
-                                    if let Some(sh) = stream_handler {
-                                        return Ok(AxumHttpServerHelper::dispatch_sse(req, body_limit, sh).await);
-                                    }
-                                }
-
-                                // Regular HTTP
                                 let resp = match AxumHttpServerHelper::extract_request(req, body_limit).await {
                                     Ok((http_req, ctx)) => match handler.handle(http_req, ctx).await {
                                         Ok(resp) => AxumHttpServerHelper::build_response(resp),
