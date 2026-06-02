@@ -47,6 +47,7 @@ impl AxumHttpServer {
                 self.handler.clone(),
                 self.body_limit,
                 self.bearer_verifier.clone(),
+                self.stream_handler.clone(),
                 tls_cfg,
                 shutdown,
             )
