@@ -1,0 +1,21 @@
+{
+  "members": [
+    {
+      "failed": 21,
+      "member": "main/features/transport",
+      "passed": 138,
+      "skipped": 0
+    },
+    {
+      "failed": 26,
+      "member": "main/features/verifier",
+      "passed": 133,
+      "skipped": 0
+    }
+  ],
+  "mode": "package",
+  "timestamp": "2026-06-02T17:38:05.315612700+02:00",
+  "total_failed": 47,
+  "total_members": 2,
+  "total_passed": 271
+}
