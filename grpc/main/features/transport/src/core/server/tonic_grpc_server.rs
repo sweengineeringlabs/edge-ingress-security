@@ -106,7 +106,7 @@ impl TonicGrpcServer {
             .as_ref()
             .map(|cfg| {
                 tracing::info!(bind = %bind_addr, mtls = cfg.is_mtls(), "gRPC+TLS server listening");
-                swe_edge_ingress_tls::build_tls_acceptor(cfg).map_err(TonicServerError::Tls)
+                swe_edge_ingress_tls::TlsSvc::build_tls_acceptor(cfg).map_err(TonicServerError::Tls)
             })
             .transpose()?;
 

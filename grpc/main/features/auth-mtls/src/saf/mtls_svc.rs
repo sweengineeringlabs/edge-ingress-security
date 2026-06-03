@@ -1,7 +1,11 @@
 //! SAF service functions for the mTLS auth interceptor.
 
 use crate::api::traits::{Processor, Validator};
-pub use swe_edge_configbuilder::create_config_builder;
+
+/// Create a config builder pre-seeded with this crate's package metadata.
+pub fn create_config_builder() -> swe_edge_configbuilder::ConfigBuilderImpl {
+    swe_edge_configbuilder::ConfigLoaderFactory::create_config_builder()
+}
 
 /// Returns `true` when the mTLS interceptor is an authorization gate.
 pub fn is_authorization_interceptor() -> bool {

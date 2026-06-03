@@ -2,7 +2,11 @@
 
 use crate::api::traits::Validator;
 use crate::api::BearerIngressConfig;
-pub use swe_edge_configbuilder::create_config_builder;
+
+/// Create a config builder pre-seeded with this crate's package metadata.
+pub fn create_config_builder() -> swe_edge_configbuilder::ConfigBuilderImpl {
+    swe_edge_configbuilder::ConfigLoaderFactory::create_config_builder()
+}
 
 /// Returns the authorization metadata key used to carry the extracted bearer subject.
 pub fn extracted_bearer_subject_key() -> &'static str {
