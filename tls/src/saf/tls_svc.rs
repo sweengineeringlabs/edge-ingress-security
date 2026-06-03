@@ -2,8 +2,8 @@
 
 use swe_edge_configbuilder::ConfigLoaderFactory;
 
-use crate::api::error::IngressTlsError;
-use crate::api::types::IngressTlsConfig;
+use crate::api::error::ingress_tls_error::IngressTlsError;
+use crate::api::types::ingress_tls_config::IngressTlsConfig;
 use crate::api::types::TlsSvc;
 use crate::core::DefaultAcceptorBuilder;
 
@@ -22,5 +22,11 @@ impl TlsSvc {
     ) -> Result<tokio_rustls::TlsAcceptor, IngressTlsError> {
         let acceptor = DefaultAcceptorBuilder::build(config)?;
         Ok(acceptor)
+    }
+
+    /// Validate any value implementing the [`Validator`](crate::api::traits::validator::Validator)
+    /// contract, returning a human-readable error describing the first failure.
+    pub fn validate<V: crate::api::traits::validator::Validator>(v: &V) -> Result<(), String> {
+        v.validate()
     }
 }

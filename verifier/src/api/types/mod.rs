@@ -10,7 +10,7 @@ pub mod verifier_svc;
 pub use api_key_verifier::ApiKeyVerifier;
 pub use claims::Claims;
 pub use claims_builder::ClaimsBuilder;
-pub use jwt::{JwtConfig, JwtKey, JwtVerifier};
+pub use jwt::{JwtConfig, JwtKey};
 pub use noop_verifier_extension::NoopVerifierExtension;
 pub use verifier_svc::VerifierSvc;
 

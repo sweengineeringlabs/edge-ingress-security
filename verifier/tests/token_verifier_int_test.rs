@@ -1,4 +1,5 @@
 //! Integration tests for the TokenVerifier trait.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use swe_edge_ingress_verifier::{JwtConfig, JwtKey, JwtVerifier, TokenVerifier};
 

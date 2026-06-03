@@ -75,13 +75,13 @@ mod tests {
 
     #[test]
     fn test_map_jwt_error_expired_signature_maps_to_expired_variant() {
-        use jsonwebtoken::{decode, errors::ErrorKind, DecodingKey, Validation};
+        use jsonwebtoken::{decode, DecodingKey, Validation};
         let key = DecodingKey::from_secret(b"wrong");
         let mut val = Validation::default();
         val.validate_exp = true;
         // Create a definitely-expired token signature mismatch → maps to Invalid
-        let raw_err =
-            decode::<crate::api::types::Claims>("not.a.jwt.at.all", &key, &val).unwrap_err();
+        let raw_err = decode::<crate::api::types::Claims>("not.a.jwt.at.all", &key, &val)
+            .expect_err("decode must fail with malformed JWT");
         let mapped = DefaultJwtVerifier::map_jwt_error(raw_err);
         assert!(matches!(mapped, VerifierError::Invalid(_)));
     }

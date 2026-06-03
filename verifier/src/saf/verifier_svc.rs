@@ -12,4 +12,10 @@ impl VerifierSvc {
             .with_name(env!("CARGO_PKG_NAME"))
             .with_version(env!("CARGO_PKG_VERSION"))
     }
+
+    /// Validate any value implementing the [`Validator`](crate::api::traits::validator::Validator)
+    /// contract, returning a human-readable error describing the first failure.
+    pub fn validate<V: crate::api::traits::validator::Validator>(v: &V) -> Result<(), String> {
+        v.validate()
+    }
 }

@@ -1,6 +1,6 @@
 //! No-op [`TlsExtension`] impl for [`NoopTlsExtension`].
 
-use crate::api::traits::TlsExtension;
+use crate::api::traits::tls_extension::TlsExtension;
 use crate::api::types::{IngressTlsConfig, NoopTlsExtension};
 
 impl TlsExtension for NoopTlsExtension {

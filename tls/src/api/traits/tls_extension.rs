@@ -6,6 +6,13 @@ use crate::api::types::IngressTlsConfig;
 ///
 /// Implement to intercept and transform a [`IngressTlsConfig`] before
 /// the acceptor is built.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "SEA api/ interface anchor — spi implements it; no public caller in production"
+    )
+)]
 pub trait TlsExtension: Send + Sync {
     /// Apply extension logic to `config`; return the (possibly modified)
     /// config.

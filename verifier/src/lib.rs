@@ -5,6 +5,7 @@
 
 #![deny(unsafe_code)]
 #![warn(missing_docs)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
 mod api;
 mod core;
@@ -12,5 +13,4 @@ mod gateway;
 mod saf;
 mod spi;
 
-pub use crate::api::traits::TokenVerifier;
 pub use gateway::*;

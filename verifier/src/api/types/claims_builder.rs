@@ -20,6 +20,7 @@ pub struct ClaimsBuilder {
 
 impl ClaimsBuilder {
     /// Set the `sub` claim.
+    #[allow(clippy::should_implement_trait)]
     pub fn sub(mut self, v: impl Into<String>) -> Self {
         self.sub = Some(v.into());
         self
