@@ -1,5 +1,5 @@
 //! Integration tests for `TransportSvc`.
-use swe_edge_ingress_http_transport::TransportSvc;
+use swe_edge_ingress_http::TransportSvc;
 
 /// @covers: TransportSvc::create_config_builder
 #[test]

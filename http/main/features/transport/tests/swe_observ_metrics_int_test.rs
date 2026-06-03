@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 //! Integration tests exercising the `swe-observ-metrics` dependency directly.
 //!
 //! Verifies that the metrics instrumentation in `HttpHandlerRegistryDispatcher`

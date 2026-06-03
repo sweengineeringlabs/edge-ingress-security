@@ -1,6 +1,7 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 //! Integration tests for `AxumHttpServerHelper`.
 use axum::http::{HeaderMap, HeaderValue};
-use swe_edge_ingress_http_transport::AxumHttpServerHelper;
+use swe_edge_ingress_http::AxumHttpServerHelper;
 
 /// @covers: AxumHttpServerHelper::is_websocket_upgrade
 #[test]
@@ -39,7 +40,7 @@ fn transport_struct_axum_http_server_helper_collect_headers_returns_map_int_test
 /// @covers: AxumHttpServerHelper::payload_too_large
 #[test]
 fn transport_struct_axum_http_server_helper_payload_too_large_returns_413_int_test() {
-    let resp = AxumHttpServerHelper::payload_too_large(1024);
+    let resp = AxumHttpServerHelper::payload_too_large();
     assert_eq!(resp.status(), 413);
 }
 
@@ -67,5 +68,5 @@ fn transport_struct_axum_http_server_helper_verify_auth_passes_when_no_verifier_
 #[test]
 fn transport_struct_axum_http_server_helper_functions_are_accessible_int_test() {
     // Compile-time proof these functions exist on the type.
-    let _ = AxumHttpServerHelper::payload_too_large(0);
+    let _ = AxumHttpServerHelper::payload_too_large();
 }

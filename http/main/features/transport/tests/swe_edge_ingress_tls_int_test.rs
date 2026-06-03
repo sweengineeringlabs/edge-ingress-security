@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 //! Integration tests exercising the `swe-edge-ingress-tls` dependency directly.
 //!
 //! Verifies TLS server construction and the `IngressTlsConfig` API as used

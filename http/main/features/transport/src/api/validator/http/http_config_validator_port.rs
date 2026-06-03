@@ -7,6 +7,10 @@
 ///
 /// Types implementing this trait validate HTTP configuration values
 /// following the `core::validator::HttpConfigValidatorPort` contract.
+#[expect(
+    dead_code,
+    reason = "SEA api/ interface anchor (Rule 121) — intentionally unused"
+)]
 pub trait HttpConfigValidatorPort: Send + Sync {
     /// Returns `Ok(())` when the config is valid, or a human-readable error.
     fn validate_config(&self) -> Result<(), String>;

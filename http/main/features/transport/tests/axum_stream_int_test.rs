@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 //! Integration tests — SSE push and WebSocket dispatch via AxumHttpServer.
 // @allow: no_mocks_in_integration — stub impls required to exercise the streaming API surface
 

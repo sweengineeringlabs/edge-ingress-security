@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 //! Integration tests exercising the `http` crate dependency directly.
 //!
 //! Verifies that the transport layer correctly handles `http::Uri` parsing

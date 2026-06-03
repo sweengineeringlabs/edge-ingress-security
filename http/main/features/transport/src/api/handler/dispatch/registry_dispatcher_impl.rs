@@ -8,4 +8,8 @@
 ///
 /// The `HttpHandlerRegistryDispatcher` in `core/` must implement this trait
 /// to satisfy the SEA interface–implementation pairing.
+#[expect(
+    dead_code,
+    reason = "SEA api/ interface anchor (Rule 121) — intentionally unused"
+)]
 pub trait RegistryDispatcherImpl: Send + Sync {}

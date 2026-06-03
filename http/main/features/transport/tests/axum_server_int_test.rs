@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 //! Integration tests for AxumHttpServer — spins up a real listener.
 
 use std::sync::Arc;

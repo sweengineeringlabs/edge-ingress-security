@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 //! Integration tests exercising the `swe-edge-ingress-verifier` dependency directly.
 //!
 //! Verifies that bearer-auth verification is wired correctly through

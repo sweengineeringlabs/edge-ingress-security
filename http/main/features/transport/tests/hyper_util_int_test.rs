@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 //! Integration tests exercising the `hyper-util` dependency directly.
 //!
 //! The `hyper-util` crate is used inside the TLS accept loop

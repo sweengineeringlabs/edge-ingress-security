@@ -7,12 +7,11 @@ pub use crate::api::port::http::HttpStream;
 pub use crate::api::port::http_health_check::HttpHealthCheck;
 pub use crate::api::port::http_ingress::HttpIngress;
 pub use crate::api::port::http_ingress_result::HttpIngressResult;
+pub use crate::api::server::axum::AxumHttpServerBuilder;
 pub use crate::api::types::handler::{HttpHandlerAdapter, HttpHandlerRegistryDispatcher};
-pub use crate::api::types::server::{
-    AxumHttpServer, AxumHttpServerBuilder, AxumHttpServerHelper, MAX_BODY_BYTES,
-};
-pub use crate::api::types::validator::HttpConfigValidator;
+pub use crate::api::types::server::{AxumHttpServer, AxumHttpServerHelper, MAX_BODY_BYTES};
 pub use crate::api::types::TransportSvc;
+pub use crate::api::validator::HttpConfigValidator;
 pub use crate::api::value::{
     FormPart, HttpAuth, HttpBody, HttpConfig, HttpConfigBuilder, HttpMethod, HttpRequest,
     HttpRequestBuilder, HttpResponse, SseEvent, SseStream, WsChannel, WsMessage, WsReceiver,

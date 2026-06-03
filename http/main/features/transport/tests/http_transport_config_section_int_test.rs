@@ -1,5 +1,5 @@
 //! Integration tests for `HttpTransportConfigSection`.
-use swe_edge_ingress_http_transport::HttpTransportConfigSection;
+use swe_edge_ingress_http::HttpTransportConfigSection;
 
 /// @covers: HttpTransportConfigSection
 #[test]

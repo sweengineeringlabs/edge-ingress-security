@@ -1,5 +1,5 @@
 //! Tests for http_stream.
-use swe_edge_ingress_http_transport::HttpStream;
+use swe_edge_ingress_http::HttpStream;
 /// @covers: HttpStream
 #[test]
 fn transport_trait_http_stream_is_object_safe_int_test() {

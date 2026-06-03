@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 //! Integration tests for AxumHttpServer TLS and mTLS.
 //!
 //! Each test generates a fresh self-signed cert with `rcgen`, starts an HTTPS

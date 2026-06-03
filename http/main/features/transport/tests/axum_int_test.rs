@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 //! Integration tests exercising the `axum` dependency directly.
 //!
 //! Verifies that the transport crate's axum-based request extraction pipeline

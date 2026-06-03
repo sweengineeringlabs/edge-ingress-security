@@ -1,18 +1,19 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 //! Integration tests for the `Validator` trait (Rule 105).
 //!
 //! Exercises the `validate` SAF function and the `Validator` implementation
 //! on `HttpConfig` end-to-end.
 
-use swe_edge_ingress_http::{validate, HttpConfig};
+use swe_edge_ingress_http::{HttpConfig, TransportSvc};
 
 /// @covers: validate
 #[test]
 fn test_validate_returns_ok_for_default_http_config() {
     let cfg = HttpConfig::default();
     assert!(
-        validate(&cfg).is_ok(),
+        TransportSvc::validate(&cfg).is_ok(),
         "expected Ok for default HttpConfig, got: {:?}",
-        validate(&cfg)
+        TransportSvc::validate(&cfg)
     );
 }
 
@@ -23,7 +24,7 @@ fn test_validate_returns_err_when_timeout_secs_is_zero() {
         timeout_secs: 0,
         ..Default::default()
     };
-    let result = validate(&cfg);
+    let result = TransportSvc::validate(&cfg);
     assert!(result.is_err(), "expected Err for zero timeout_secs");
     let msg = result.unwrap_err();
     assert!(
@@ -39,7 +40,7 @@ fn test_validate_returns_err_when_connect_timeout_secs_is_zero() {
         connect_timeout_secs: 0,
         ..Default::default()
     };
-    let result = validate(&cfg);
+    let result = TransportSvc::validate(&cfg);
     assert!(
         result.is_err(),
         "expected Err for zero connect_timeout_secs"
@@ -56,8 +57,8 @@ fn test_validate_returns_err_when_connect_timeout_secs_is_zero() {
 fn test_validate_returns_ok_for_custom_valid_config() {
     let cfg = HttpConfig::with_base_url("https://api.example.com").with_timeout(60);
     assert!(
-        validate(&cfg).is_ok(),
+        TransportSvc::validate(&cfg).is_ok(),
         "expected Ok for custom valid config, got: {:?}",
-        validate(&cfg)
+        TransportSvc::validate(&cfg)
     );
 }

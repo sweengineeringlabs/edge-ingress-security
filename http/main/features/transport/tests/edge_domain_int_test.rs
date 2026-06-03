@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 //! Integration tests exercising the `edge-domain` dependency directly.
 //!
 //! Verifies that `edge_domain` types (Handler, HandlerRegistry, RequestContext)
