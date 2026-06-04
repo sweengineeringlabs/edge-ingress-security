@@ -291,7 +291,6 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 [[package]]
 name = "edge-domain"
 version = "0.1.0"
-source = "git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=v0.7.1#b628ec0b0fd62f33e1cc76eb7b5cc1f883329d60"
 dependencies = [
  "async-trait",
  "futures",
@@ -1424,7 +1423,6 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 [[package]]
 name = "swe-edge-configbuilder"
 version = "0.1.0"
-source = "git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=v0.7.1#b628ec0b0fd62f33e1cc76eb7b5cc1f883329d60"
 dependencies = [
  "dirs",
  "regex",
@@ -1483,7 +1481,6 @@ dependencies = [
 [[package]]
 name = "swe-edge-ingress-tls"
 version = "0.1.0"
-source = "git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=v0.7.1#b628ec0b0fd62f33e1cc76eb7b5cc1f883329d60"
 dependencies = [
  "rustls",
  "rustls-pemfile",
@@ -1496,7 +1493,6 @@ dependencies = [
 [[package]]
 name = "swe-edge-ingress-verifier"
 version = "0.1.0"
-source = "git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=v0.7.1#b628ec0b0fd62f33e1cc76eb7b5cc1f883329d60"
 dependencies = [
  "edge-domain",
  "jsonwebtoken",
