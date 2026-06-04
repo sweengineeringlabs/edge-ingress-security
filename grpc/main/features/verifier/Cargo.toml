@@ -21,9 +21,9 @@ path = "src/lib.rs"
 thiserror = "2"
 tracing   = { version = "0.1", default-features = false }
 
-swe-edge-ingress-verifier       = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.8.0-rc.2" }
+swe-edge-ingress-verifier = { workspace = true }
 swe-edge-ingress-grpc-transport = { path = "../transport" }
-swe-edge-configbuilder = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.8.0-rc.2" }
+swe-edge-configbuilder = { workspace = true }
 
 [dev-dependencies]
 tokio      = { version = "1.0", features = ["rt", "macros"] }

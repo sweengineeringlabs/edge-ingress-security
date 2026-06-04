@@ -24,9 +24,9 @@ axum      = "0.8"
 http      = "1"
 tower     = { version = "0.5", features = ["util"] }
 
-swe-edge-ingress-verifier = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.7.1" }
-edge-domain               = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.7.1" }
-swe-edge-configbuilder    = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.7.1" }
+swe-edge-ingress-verifier = { workspace = true }
+edge-domain = { workspace = true }
+swe-edge-configbuilder = { workspace = true }
 
 [dev-dependencies]
 tokio      = { version = "1.0", features = ["rt-multi-thread", "macros"] }
