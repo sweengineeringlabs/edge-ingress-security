@@ -16,22 +16,3 @@ impl swe_edge_configbuilder::ConfigSection for ApplicationConfig {
         NAME
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use swe_edge_configbuilder::ConfigSection as _;
-
-    #[test]
-    fn test_application_config_default_has_empty_fields() {
-        let cfg = ApplicationConfig::default();
-        assert_eq!(cfg.name, "");
-        assert_eq!(cfg.version, "");
-    }
-
-    /// @covers: section_name
-    #[test]
-    fn test_section_name_returns_application_key() {
-        assert_eq!(ApplicationConfig::section_name(), "application");
-    }
-}

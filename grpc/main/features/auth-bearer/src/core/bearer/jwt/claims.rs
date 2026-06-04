@@ -7,7 +7,10 @@ pub(crate) use crate::api::bearer::jwt::jwt_claims::JwtClaims;
 
 impl JwtClaims {
     /// Construct a new [`JwtClaims`] value.
-    #[allow(dead_code)]
+    #[cfg_attr(
+        not(test),
+        expect(dead_code, reason = "SEA core/ builder — used by tests")
+    )]
     pub(crate) fn new(
         iss: impl Into<String>,
         sub: impl Into<String>,

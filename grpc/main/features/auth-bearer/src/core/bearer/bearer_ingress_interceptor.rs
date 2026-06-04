@@ -14,7 +14,12 @@ use crate::api::{
 };
 use crate::core::bearer::jwt::claims::JwtClaims;
 
-impl Processor for BearerIngressInterceptor {}
+impl Processor for BearerIngressInterceptor {
+    fn describe(&self) -> &'static str {
+        const LABEL: &str = "grpc-auth-bearer";
+        LABEL
+    }
+}
 
 impl BearerIngressInterceptor {
     fn validate(&self, header_value: &str) -> Result<JwtClaims, BearerAuthError> {

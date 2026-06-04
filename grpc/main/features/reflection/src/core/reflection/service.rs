@@ -19,9 +19,9 @@ use crate::api::reflection::reflection_service::{
 use crate::api::reflection::reflection_request::ReflectionRequest;
 use crate::api::reflection::reflection_response::ReflectionResponse;
 use crate::api::traits::Processor;
-use crate::api::wire::{decode_request, encode_response};
+use crate::api::types::reflection_codec::{decode_request, encode_response};
 
-#[allow(dead_code)]
+#[expect(dead_code, reason = "SEA api/ interface anchor")]
 const REFLECTION_DEFAULT_DEADLINE: Duration = Duration::from_secs(5);
 
 impl ReflectionService {

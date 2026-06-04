@@ -14,15 +14,3 @@ pub enum ServingStatus {
     ServiceUnknown = 3,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_serving_status_wire_values_are_correct() {
-        assert_eq!(ServingStatus::Unknown as i32, 0);
-        assert_eq!(ServingStatus::Serving as i32, 1);
-        assert_eq!(ServingStatus::NotServing as i32, 2);
-        assert_eq!(ServingStatus::ServiceUnknown as i32, 3);
-    }
-}

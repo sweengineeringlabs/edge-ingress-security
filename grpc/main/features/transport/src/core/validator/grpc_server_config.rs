@@ -8,6 +8,7 @@ use crate::api::value::GrpcServerConfig;
 /// The validated type is [`GrpcServerConfig`] from api/.
 /// This struct exists to satisfy the SEA rule requiring every core module file
 /// to define a primary type matching the filename.
+#[expect(dead_code, reason = "SEA core/ validator anchor")]
 pub(crate) struct GrpcServerConfigValidator;
 
 impl Validator for GrpcServerConfig {

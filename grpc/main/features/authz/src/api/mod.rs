@@ -4,8 +4,7 @@ pub(crate) mod application;
 pub(crate) mod authz;
 pub mod error;
 pub(crate) mod method;
-pub(crate) mod processor;
-pub(crate) mod traits;
+pub mod traits;
 pub mod types;
 
 pub use error::AuthzError;

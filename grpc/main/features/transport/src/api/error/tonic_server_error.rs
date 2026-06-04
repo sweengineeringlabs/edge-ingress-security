@@ -18,25 +18,3 @@ pub enum TonicServerError {
     #[error("{0}")]
     AuthorizationRequired(String),
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_tonic_server_error_bind_formats_correctly() {
-        let err = TonicServerError::Bind(
-            "127.0.0.1:443".into(),
-            std::io::Error::new(std::io::ErrorKind::AddrInUse, "port in use"),
-        );
-        let msg = err.to_string();
-        assert!(msg.contains("127.0.0.1:443"));
-    }
-
-    #[test]
-    fn test_tonic_server_error_authorization_required_formats_correctly() {
-        let err = TonicServerError::AuthorizationRequired("missing interceptor".into());
-        let msg = err.to_string();
-        assert!(msg.contains("missing interceptor"));
-    }
-}

@@ -1,7 +1,7 @@
 //! SAF wrappers for the gRPC reflection service.
 
 use crate::api::traits::Validator;
-use crate::api::types::reflection_service::ReflectionService;
+use crate::api::types::reflection::reflection_service::ReflectionService;
 use crate::api::types::{ReflectionRequest, ReflectionResponse};
 
 /// Create a config builder pre-seeded with this crate's package metadata.

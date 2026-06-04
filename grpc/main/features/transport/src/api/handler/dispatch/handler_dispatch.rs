@@ -10,11 +10,3 @@
 /// Rule 161 (every api/ file must have exactly one pub item matching its stem).
 pub trait HandlerDispatch {}
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_handler_dispatch_interface_module_is_accessible() {
-        // Module exists and is visible — compilation passing is the assertion.
-        let _ = 42;
-    }
-}

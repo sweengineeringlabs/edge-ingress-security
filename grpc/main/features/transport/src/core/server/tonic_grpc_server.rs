@@ -19,15 +19,15 @@ use tokio_util::sync::CancellationToken;
 use edge_domain::RequestContext;
 
 use crate::api::audit::{AuditEvent, AuditSink};
-use crate::api::grpc_timeout::{GrpcTimeoutParser, DEFAULT_DEADLINE};
 use crate::api::interceptor::GrpcIngressInterceptorChain;
-use crate::api::peer_identity::PeerIdentityExtractor;
 use crate::api::port::grpc::{GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream};
 use crate::api::server::{
     TonicGrpcServer, TonicServerError, MISSING_AUTHORIZATION_INTERCEPTOR_MSG,
     REFLECTION_ENABLED_WARN_MSG,
 };
-use crate::api::status_codes::StatusCodeConverter;
+use crate::api::types::internal::grpc_timeout_parser::{GrpcTimeoutParser, DEFAULT_DEADLINE};
+use crate::api::types::internal::peer_identity_extractor::PeerIdentityExtractor;
+use crate::api::types::internal::status_code_converter::StatusCodeConverter;
 use crate::api::value::{
     CompressionMode, GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode, PeerIdentity, PEER_CN,
 };
@@ -641,7 +641,7 @@ impl TonicServerDispatcher {
 
     /// Collect a response stream into a single HTTP/2 response with one DATA frame
     /// per stream item plus a trailing `grpc-status=0` header and any response metadata.
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "SEA api/ interface anchor")]
     async fn grpc_stream_response(
         mut stream: GrpcMessageStream,
         meta: GrpcMetadata,

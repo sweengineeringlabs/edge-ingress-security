@@ -19,7 +19,12 @@ use crate::api::{
     MtlsAuthError, MtlsAuthInterceptor,
 };
 
-impl Processor for MtlsAuthInterceptor {}
+impl Processor for MtlsAuthInterceptor {
+    fn describe(&self) -> &'static str {
+        const LABEL: &str = "grpc-auth-mtls";
+        LABEL
+    }
+}
 impl Validator for MtlsAuthInterceptor {
     fn validate(&self) -> Result<(), String> {
         Ok(())

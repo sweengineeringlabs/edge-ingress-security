@@ -18,12 +18,12 @@ service_type = "processor"
 path = "src/lib.rs"
 
 [dependencies]
-swe-edge-ingress-grpc = { package = "swe-edge-ingress-grpc-transport", path = "../transport" }
+swe-edge-ingress-grpc = { path = "../transport", package = "swe-edge-ingress-grpc-transport" }
 thiserror   = "2"
 serde       = { version = "1.0", features = ["derive"] }
 toml        = "0.8"
 tracing     = { version = "0.1", default-features = false }
-swe-edge-configbuilder = { path = "../../../../../configbuilder/main/features/configbuilder" }
+swe-edge-configbuilder = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.8.0-rc.2" }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros", "rt", "rt-multi-thread"] }

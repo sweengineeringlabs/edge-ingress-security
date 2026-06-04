@@ -1,1 +1,1 @@
-pub(crate) mod bearer_interceptor;
+pub(crate) mod bearer;

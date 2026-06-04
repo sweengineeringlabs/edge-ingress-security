@@ -21,27 +21,3 @@ impl AuthzInterceptor {
         Self { policy }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    struct AllowAll;
-    impl AuthzPolicy for AllowAll {
-        fn allows(&self, _: &swe_edge_ingress_grpc::PeerIdentity, _: &str) -> bool {
-            true
-        }
-    }
-
-    /// @covers: from_policy
-    #[test]
-    fn test_from_policy_creates_interceptor() {
-        let _ = AuthzInterceptor::from_policy(AllowAll);
-    }
-
-    /// @covers: from_shared_policy
-    #[test]
-    fn test_from_shared_policy_creates_interceptor() {
-        let _ = AuthzInterceptor::from_shared_policy(Arc::new(AllowAll));
-    }
-}

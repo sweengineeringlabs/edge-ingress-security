@@ -14,7 +14,12 @@ use swe_edge_ingress_grpc::{
 use crate::api::authz::AuthzInterceptor;
 use crate::api::traits::Processor;
 
-impl Processor for AuthzInterceptor {}
+impl Processor for AuthzInterceptor {
+    fn describe(&self) -> &'static str {
+        const LABEL: &str = "grpc-authz";
+        LABEL
+    }
+}
 
 impl AuthzInterceptor {
     /// Build a [`PeerIdentity`] from the metadata bag the upstream

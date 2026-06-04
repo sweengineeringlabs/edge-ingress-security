@@ -1,28 +1,16 @@
 //! gRPC value objects and domain types.
 
 pub(crate) mod compression_mode;
-pub(crate) mod grpc_metadata;
-pub(crate) mod grpc_request;
-pub(crate) mod grpc_request_builder;
-pub(crate) mod grpc_response;
-pub(crate) mod grpc_server_config;
-pub(crate) mod grpc_server_config_builder;
-pub(crate) mod grpc_status_code;
-pub(crate) mod peer_identity;
-pub mod peer_identity_extractor;
+pub(crate) mod grpc;
+pub(crate) mod peer;
 
 pub use compression_mode::CompressionMode;
-pub use grpc_metadata::GrpcMetadata;
-pub use grpc_request::GrpcRequest;
-pub use grpc_request_builder::GrpcRequestBuilder;
-pub use grpc_response::GrpcResponse;
-pub use grpc_server_config::{
-    GrpcServerConfig, DEFAULT_MAX_CONCURRENT_STREAMS, DEFAULT_MAX_MESSAGE_BYTES,
+pub use grpc::{
+    GrpcMetadata, GrpcRequest, GrpcRequestBuilder, GrpcResponse, GrpcServerConfig,
+    GrpcServerConfigBuilder, GrpcStatusCode, DEFAULT_MAX_CONCURRENT_STREAMS,
+    DEFAULT_MAX_MESSAGE_BYTES,
 };
-pub use grpc_server_config_builder::GrpcServerConfigBuilder;
-pub use grpc_status_code::GrpcStatusCode;
-pub use peer_identity::{
-    PeerIdentity, PEER_CERT_FINGERPRINT_SHA256, PEER_CN, PEER_IDENTITY, PEER_SAN_DNS, PEER_SAN_URI,
-    RESERVED_PEER_PREFIXES,
+pub use peer::{
+    PeerIdentity, PeerIdentityExtractor, PEER_CERT_FINGERPRINT_SHA256, PEER_CN, PEER_IDENTITY,
+    PEER_SAN_DNS, PEER_SAN_URI, RESERVED_PEER_PREFIXES,
 };
-pub use peer_identity_extractor::PeerIdentityExtractor;

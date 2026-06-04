@@ -25,25 +25,3 @@ impl Default for NoopAuditSink {
         Self
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use std::time::SystemTime;
-
-    use crate::api::value::GrpcStatusCode;
-
-    use super::*;
-    use crate::api::types::audit::AuditEvent;
-
-    #[test]
-    fn test_noop_audit_sink_record_drops_events_silently() {
-        let sink = NoopAuditSink;
-        sink.record(AuditEvent {
-            timestamp: SystemTime::now(),
-            method: "/svc/M".into(),
-            identity: Some("alice".into()),
-            status: GrpcStatusCode::Ok,
-            duration_ms: 1,
-        });
-    }
-}

@@ -21,14 +21,13 @@ path = "src/lib.rs"
 serde        = { version = "1.0", features = ["derive"] }
 thiserror    = "2"
 futures      = "0.3"
-tokio        = { version = "1.0", features = ["rt-multi-thread", "rt", "sync", "macros", "time"] }
 parking_lot  = "0.12"
 tracing      = { version = "0.1", default-features = false }
 
 # Cross-workspace path dep on the inbound port + dispatcher.
-swe-edge-ingress-grpc = { package = "swe-edge-ingress-grpc-transport", path = "../transport" }
-edge-domain = { path = "../../../../../domain" }
-swe-edge-configbuilder = { path = "../../../../../configbuilder/main/features/configbuilder" }
+swe-edge-ingress-grpc = { path = "../transport", package = "swe-edge-ingress-grpc-transport" }
+edge-domain = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.8.0-rc.2" }
+swe-edge-configbuilder = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.8.0-rc.2" }
 
 [dev-dependencies]
 async-trait    = "0.1"
@@ -40,8 +39,9 @@ http           = "1"
 http-body-util = "0.1"
 hyper          = { version = "1", features = ["http2", "client", "server"] }
 hyper-util     = { version = "0.1", features = ["tokio"] }
-swe-edge-ingress-grpc = { package = "swe-edge-ingress-grpc-transport", path = "../transport" }
-edge-domain = { path = "../../../../../domain" }
+swe-edge-ingress-grpc = { path = "../transport", package = "swe-edge-ingress-grpc-transport" }
+edge-domain = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.8.0-rc.2" }
 
 [lints]
 workspace = true
+

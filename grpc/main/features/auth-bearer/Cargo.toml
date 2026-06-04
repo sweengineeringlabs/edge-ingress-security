@@ -18,13 +18,13 @@ service_type = "processor"
 path = "src/lib.rs"
 
 [dependencies]
-swe-edge-ingress-grpc = { package = "swe-edge-ingress-grpc-transport", path = "../transport" }
+swe-edge-ingress-grpc = { path = "../transport", package = "swe-edge-ingress-grpc-transport" }
 thiserror    = "2"
 serde        = { version = "1.0", features = ["derive"] }
 tracing      = { version = "0.1", default-features = false }
 jsonwebtoken = "9"
 subtle       = "2"
-swe-edge-configbuilder = { path = "../../../../../configbuilder/main/features/configbuilder" }
+swe-edge-configbuilder = { git = "ssh://git@github.com/sweengineeringlabs/edge.git", tag = "v0.8.0-rc.2" }
 
 [dev-dependencies]
 tokio   = { version = "1.0", features = ["macros", "rt", "rt-multi-thread"] }
@@ -34,68 +34,68 @@ subtle  = "2"
 
 [[test]]
 name = "jwt_claims_int_test"
-path = "test/jwt_claims_int_test.rs"
+path = "tests/jwt_claims_int_test.rs"
 
 [[test]]
 name = "bearer_ingress_int_test"
-path = "test/bearer_ingress_int_test.rs"
+path = "tests/bearer_ingress_int_test.rs"
 
 [[test]]
 name = "bearer_auth_config_int_test"
-path = "test/bearer_auth_config_int_test.rs"
+path = "tests/bearer_auth_config_int_test.rs"
 
 [[test]]
 name = "bearer_auth_error_int_test"
-path = "test/bearer_auth_error_int_test.rs"
+path = "tests/bearer_auth_error_int_test.rs"
 
 [[test]]
 name = "metadata_keys_int_test"
-path = "test/metadata_keys_int_test.rs"
+path = "tests/metadata_keys_int_test.rs"
 
 [[test]]
 name = "processor_int_test"
-path = "test/processor_int_test.rs"
+path = "tests/processor_int_test.rs"
 
 [[test]]
 name = "bearer_ingress_config_int_test"
-path = "test/bearer_ingress_config_int_test.rs"
+path = "tests/bearer_ingress_config_int_test.rs"
 
 [[test]]
 name = "bearer_ingress_interceptor_int_test"
-path = "test/bearer_ingress_interceptor_int_test.rs"
+path = "tests/bearer_ingress_interceptor_int_test.rs"
 
 [[test]]
 name = "bearer_secret_int_test"
-path = "test/bearer_secret_int_test.rs"
+path = "tests/bearer_secret_int_test.rs"
 
 [[test]]
 name = "traits_int_test"
-path = "test/traits_int_test.rs"
+path = "tests/traits_int_test.rs"
 
 [[test]]
 name = "futures_coverage_int_test"
-path = "test/futures_coverage_int_test.rs"
+path = "tests/futures_coverage_int_test.rs"
 
 [[test]]
 name = "subtle_coverage_int_test"
-path = "test/subtle_coverage_int_test.rs"
+path = "tests/subtle_coverage_int_test.rs"
 
 [[test]]
 name = "application_config_builder_int_test"
-path = "test/application_config_builder_int_test.rs"
+path = "tests/application_config_builder_int_test.rs"
 
 [[test]]
 name = "validator_int_test"
-path = "test/validator_int_test.rs"
+path = "tests/validator_int_test.rs"
 
 [[test]]
 name = "bearer_svc_int_test"
-path = "test/bearer_svc_int_test.rs"
+path = "tests/bearer_svc_int_test.rs"
 
 [[test]]
 name = "jwt_claims_builder_contract_int_test"
-path = "test/jwt_claims_builder_contract_int_test.rs"
+path = "tests/jwt_claims_builder_contract_int_test.rs"
 
 [[test]]
 name = "claims_builder_int_test"
-path = "test/claims_builder_int_test.rs"
+path = "tests/claims_builder_int_test.rs"

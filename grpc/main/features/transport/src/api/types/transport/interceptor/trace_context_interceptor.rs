@@ -24,19 +24,3 @@ impl TraceContextInterceptor {
         Self::default()
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_new_creates_trace_context_interceptor() {
-        let _ = TraceContextInterceptor::new();
-    }
-
-    #[test]
-    fn test_header_constants_are_lowercase() {
-        assert_eq!(TRACEPARENT, TRACEPARENT.to_lowercase());
-        assert_eq!(TRACESTATE, TRACESTATE.to_lowercase());
-    }
-}

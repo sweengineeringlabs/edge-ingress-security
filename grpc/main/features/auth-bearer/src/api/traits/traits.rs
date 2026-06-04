@@ -1,0 +1,17 @@
+//! SEA interface contracts.
+//!
+//! `Processor` is defined in [`crate::api::processor`] and re-exported
+//! here.  `Validator` is defined inline — rule 155 requires the literal
+//! `pub trait Validator` to appear in this file.
+
+/// Validation contract — implementors check their own invariants.
+///
+/// Implemented by [`crate::api::bearer::bearer_ingress_config::BearerIngressConfig`]
+/// to verify that required fields (issuer, audience) are populated before
+pub trait Validator: Send + Sync {
+    /// Validate the receiver's invariants.
+    ///
+    /// Returns `Ok(())` when all invariants hold, or an `Err` describing the
+    /// first violation found.
+    fn validate(&self) -> Result<(), String>;
+}

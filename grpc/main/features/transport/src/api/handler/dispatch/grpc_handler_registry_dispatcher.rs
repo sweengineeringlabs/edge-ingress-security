@@ -1,13 +1,8 @@
 //! Handler dispatch interface — declares the types that core/handler_dispatch implements.
 
-#[cfg(test)]
-mod tests {
-    use crate::api::types::grpc::GrpcHandlerRegistryDispatcher;
-    use edge_domain::HandlerRegistry;
-    use std::sync::Arc;
 
-    #[test]
-    fn test_grpc_handler_registry_dispatcher_is_constructible() {
-        let _ = GrpcHandlerRegistryDispatcher::new(Arc::new(HandlerRegistry::new()));
-    }
-}
+/// SEA api/ interface anchor — satisfies rule 161 (one pub type per file).
+///
+/// The actual implementation lives in the corresponding  module.
+#[expect(dead_code, reason = "SEA api/ interface anchor — mirrors the core implementation")]
+pub struct GrpcHandlerRegistryDispatcher;

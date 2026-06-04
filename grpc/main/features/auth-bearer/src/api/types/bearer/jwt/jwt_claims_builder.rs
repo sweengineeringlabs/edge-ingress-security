@@ -10,7 +10,7 @@ use super::jwt_claims::JwtClaims;
 ///
 /// Use this builder to construct [`JwtClaims`] instances in tests and
 /// internal fixtures rather than constructing the struct directly.
-#[allow(dead_code)]
+
 pub struct JwtClaimsBuilder {
     /// Issuer claim.
     pub iss: String,
@@ -24,7 +24,7 @@ pub struct JwtClaimsBuilder {
     pub iat: u64,
 }
 
-#[allow(dead_code)]
+
 impl JwtClaimsBuilder {
     /// Build the [`JwtClaims`].
     pub fn build(self) -> JwtClaims {

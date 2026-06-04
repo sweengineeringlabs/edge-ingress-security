@@ -5,7 +5,7 @@
 /// The actual type is [`crate::api::interceptor::TraceContextInterceptor`].
 /// This struct exists to satisfy the SEA rule requiring every core module file to define
 /// a primary type matching the filename.
-pub(crate) struct TraceContextInterceptorImpl;
+pub(crate) struct DefaultTraceContextInterceptor;
 
 use crate::api::interceptor::GrpcIngressInterceptor;
 use crate::api::interceptor::{
@@ -14,7 +14,7 @@ use crate::api::interceptor::{
 use crate::api::port::grpc::GrpcIngressError;
 use crate::api::value::{GrpcRequest, GrpcResponse};
 
-impl TraceContextInterceptorImpl {
+impl DefaultTraceContextInterceptor {
     fn is_valid_traceparent(value: &str) -> bool {
         if value.len() != 55 {
             return false;
@@ -35,7 +35,7 @@ impl TraceContextInterceptorImpl {
 impl GrpcIngressInterceptor for TraceContextInterceptor {
     fn before_dispatch(&self, req: &mut GrpcRequest) -> Result<(), GrpcIngressError> {
         if let Some(tp) = req.metadata.headers.get(TRACEPARENT).cloned() {
-            if TraceContextInterceptorImpl::is_valid_traceparent(&tp) {
+            if DefaultTraceContextInterceptor::is_valid_traceparent(&tp) {
                 req.metadata
                     .headers
                     .insert(EXTRACTED_TRACEPARENT.to_string(), tp);

@@ -9,7 +9,7 @@ use super::jwt_claims::JwtClaims;
 /// Contract for fluent JWT claims builders.
 ///
 /// Implemented by [`crate::core::bearer::jwt::claims_builder::JwtClaimsBuilder`].
-#[allow(dead_code)]
+#[expect(dead_code, reason = "SEA api/ interface anchor")]
 pub trait ClaimsBuilder {
     /// Build the final [`JwtClaims`].
     fn build(self) -> JwtClaims;

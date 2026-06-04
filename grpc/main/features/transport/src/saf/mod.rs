@@ -1,10 +1,9 @@
 //! SAF layer — gRPC inbound public facade.
 
-mod edge_ingress_grpc_transport_svc;
+mod transport_svc;
 
 pub use crate::api::application::ApplicationConfig;
 pub use crate::api::audit::{AuditEvent, AuditEventBuilder, AuditSink, NoopAuditSink};
-pub use crate::api::grpc_timeout::{GrpcTimeoutParser, DEFAULT_DEADLINE};
 pub use crate::api::handler::{
     DecodeFn as GrpcDecodeFn, EncodeFn as GrpcEncodeFn, GrpcHandlerAdapter,
     GrpcHandlerRegistryDispatcher,
@@ -19,7 +18,6 @@ pub use crate::api::interceptor::{
 pub use crate::api::interceptor::{
     TraceContextInterceptor, EXTRACTED_TRACEPARENT, EXTRACTED_TRACESTATE, TRACEPARENT, TRACESTATE,
 };
-pub use crate::api::peer_identity::PeerIdentityExtractor;
 pub use crate::api::port::grpc::{
     GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream,
 };
@@ -27,7 +25,11 @@ pub use crate::api::server::{
     GrpcServer, GrpcServerConfigError, TonicGrpcServer, TonicGrpcServerBuilder, TonicServerError,
     MAX_MESSAGE_BYTES, MISSING_AUTHORIZATION_INTERCEPTOR_MSG, REFLECTION_ENABLED_WARN_MSG,
 };
-pub use crate::api::status_codes::{StatusCodeConverter, SANITIZED_INTERNAL_MSG};
+pub use crate::api::types::internal::grpc_timeout_parser::{GrpcTimeoutParser, DEFAULT_DEADLINE};
+pub use crate::api::types::internal::peer_identity_extractor::PeerIdentityExtractor;
+pub use crate::api::types::internal::status_code_converter::{
+    StatusCodeConverter, SANITIZED_INTERNAL_MSG,
+};
 pub use crate::api::value::{
     CompressionMode, GrpcMetadata, GrpcRequest, GrpcRequestBuilder, GrpcResponse, GrpcServerConfig,
     GrpcServerConfigBuilder, GrpcStatusCode, PeerIdentity, DEFAULT_MAX_CONCURRENT_STREAMS,
@@ -35,5 +37,5 @@ pub use crate::api::value::{
     PEER_SAN_URI, RESERVED_PEER_PREFIXES,
 };
 pub use edge_domain::RequestContext;
-pub use edge_ingress_grpc_transport_svc::{create_config_builder, validate};
 pub use swe_edge_ingress_tls::{IngressTlsConfig, IngressTlsError};
+pub use transport_svc::{create_config_builder, validate};

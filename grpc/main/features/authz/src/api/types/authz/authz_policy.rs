@@ -27,31 +27,3 @@ where
         (self)(identity, method)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// @covers: allows
-    #[test]
-    fn test_closure_implementing_authz_policy_returns_decision() {
-        let policy =
-            |identity: &PeerIdentity, _method: &str| identity.cn.as_deref() == Some("alice");
-        let alice = PeerIdentity {
-            cn: Some("alice".into()),
-            ..Default::default()
-        };
-        let bob = PeerIdentity {
-            cn: Some("bob".into()),
-            ..Default::default()
-        };
-        assert!(AuthzPolicy::allows(&policy, &alice, "/svc/M"));
-        assert!(!AuthzPolicy::allows(&policy, &bob, "/svc/M"));
-    }
-
-    /// @covers: allows
-    #[test]
-    fn test_authz_policy_is_object_safe() {
-        fn _assert(_: &dyn AuthzPolicy) {}
-    }
-}

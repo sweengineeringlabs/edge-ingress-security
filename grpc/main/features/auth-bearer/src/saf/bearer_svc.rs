@@ -1,7 +1,15 @@
 //! SAF service functions for bearer auth.
 
-use crate::api::traits::Validator;
+use crate::api::traits::{Processor, Validator};
 use crate::api::BearerIngressConfig;
+
+/// Return the processor's self-description via the [`Processor`] trait contract.
+///
+/// This function consumes the `Processor` trait bound, satisfying the SEA
+/// requirement that every api/ trait is exercised through the saf facade.
+pub fn processor_describe<P: Processor>(p: &P) -> &'static str {
+    p.describe()
+}
 
 /// Create a config builder pre-seeded with this crate's package metadata.
 pub fn create_config_builder() -> swe_edge_configbuilder::ConfigBuilderImpl {

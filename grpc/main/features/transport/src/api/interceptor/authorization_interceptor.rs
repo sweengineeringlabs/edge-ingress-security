@@ -19,29 +19,3 @@ use super::grpc::grpc_ingress_interceptor::GrpcIngressInterceptor;
 /// `is_authorization()` method on the base trait — the marker is the
 /// declarative contract, the method is the runtime detection hook.
 pub trait AuthorizationInterceptor: GrpcIngressInterceptor {}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::api::port::grpc::GrpcIngressError;
-    use crate::api::value::{GrpcRequest, GrpcResponse};
-
-    #[test]
-    fn test_authorization_interceptor_is_a_supertrait_of_grpc_ingress_interceptor() {
-        // Verify that a type implementing both traits compiles and is usable.
-        struct AlwaysAllow;
-        impl GrpcIngressInterceptor for AlwaysAllow {
-            fn before_dispatch(&self, _: &mut GrpcRequest) -> Result<(), GrpcIngressError> {
-                Ok(())
-            }
-            fn after_dispatch(&self, _: &mut GrpcResponse) -> Result<(), GrpcIngressError> {
-                Ok(())
-            }
-            fn is_authorization(&self) -> bool {
-                true
-            }
-        }
-        impl AuthorizationInterceptor for AlwaysAllow {}
-        let _ = AlwaysAllow;
-    }
-}
