@@ -20,6 +20,6 @@ expect_used = "deny"
 
 [workspace.dependencies]
 edge-domain               = { path = "../../domain/main/features/domain" }
-swe-edge-configbuilder    = { path = "../../configbuilder/main/features/configbuilder" }
+swe-edge-configbuilder    = { path = "../../configbuilder/main/configbuilder" }
 swe-edge-ingress-tls      = { path = "../../ingress/tls" }
 swe-edge-ingress-verifier = { path = "../../ingress/verifier" }

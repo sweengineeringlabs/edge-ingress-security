@@ -15,4 +15,4 @@ unsafe_code  = "deny"
 missing_docs = "warn"
 
 [patch."ssh://git@github.com/sweengineeringlabs/edge.git"]
-swe-edge-runtime-message-broker = { path = "../../runtime/main/features/message-broker" }
+swe-edge-runtime-message-broker = { path = "../../runtime/main/message-broker" }

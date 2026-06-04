@@ -14,7 +14,7 @@ authors      = ["SWE Engineering Labs"]
 repository   = "https://github.com/sweengineeringlabs/edge"
 
 [workspace.dependencies]
-swe-edge-configbuilder = { path = "../configbuilder/main/features/configbuilder" }
+swe-edge-configbuilder = { path = "../configbuilder/main/configbuilder" }
 edge-domain            = { path = "../domain/main/features/domain" }
 
 [workspace.lints.rust]
