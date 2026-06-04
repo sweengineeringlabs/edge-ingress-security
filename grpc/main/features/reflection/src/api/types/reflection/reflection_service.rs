@@ -54,6 +54,26 @@ impl ReflectionService {
     }
 
     /// Extract the service name from a `/pkg.Service/Method` path.
+    ///
+    /// Returns `None` for paths that are empty, missing the leading `/`, or
+    /// have no method component after the service name.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use swe_edge_ingress_grpc_reflection::ReflectionService;
+    ///
+    /// assert_eq!(
+    ///     ReflectionService::service_name_from_method_path("/grpc.health.v1.Health/Check"),
+    ///     Some("grpc.health.v1.Health"),
+    /// );
+    /// assert_eq!(
+    ///     ReflectionService::service_name_from_method_path("/pkg.MyService/Greet"),
+    ///     Some("pkg.MyService"),
+    /// );
+    /// assert_eq!(ReflectionService::service_name_from_method_path("/NoMethod"), None);
+    /// assert_eq!(ReflectionService::service_name_from_method_path(""), None);
+    /// ```
     pub fn service_name_from_method_path(path: &str) -> Option<&str> {
         let path = path.strip_prefix('/')?;
         let slash = path.find('/')?;

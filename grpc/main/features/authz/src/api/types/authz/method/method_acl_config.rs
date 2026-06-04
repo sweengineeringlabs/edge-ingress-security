@@ -11,6 +11,19 @@ use serde::{Deserialize, Serialize};
 /// mean "allow all methods" for that subject; absent subjects are
 /// denied by default.  A wildcard subject `"*"` applies to every
 /// authenticated caller.
+///
+/// # Examples
+///
+/// ```rust
+/// use swe_edge_ingress_grpc_authz::MethodAclConfig;
+///
+/// let acl = MethodAclConfig::deny_all()
+///     .allow("svc-a", vec!["/pkg.MyService/Query".to_string()])
+///     .allow_for_any_authenticated("/grpc.health.v1.Health/Check");
+///
+/// assert!(acl.by_subject.contains_key("svc-a"));
+/// assert!(acl.by_subject.contains_key("*"));
+/// ```
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MethodAclConfig {
     /// `subject -> [method-paths]`.
@@ -20,11 +33,29 @@ pub struct MethodAclConfig {
 
 impl MethodAclConfig {
     /// Build an empty config — denies every authenticated caller.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use swe_edge_ingress_grpc_authz::MethodAclConfig;
+    /// let acl = MethodAclConfig::deny_all();
+    /// assert!(acl.by_subject.is_empty());
+    /// ```
     pub fn deny_all() -> Self {
         Self::default()
     }
 
     /// Allow `subject` to invoke each listed `method` path.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use swe_edge_ingress_grpc_authz::MethodAclConfig;
+    ///
+    /// let acl = MethodAclConfig::deny_all()
+    ///     .allow("svc-a", vec!["/pkg.Svc/Greet".to_string()]);
+    /// assert!(acl.by_subject["svc-a"].contains(&"/pkg.Svc/Greet".to_string()));
+    /// ```
     pub fn allow(
         mut self,
         subject: impl Into<String>,
@@ -38,6 +69,19 @@ impl MethodAclConfig {
     }
 
     /// Allow EVERY authenticated caller to invoke `method` (wildcard subject).
+    ///
+    /// Unauthenticated callers (no identity in metadata) are still denied —
+    /// the wildcard only expands for callers that have a verified identity.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use swe_edge_ingress_grpc_authz::MethodAclConfig;
+    ///
+    /// let acl = MethodAclConfig::deny_all()
+    ///     .allow_for_any_authenticated("/grpc.health.v1.Health/Check");
+    /// assert!(acl.by_subject["*"].contains(&"/grpc.health.v1.Health/Check".to_string()));
+    /// ```
     pub fn allow_for_any_authenticated(mut self, method: impl Into<String>) -> Self {
         self.by_subject
             .entry("*".to_string())
@@ -47,6 +91,20 @@ impl MethodAclConfig {
     }
 
     /// Load from TOML.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use swe_edge_ingress_grpc_authz::MethodAclConfig;
+    ///
+    /// let toml = r#"
+    ///     [by_subject]
+    ///     "svc-a" = ["/pkg.Svc/Query"]
+    ///     "*" = ["/grpc.health.v1.Health/Check"]
+    /// "#;
+    /// let acl = MethodAclConfig::from_toml(toml).unwrap();
+    /// assert!(acl.by_subject.contains_key("svc-a"));
+    /// ```
     pub fn from_toml(s: &str) -> Result<Self, toml::de::Error> {
         toml::from_str(s)
     }

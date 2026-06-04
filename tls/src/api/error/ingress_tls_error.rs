@@ -1,6 +1,25 @@
 //! Error type for TLS configuration loading.
 
 /// Errors that can occur while loading or building a server TLS configuration.
+///
+/// Returned by [`TlsSvc::build_tls_acceptor`](crate::TlsSvc::build_tls_acceptor).
+/// The path that failed is always included in the message so operators can
+/// identify which file is broken without reading source.
+///
+/// # Examples
+///
+/// ```rust
+/// use swe_edge_ingress_tls::IngressTlsError;
+///
+/// let err = IngressTlsError::CertParse("no certificates found in PEM".to_string());
+/// assert!(err.to_string().contains("no certificates"));
+///
+/// // Match on the variant to apply different recovery strategies.
+/// match err {
+///     IngressTlsError::CertParse(msg) => eprintln!("cert parse failed: {msg}"),
+///     _ => {}
+/// }
+/// ```
 #[derive(Debug, thiserror::Error)]
 pub enum IngressTlsError {
     /// Certificate file could not be opened.

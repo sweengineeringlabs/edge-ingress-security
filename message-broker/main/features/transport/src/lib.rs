@@ -11,6 +11,7 @@
 //! ```
 //!
 //! ```rust,ignore
+//! // Requires feature = "in-memory" or "nats" — see Cargo.toml.
 //! use swe_edge_ingress_message_broker_transport::{default_consumer, MessageConsumer};
 //! use futures::StreamExt;
 //!

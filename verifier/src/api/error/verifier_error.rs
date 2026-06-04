@@ -2,6 +2,30 @@
 
 /// Errors returned by [`TokenVerifier`](super::token_verifier::TokenVerifier)
 /// and [`ApiKeyVerifier`](super::api_key_verifier::ApiKeyVerifier).
+///
+/// All variants except [`Config`](VerifierError::Config) indicate a caller
+/// error (bad token, expired token, wrong key) — return HTTP 401 to the client.
+/// `Config` indicates a server misconfiguration — return HTTP 500 and page on-call.
+///
+/// # Examples
+///
+/// ```rust
+/// use swe_edge_ingress_verifier::VerifierError;
+///
+/// let err = VerifierError::Expired;
+/// assert!(err.to_string().contains("expired"));
+///
+/// // Map to HTTP status codes.
+/// let status = match err {
+///     VerifierError::Invalid(_)
+///     | VerifierError::Expired
+///     | VerifierError::NotYetValid
+///     | VerifierError::UnknownApiKey => 401,
+///     VerifierError::ClaimMismatch(_) => 403,
+///     VerifierError::Config(_) => 500,
+/// };
+/// assert_eq!(status, 401);
+/// ```
 #[derive(Debug, thiserror::Error)]
 pub enum VerifierError {
     /// Token signature or structure is invalid.

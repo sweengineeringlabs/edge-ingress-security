@@ -8,18 +8,20 @@ use serde::{Deserialize, Serialize};
 /// [`TlsSvc::build_tls_acceptor`](crate::TlsSvc::build_tls_acceptor) is called — failures
 /// surface at startup, not on the first connection.
 ///
-/// # TLS
+/// # Examples
 ///
-/// ```rust,ignore
+/// ```rust
+/// use swe_edge_ingress_tls::IngressTlsConfig;
+///
+/// // TLS only — no client cert required.
 /// let cfg = IngressTlsConfig::tls("certs/server.crt", "certs/server.key");
-/// let server = AxumHttpServer::new("0.0.0.0:443", handler).with_tls(cfg);
-/// ```
+/// assert!(!cfg.is_mtls());
+/// assert_eq!(cfg.cert_pem_path, "certs/server.crt");
 ///
-/// # mTLS
-///
-/// ```rust,ignore
+/// // mTLS — clients must present a cert signed by the given CA.
 /// let cfg = IngressTlsConfig::mtls("certs/server.crt", "certs/server.key", "certs/client-ca.crt");
-/// let server = TonicGrpcServer::new("0.0.0.0:50443", handler).with_tls(cfg);
+/// assert!(cfg.is_mtls());
+/// assert_eq!(cfg.client_ca_pem_path.as_deref(), Some("certs/client-ca.crt"));
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IngressTlsConfig {
@@ -38,6 +40,14 @@ pub struct IngressTlsConfig {
 impl IngressTlsConfig {
     /// TLS-only: server authenticates with `cert`/`key`; client certificates
     /// are not required.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use swe_edge_ingress_tls::IngressTlsConfig;
+    /// let cfg = IngressTlsConfig::tls("certs/server.crt", "certs/server.key");
+    /// assert!(cfg.client_ca_pem_path.is_none());
+    /// ```
     pub fn tls(cert_pem_path: impl Into<String>, key_pem_path: impl Into<String>) -> Self {
         Self {
             cert_pem_path: cert_pem_path.into(),
@@ -48,6 +58,15 @@ impl IngressTlsConfig {
 
     /// mTLS: server authenticates with `cert`/`key`; clients must present a
     /// certificate signed by `client_ca`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use swe_edge_ingress_tls::IngressTlsConfig;
+    /// let cfg = IngressTlsConfig::mtls("certs/server.crt", "certs/server.key", "certs/ca.crt");
+    /// assert!(cfg.is_mtls());
+    /// assert_eq!(cfg.client_ca_pem_path.as_deref(), Some("certs/ca.crt"));
+    /// ```
     pub fn mtls(
         cert_pem_path: impl Into<String>,
         key_pem_path: impl Into<String>,
@@ -61,6 +80,14 @@ impl IngressTlsConfig {
     }
 
     /// Whether client certificate verification is required.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use swe_edge_ingress_tls::IngressTlsConfig;
+    /// assert!(!IngressTlsConfig::tls("c.crt", "k.key").is_mtls());
+    /// assert!(IngressTlsConfig::mtls("c.crt", "k.key", "ca.crt").is_mtls());
+    /// ```
     pub fn is_mtls(&self) -> bool {
         self.client_ca_pem_path.is_some()
     }

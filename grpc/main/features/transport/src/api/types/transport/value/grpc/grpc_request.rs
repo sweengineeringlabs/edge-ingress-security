@@ -21,6 +21,24 @@ use super::grpc_metadata::GrpcMetadata;
 /// client TCP/HTTP-2 stream is closed before the handler completes.
 /// Long-running handlers SHOULD select on this token to abort early
 /// instead of running to completion against a disconnected caller.
+///
+/// # Examples
+///
+/// ```rust
+/// use std::time::Duration;
+/// use swe_edge_ingress_grpc_transport::GrpcRequest;
+///
+/// let req = GrpcRequest::new(
+///     "/pkg.GreetService/Greet",
+///     b"\x0a\x05Alice".to_vec(),  // protobuf-encoded payload
+///     Duration::from_secs(5),
+/// );
+///
+/// assert_eq!(req.method, "/pkg.GreetService/Greet");
+/// assert_eq!(req.deadline, Duration::from_secs(5));
+/// assert!(req.cancellation.is_none());
+/// assert!(req.metadata.headers.is_empty());
+/// ```
 #[derive(Debug, Clone)]
 pub struct GrpcRequest {
     /// Fully-qualified gRPC method path (e.g. `"/pkg.Service/Method"`).
@@ -40,6 +58,16 @@ impl GrpcRequest {
     ///
     /// `deadline` is a required positional argument — there is no overload
     /// without it and no default.  Compile error if omitted.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use std::time::Duration;
+    /// use swe_edge_ingress_grpc_transport::GrpcRequest;
+    ///
+    /// let req = GrpcRequest::new("/svc.Foo/Bar", vec![], Duration::from_millis(500));
+    /// assert_eq!(req.deadline, Duration::from_millis(500));
+    /// ```
     pub fn new(method: impl Into<String>, body: Vec<u8>, deadline: Duration) -> Self {
         Self {
             method: method.into(),

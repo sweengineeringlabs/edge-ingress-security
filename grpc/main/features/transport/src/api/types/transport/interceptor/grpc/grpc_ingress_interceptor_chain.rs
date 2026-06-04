@@ -8,6 +8,26 @@ use crate::api::value::{GrpcRequest, GrpcResponse};
 use super::grpc_ingress_interceptor::GrpcIngressInterceptor;
 
 /// A registered chain of [`GrpcIngressInterceptor`]s.
+///
+/// Interceptors run in registration order: `before_dispatch` fires first→last;
+/// `after_dispatch` fires first→last. The first interceptor returning `Err`
+/// aborts the chain and the handler is not called.
+///
+/// The server startup check calls [`contains_authorization`] — if no auth
+/// interceptor is registered, the server logs a warning.
+///
+/// [`contains_authorization`]: GrpcIngressInterceptorChain::contains_authorization
+///
+/// # Examples
+///
+/// ```rust
+/// use swe_edge_ingress_grpc_transport::GrpcIngressInterceptorChain;
+///
+/// let chain = GrpcIngressInterceptorChain::new();
+/// assert!(chain.is_empty());
+/// assert_eq!(chain.len(), 0);
+/// assert!(!chain.contains_authorization());
+/// ```
 #[derive(Clone, Default)]
 pub struct GrpcIngressInterceptorChain {
     interceptors: Vec<Arc<dyn GrpcIngressInterceptor>>,
