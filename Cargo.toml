@@ -15,7 +15,7 @@ repository   = "https://github.com/sweengineeringlabs/edge"
 
 [workspace.dependencies]
 swe-edge-configbuilder = { path = "../configbuilder/main/configbuilder" }
-edge-domain            = { path = "../domain/main/features/domain" }
+edge-domain            = { path = "../domain/main/domain" }
 
 [workspace.lints.rust]
 unsafe_code  = "deny"
