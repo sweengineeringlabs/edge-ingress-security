@@ -2,7 +2,8 @@
 
 use std::time::SystemTime;
 
-use crate::api::port::grpc::{GrpcIngressError, GrpcIngressResult};
+use crate::api::error::GrpcIngressError;
+use crate::api::types::GrpcIngressResult;
 use crate::api::value::GrpcStatusCode;
 
 use super::audit_event::AuditEvent;

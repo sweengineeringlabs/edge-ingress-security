@@ -6,7 +6,7 @@ use swe_edge_ingress_tls::IngressTlsConfig;
 
 use crate::api::audit::{AuditSink, NoopAuditSink};
 use crate::api::interceptor::GrpcIngressInterceptorChain;
-use crate::api::port::grpc::GrpcIngress;
+use crate::api::traits::GrpcIngress;
 use crate::api::value::{CompressionMode, GrpcServerConfig};
 
 use crate::api::server::grpc::grpc_server_config_error::GrpcServerConfigError;

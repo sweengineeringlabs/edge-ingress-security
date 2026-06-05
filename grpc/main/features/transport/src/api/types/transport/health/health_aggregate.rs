@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use crate::api::port::grpc::GrpcIngress;
+use crate::api::traits::GrpcIngress;
 
 use super::super::serving_status::ServingStatus;
 use super::health_service::HealthService;

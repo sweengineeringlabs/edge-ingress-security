@@ -1,7 +1,7 @@
 //! Integration tests — MessageConsumer trait contract.
 
 use futures::future::BoxFuture;
-use swe_edge_ingress_message_broker_transport::{ConsumerResult, MessageConsumer, MessageStream};
+use swe_edge_ingress_message_consumer::{ConsumerResult, MessageConsumer, MessageStream};
 
 struct NeverConsumer;
 impl MessageConsumer for NeverConsumer {

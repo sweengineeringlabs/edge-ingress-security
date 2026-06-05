@@ -7,7 +7,7 @@ use swe_edge_ingress_tls::IngressTlsConfig;
 use super::tonic_grpc_server::TonicGrpcServer;
 use crate::api::audit::AuditSink;
 use crate::api::interceptor::GrpcIngressInterceptorChain;
-use crate::api::port::grpc::GrpcIngress;
+use crate::api::traits::GrpcIngress;
 use crate::api::value::CompressionMode;
 
 /// Fluent builder for [`TonicGrpcServer`].

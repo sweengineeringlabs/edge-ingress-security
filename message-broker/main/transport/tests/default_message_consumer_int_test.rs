@@ -1,20 +1,31 @@
-//! Integration tests — default (in-memory) message consumer.
+//! Integration tests — broker consumer via SAF (replaces default/in-memory backend tests).
 
-#[cfg(feature = "in-memory")]
-mod in_memory {
-    use swe_edge_ingress_message_broker_transport::{MessageBrokerSvc, MessageConsumer};
+use swe_edge_ingress_message_consumer::{MessageConsumer, MessageConsumerSvc};
+use swe_edge_message_broker::{BrokerError, Message, MessageBroker, MessageStream};
 
-    /// @covers: DefaultMessageConsumer — subscribes via SAF
-    #[tokio::test]
-    async fn test_default_message_consumer_subscribes_successfully() {
-        let c = MessageBrokerSvc::default_consumer();
-        assert!(c.subscribe("default.test").await.is_ok());
+struct MockBroker;
+impl MessageBroker for MockBroker {
+    fn publish<'a>(&'a self, _: &'a str, _: Message) -> futures::future::BoxFuture<'a, Result<(), BrokerError>> {
+        Box::pin(futures::future::ready(Ok(())))
     }
-
-    /// @covers: DefaultMessageConsumer — health check via SAF
-    #[tokio::test]
-    async fn test_default_message_consumer_health_check_returns_ok() {
-        let c = MessageBrokerSvc::default_consumer();
-        assert!(c.health_check().await.is_ok());
+    fn subscribe<'a>(&'a self, _: &'a str) -> futures::future::BoxFuture<'a, Result<MessageStream, BrokerError>> {
+        Box::pin(futures::future::ready(Ok(Box::pin(futures::stream::empty()) as MessageStream)))
     }
+    fn health_check(&self) -> futures::future::BoxFuture<'_, Result<(), BrokerError>> {
+        Box::pin(futures::future::ready(Ok(())))
+    }
+}
+
+/// @covers: BrokerConsumerAdapter — subscribes via SAF
+#[tokio::test]
+async fn test_broker_consumer_adapter_subscribes_successfully() {
+    let c = MessageConsumerSvc::from_broker(MockBroker);
+    assert!(c.subscribe("default.test").await.is_ok());
+}
+
+/// @covers: BrokerConsumerAdapter — health check via SAF
+#[tokio::test]
+async fn test_broker_consumer_adapter_health_check_returns_ok() {
+    let c = MessageConsumerSvc::from_broker(MockBroker);
+    assert!(c.health_check().await.is_ok());
 }

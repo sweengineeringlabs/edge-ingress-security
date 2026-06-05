@@ -9,7 +9,7 @@ use crate::api::value::ws::ws_sender::WsSender;
 /// and uses [`sender`] to push frames to the peer while consuming
 /// incoming frames from [`receiver`].
 ///
-/// [`HttpStream::handle_websocket`]: crate::api::port::http::http_stream::HttpStream::handle_websocket
+/// [`HttpStream::handle_websocket`]: crate::api::traits::http_stream::HttpStream::handle_websocket
 pub struct WsChannel {
     /// Send frames to the connected WebSocket peer.
     pub sender: WsSender,

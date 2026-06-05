@@ -106,9 +106,9 @@ impl AxumHttpServer {
 #[cfg(test)]
 mod dedicated_coverage {
     use super::AxumHttpServer;
-    use crate::api::port::http_health_check::HttpHealthCheck;
-    use crate::api::port::http_ingress::HttpIngress;
-    use crate::api::port::http_ingress_result::HttpIngressResult;
+    use crate::api::types::http_health_check::HttpHealthCheck;
+    use crate::api::traits::http_ingress::HttpIngress;
+    use crate::api::types::http_ingress_result::HttpIngressResult;
     use crate::api::types::server::axum::axum_http_server::MAX_BODY_BYTES;
     use crate::api::value::{HttpRequest, HttpResponse};
     use edge_domain::RequestContext;
@@ -180,9 +180,9 @@ mod dedicated_coverage {
 #[cfg(test)]
 mod sync_coverage {
     use super::AxumHttpServer;
-    use crate::api::port::http_health_check::HttpHealthCheck;
-    use crate::api::port::http_ingress::HttpIngress;
-    use crate::api::port::http_ingress_result::HttpIngressResult;
+    use crate::api::types::http_health_check::HttpHealthCheck;
+    use crate::api::traits::http_ingress::HttpIngress;
+    use crate::api::types::http_ingress_result::HttpIngressResult;
     use crate::api::value::{HttpRequest, HttpResponse};
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;

@@ -1,6 +1,6 @@
 //! Integration tests — ConsumerError type.
 
-use swe_edge_ingress_message_broker_transport::ConsumerError;
+use swe_edge_ingress_message_consumer::ConsumerError;
 
 /// @covers: ConsumerError::Subscribe
 #[test]

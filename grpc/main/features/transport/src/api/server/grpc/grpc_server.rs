@@ -2,7 +2,7 @@
 
 use futures::future::BoxFuture;
 
-use crate::api::port::grpc::GrpcIngressError;
+use crate::api::error::GrpcIngressError;
 
 /// A runnable gRPC server that drives a [`GrpcIngress`](super::super::port::grpc::GrpcIngress) handler.
 pub trait GrpcServer: Send + Sync {

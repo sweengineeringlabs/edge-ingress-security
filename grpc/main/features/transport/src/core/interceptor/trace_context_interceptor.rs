@@ -11,7 +11,7 @@ use crate::api::interceptor::GrpcIngressInterceptor;
 use crate::api::interceptor::{
     TraceContextInterceptor, EXTRACTED_TRACEPARENT, EXTRACTED_TRACESTATE, TRACEPARENT, TRACESTATE,
 };
-use crate::api::port::grpc::GrpcIngressError;
+use crate::api::error::GrpcIngressError;
 use crate::api::value::{GrpcRequest, GrpcResponse};
 
 impl DefaultTraceContextInterceptor {

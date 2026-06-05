@@ -1,15 +1,13 @@
-//! SAF factory methods on [`MessageBrokerSvc`].
+//! SAF factory methods on [`MessageConsumerSvc`].
 
-use crate::api::port::consumer_result::ConsumerResult;
-use crate::api::port::message_consumer::MessageConsumer;
+use crate::api::traits::message_consumer::MessageConsumer;
+use crate::api::types::consumer_result::ConsumerResult;
 use crate::api::traits::validator::Validator;
-use crate::api::types::message::message_broker_svc::MessageBrokerSvc;
-use swe_edge_message_broker::MessageStream;
-
-#[cfg(any(feature = "in-memory", feature = "nats"))]
+use crate::api::types::message::message_broker_svc::MessageConsumerSvc;
 use crate::api::types::message::message_consumer_handle::MessageConsumerHandle;
+use swe_edge_message_broker::{MessageBroker, MessageStream};
 
-impl MessageBrokerSvc {
+impl MessageConsumerSvc {
     /// Return a [`ConfigBuilderImpl`](swe_edge_configbuilder::ConfigBuilderImpl) pre-seeded
     /// with this crate's package name and version.
     pub fn create_config_builder() -> swe_edge_configbuilder::ConfigBuilderImpl {
@@ -42,34 +40,19 @@ impl MessageBrokerSvc {
         consumer.health_check()
     }
 
-    /// Construct an in-memory consumer backed by a tokio broadcast channel.
+    /// Wrap an already-constructed [`MessageConsumer`] in a handle for injection.
     ///
-    /// Returns a [`MessageConsumerHandle`] that implements [`MessageConsumer`] and
-    /// can be cloned to share the same underlying channel.
-    ///
-    /// Requires the `in-memory` feature.
-    #[cfg(feature = "in-memory")]
-    pub fn default_consumer() -> MessageConsumerHandle {
-        MessageConsumerHandle::new(crate::core::DefaultMessageConsumer::new())
+    /// Use this when the assembler has already constructed and configured the consumer.
+    pub fn consumer(c: impl MessageConsumer + 'static) -> MessageConsumerHandle {
+        MessageConsumerHandle::new(c)
     }
 
-    /// Connect to a NATS server and return a consumer handle.
+    /// Wrap an already-constructed [`MessageBroker`] as a consumer handle.
     ///
-    /// # Errors
-    /// Returns [`ConsumerError::Connection`](crate::api::error::ConsumerError::Connection)
-    /// when the server is unreachable.
-    ///
-    /// Requires the `nats` feature.
-    #[cfg(feature = "nats")]
-    pub async fn nats_consumer(
-        url: &str,
-    ) -> Result<MessageConsumerHandle, crate::api::error::ConsumerError> {
-        use swe_edge_runtime_message_broker::MessageBrokerFactory;
-        let broker = MessageBrokerFactory::nats(url)
-            .await
-            .map_err(crate::api::error::ConsumerError::from)?;
-        Ok(MessageConsumerHandle::new(
-            crate::core::NatsMessageConsumer::new(broker),
-        ))
+    /// The `BrokerConsumerAdapter` adapts the broker's subscribe/health_check to
+    /// the [`MessageConsumer`] contract. The backend is fully owned by the caller —
+    /// this crate never constructs runtime brokers itself.
+    pub fn from_broker(b: impl MessageBroker + 'static) -> MessageConsumerHandle {
+        MessageConsumerHandle::new(crate::core::BrokerConsumerAdapter::new(b))
     }
 }

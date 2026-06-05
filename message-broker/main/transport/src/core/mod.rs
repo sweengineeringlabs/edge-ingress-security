@@ -1,10 +1,4 @@
 //! Core implementations — pub(crate) only.
-#[cfg(feature = "in-memory")]
-pub(crate) mod default;
-#[cfg(feature = "nats")]
-pub(crate) mod nats;
+pub(crate) mod broker;
 
-#[cfg(feature = "in-memory")]
-pub(crate) use default::DefaultMessageConsumer;
-#[cfg(feature = "nats")]
-pub(crate) use nats::NatsMessageConsumer;
+pub(crate) use broker::BrokerConsumerAdapter;

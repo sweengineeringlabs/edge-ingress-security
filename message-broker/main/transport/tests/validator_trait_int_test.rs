@@ -1,6 +1,6 @@
 //! Integration tests — Validator trait contract.
 
-use swe_edge_ingress_message_broker_transport::Validator;
+use swe_edge_ingress_message_consumer::Validator;
 
 struct AlwaysOk;
 impl Validator for AlwaysOk {

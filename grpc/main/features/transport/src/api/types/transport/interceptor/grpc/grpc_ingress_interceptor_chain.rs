@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use crate::api::port::grpc::GrpcIngressError;
+use crate::api::error::GrpcIngressError;
 use crate::api::value::{GrpcRequest, GrpcResponse};
 
 use super::grpc_ingress_interceptor::GrpcIngressInterceptor;

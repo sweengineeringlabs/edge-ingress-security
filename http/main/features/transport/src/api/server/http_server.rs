@@ -2,9 +2,9 @@
 
 use futures::future::BoxFuture;
 
-use crate::api::port::http_ingress_error::HttpIngressError;
+use crate::api::error::HttpIngressError;
 
-/// A runnable HTTP server that drives an [`HttpIngress`](crate::api::port::http_ingress::HttpIngress) handler.
+/// A runnable HTTP server that drives an [`HttpIngress`](crate::api::traits::http_ingress::HttpIngress) handler.
 #[expect(
     dead_code,
     reason = "SEA api/ interface anchor (Rule 121) — intentionally unused"

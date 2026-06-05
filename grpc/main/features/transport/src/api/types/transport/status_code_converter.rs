@@ -1,6 +1,6 @@
 //! gRPC status-code conversions.
 
-use crate::api::port::grpc::GrpcIngressError;
+use crate::api::error::GrpcIngressError;
 use crate::api::value::GrpcStatusCode;
 
 /// Sanitized message returned to clients for any `Internal` server error.

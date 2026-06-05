@@ -9,7 +9,6 @@ pub(crate) mod audit;
 pub(crate) mod handler;
 pub(crate) mod health;
 pub(crate) mod interceptor;
-pub(crate) mod port;
 pub(crate) mod server;
 pub(crate) mod validator;
 pub(crate) mod value;

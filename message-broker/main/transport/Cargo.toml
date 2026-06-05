@@ -1,12 +1,12 @@
 [package]
-name         = "swe-edge-ingress-message-broker-transport"
+name         = "swe-edge-ingress-message-consumer"
 version.workspace     = true
 edition.workspace     = true
 license.workspace     = true
 rust-version.workspace = true
 authors.workspace     = true
 repository.workspace  = true
-description  = "edge — ingress message consumer: opt-in MessageConsumer port with in-memory and NATS backends."
+description  = "edge — ingress message consumer: injection-only MessageConsumer port."
 keywords     = ["message-broker", "pubsub", "ingress", "nats", "swe"]
 categories   = ["network-programming", "asynchronous"]
 
@@ -15,16 +15,8 @@ application_type = "lib"
 service_type     = "transport"
 
 [lib]
-name = "swe_edge_ingress_message_broker_transport"
+name = "swe_edge_ingress_message_consumer"
 path = "src/lib.rs"
-
-[features]
-default   = []
-# In-memory broadcast consumer — for testing and single-process deployments.
-# Pulls the runtime broker backend in addition to the always-present contract.
-in-memory = ["dep:swe-edge-runtime-message-broker", "swe-edge-runtime-message-broker/tokio-rt"]
-# NATS-backed consumer.
-nats      = ["dep:swe-edge-runtime-message-broker", "swe-edge-runtime-message-broker/nats"]
 
 [dependencies]
 thiserror                       = "2"
@@ -34,8 +26,6 @@ tracing                         = { version = "0.1", default-features = false }
 # Contract: the MessageConsumer port speaks the broker vocabulary (Message,
 # MessageStream, BrokerError) owned by edge-message-broker — always present.
 swe-edge-message-broker         = { workspace = true }
-# Backends: concrete in-memory / NATS brokers, pulled only when a feature is on.
-swe-edge-runtime-message-broker = { workspace = true, optional = true }
 serde                           = { version = "1.0", features = ["derive"] }
 swe-edge-configbuilder          = { workspace = true }
 
@@ -102,12 +92,8 @@ name = "message_consumer_handle_int_test"
 path = "tests/message_consumer_handle_int_test.rs"
 
 [[test]]
-name = "default_message_consumer_int_test"
-path = "tests/default_message_consumer_int_test.rs"
-
-[[test]]
-name = "nats_message_consumer_int_test"
-path = "tests/nats_message_consumer_int_test.rs"
+name = "broker_consumer_adapter_int_test"
+path = "tests/broker_consumer_adapter_int_test.rs"
 
 [[test]]
 name = "consumer_result_int_test"
@@ -117,10 +103,17 @@ path = "tests/consumer_result_int_test.rs"
 name = "in_memory_message_consumer_int_test"
 path = "tests/in_memory_message_consumer_int_test.rs"
 
+[[test]]
+name = "default_message_consumer_int_test"
+path = "tests/default_message_consumer_int_test.rs"
+
+[[test]]
+name = "nats_message_consumer_int_test"
+path = "tests/nats_message_consumer_int_test.rs"
+
 [[example]]
 name = "subscribe"
 path = "examples/subscribe.rs"
-required-features = ["in-memory"]
 
 [lints]
 workspace = true

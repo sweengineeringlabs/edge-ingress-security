@@ -8,9 +8,9 @@ use futures::StreamExt;
 use crate::api::health::{HealthService, ServingStatus, HEALTH_CHECK_METHOD, HEALTH_WATCH_METHOD};
 use edge_domain::RequestContext;
 
-use crate::api::port::grpc::{
-    GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream,
-};
+use crate::api::error::GrpcIngressError;
+use crate::api::traits::GrpcIngress;
+use crate::api::types::{GrpcHealthCheck, GrpcIngressResult, GrpcMessageStream};
 use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse, GrpcStatusCode};
 
 /// Codec for health check messages.
@@ -215,7 +215,8 @@ mod tests {
 
     use super::HealthCheckCodec;
     use crate::api::health::{HealthAggregate, HealthService, ServingStatus, HEALTH_CHECK_METHOD};
-    use crate::api::port::grpc::{GrpcHealthCheck, GrpcIngress, GrpcIngressResult};
+    use crate::api::traits::GrpcIngress;
+    use crate::api::types::{GrpcHealthCheck, GrpcIngressResult};
     use crate::api::value::{GrpcMetadata, GrpcRequest, GrpcResponse};
 
     /// @covers: decode_request

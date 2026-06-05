@@ -1,6 +1,6 @@
 //! Integration tests — MessageConsumerConfig.
 
-use swe_edge_ingress_message_broker_transport::MessageConsumerConfig;
+use swe_edge_ingress_message_consumer::MessageConsumerConfig;
 
 /// @covers: MessageConsumerConfig::default
 #[test]

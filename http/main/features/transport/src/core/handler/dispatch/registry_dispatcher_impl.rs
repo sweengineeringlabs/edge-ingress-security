@@ -6,10 +6,10 @@ use edge_domain::{HandlerError, RequestContext};
 use futures::future::BoxFuture;
 
 use crate::api::handler::http::http_handler_registry_dispatcher::HttpHandlerRegistryDispatcher;
-use crate::api::port::http_health_check::HttpHealthCheck;
-use crate::api::port::http_ingress::HttpIngress;
-use crate::api::port::http_ingress_error::HttpIngressError;
-use crate::api::port::http_ingress_result::HttpIngressResult;
+use crate::api::types::http_health_check::HttpHealthCheck;
+use crate::api::traits::http_ingress::HttpIngress;
+use crate::api::error::HttpIngressError;
+use crate::api::types::http_ingress_result::HttpIngressResult;
 use crate::api::value::{HttpRequest, HttpResponse};
 
 impl HttpHandlerRegistryDispatcher {
@@ -120,8 +120,8 @@ mod tests {
 
     use super::*;
     use crate::api::handler::http::http_handler_adapter::HttpHandlerAdapter;
-    use crate::api::port::http_ingress::HttpIngress;
-    use crate::api::port::http_ingress_error::HttpIngressError;
+    use crate::api::traits::http_ingress::HttpIngress;
+    use crate::api::error::HttpIngressError;
     use crate::api::value::HttpRequest;
 
     fn fresh() -> HttpHandlerRegistryDispatcher {

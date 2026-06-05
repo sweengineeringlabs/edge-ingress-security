@@ -5,13 +5,13 @@ use std::sync::Arc;
 use futures::future::BoxFuture;
 use swe_edge_message_broker::MessageStream;
 
-use crate::api::port::consumer_result::ConsumerResult;
-use crate::api::port::message_consumer::MessageConsumer;
+use crate::api::traits::message_consumer::MessageConsumer;
+use crate::api::types::consumer_result::ConsumerResult;
 
 /// An opaque, cloneable handle to a [`MessageConsumer`] instance.
 ///
 /// Returned by SAF factory functions such as
-/// [`MessageBrokerSvc::default_consumer`](crate::api::types::message::message_broker_svc::MessageBrokerSvc).
+/// [`MessageConsumerSvc::consumer`](crate::api::types::message::message_broker_svc::MessageConsumerSvc).
 /// Callers use this handle as a `dyn`-compatible consumer without needing to
 /// name the underlying concrete type.
 #[derive(Clone)]
@@ -21,7 +21,6 @@ pub struct MessageConsumerHandle {
 
 impl MessageConsumerHandle {
     /// Wrap any `MessageConsumer` implementation in a handle.
-    #[cfg(any(feature = "in-memory", feature = "nats"))]
     pub(crate) fn new(consumer: impl MessageConsumer + 'static) -> Self {
         Self {
             inner: Arc::new(consumer),

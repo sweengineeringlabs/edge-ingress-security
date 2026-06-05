@@ -1,21 +1,22 @@
-//! `swe-edge-ingress-message-broker-transport` — opt-in ingress message consumer port.
+//! `swe-edge-ingress-message-consumer` — injection-only ingress message consumer port.
 //!
-//! Wraps `swe-edge-runtime-message-broker` as a structured ingress port. Nothing is
-//! compiled unless the caller opts in via a feature flag.
+//! Defines the [`MessageConsumer`] port contract. The assembler injects a concrete
+//! backend via [`MessageConsumerSvc::from_broker`] or [`MessageConsumerSvc::consumer`].
+//! This crate never constructs runtime brokers itself.
 //!
 //! # Quick start
 //!
 //! ```toml
 //! [dependencies]
-//! swe-edge-ingress-message-broker-transport = { path = "...", features = ["in-memory"] }
+//! swe-edge-ingress-message-consumer = { path = "..." }
 //! ```
 //!
 //! ```rust,ignore
-//! // Requires feature = "in-memory" or "nats" — see Cargo.toml.
-//! use swe_edge_ingress_message_broker_transport::{MessageBrokerSvc, MessageConsumer};
+//! use swe_edge_ingress_message_consumer::{MessageConsumerSvc, MessageConsumer};
 //! use futures::StreamExt;
 //!
-//! let consumer = MessageBrokerSvc::default_consumer();
+//! // The assembler constructs and injects the broker:
+//! let consumer = MessageConsumerSvc::from_broker(broker);
 //! let mut stream = consumer.subscribe("orders.created").await?;
 //! while let Some(msg) = stream.next().await {
 //!     // process msg

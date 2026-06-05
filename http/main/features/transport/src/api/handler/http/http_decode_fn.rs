@@ -1,6 +1,6 @@
 //! Decode function type alias for the HTTP adapter.
 
-use crate::api::port::http_ingress_error::HttpIngressError;
+use crate::api::error::HttpIngressError;
 use crate::api::value::HttpRequest;
 
 /// Decodes a typed request from an inbound [`HttpRequest`].

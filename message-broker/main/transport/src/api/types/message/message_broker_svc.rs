@@ -1,4 +1,4 @@
-//! `MessageBrokerSvc` — SAF factory type declaration.
+//! `MessageConsumerSvc` — SAF factory type declaration.
 
 /// SAF factory entry point for the ingress message consumer.
-pub struct MessageBrokerSvc;
+pub struct MessageConsumerSvc;

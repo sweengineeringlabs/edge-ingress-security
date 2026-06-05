@@ -1,12 +1,34 @@
-//! Integration tests — NATS message consumer interface contract.
+//! Integration tests — BrokerConsumerAdapter with injected broker (replaces NATS feature-gated tests).
 //!
-//! The NATS backend requires a live NATS server and is guarded by the `nats` feature.
+//! The NATS backend is a runtime concern wired by the assembler. This test verifies
+//! the from_broker() injection path using a mock broker.
 
-/// @covers: NatsMessageConsumer — feature-gated availability
-#[test]
-fn test_nats_message_consumer_trait_is_feature_gated() {
-    // The NatsMessageConsumer trait is only implemented when the `nats` feature is enabled.
-    // This test documents the feature gate requirement.
-    let nats_feature_enabled = cfg!(feature = "nats");
-    let _ = nats_feature_enabled;
+use swe_edge_ingress_message_consumer::{MessageConsumer, MessageConsumerSvc};
+use swe_edge_message_broker::{BrokerError, Message, MessageBroker, MessageStream};
+
+struct MockBroker;
+impl MessageBroker for MockBroker {
+    fn publish<'a>(&'a self, _: &'a str, _: Message) -> futures::future::BoxFuture<'a, Result<(), BrokerError>> {
+        Box::pin(futures::future::ready(Ok(())))
+    }
+    fn subscribe<'a>(&'a self, _: &'a str) -> futures::future::BoxFuture<'a, Result<MessageStream, BrokerError>> {
+        Box::pin(futures::future::ready(Ok(Box::pin(futures::stream::empty()) as MessageStream)))
+    }
+    fn health_check(&self) -> futures::future::BoxFuture<'_, Result<(), BrokerError>> {
+        Box::pin(futures::future::ready(Ok(())))
+    }
+}
+
+/// @covers: BrokerConsumerAdapter — injection-based consumer is healthy
+#[tokio::test]
+async fn test_broker_consumer_adapter_from_injected_broker_is_healthy() {
+    let c = MessageConsumerSvc::from_broker(MockBroker);
+    assert!(c.health_check().await.is_ok());
+}
+
+/// @covers: BrokerConsumerAdapter — injection-based consumer can subscribe
+#[tokio::test]
+async fn test_broker_consumer_adapter_from_injected_broker_can_subscribe() {
+    let c = MessageConsumerSvc::from_broker(MockBroker);
+    assert!(c.subscribe("nats.replaced").await.is_ok());
 }

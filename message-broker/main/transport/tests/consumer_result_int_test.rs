@@ -1,6 +1,6 @@
 //! Integration tests — ConsumerResult type alias.
 
-use swe_edge_ingress_message_broker_transport::{ConsumerError, ConsumerResult};
+use swe_edge_ingress_message_consumer::{ConsumerError, ConsumerResult};
 
 /// @covers: ConsumerResult — Ok variant
 #[test]

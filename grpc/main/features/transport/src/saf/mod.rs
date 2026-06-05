@@ -18,9 +18,9 @@ pub use crate::api::interceptor::{
 pub use crate::api::interceptor::{
     TraceContextInterceptor, EXTRACTED_TRACEPARENT, EXTRACTED_TRACESTATE, TRACEPARENT, TRACESTATE,
 };
-pub use crate::api::port::grpc::{
-    GrpcHealthCheck, GrpcIngress, GrpcIngressError, GrpcIngressResult, GrpcMessageStream,
-};
+pub use crate::api::error::GrpcIngressError;
+pub use crate::api::traits::GrpcIngress;
+pub use crate::api::types::{GrpcHealthCheck, GrpcIngressResult, GrpcMessageStream};
 pub use crate::api::server::{
     GrpcServer, GrpcServerConfigError, TonicGrpcServer, TonicGrpcServerBuilder, TonicServerError,
     MAX_MESSAGE_BYTES, MISSING_AUTHORIZATION_INTERCEPTOR_MSG, REFLECTION_ENABLED_WARN_MSG,

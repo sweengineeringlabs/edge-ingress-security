@@ -1,6 +1,6 @@
 //! Integration tests — ApplicationConfigBuilder.
 
-use swe_edge_ingress_message_broker_transport::ApplicationConfigBuilder;
+use swe_edge_ingress_message_consumer::ApplicationConfigBuilder;
 
 /// @covers: ApplicationConfigBuilder::new
 #[test]
