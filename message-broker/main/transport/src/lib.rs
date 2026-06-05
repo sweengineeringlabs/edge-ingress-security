@@ -12,10 +12,10 @@
 //!
 //! ```rust,ignore
 //! // Requires feature = "in-memory" or "nats" — see Cargo.toml.
-//! use swe_edge_ingress_message_broker_transport::{default_consumer, MessageConsumer};
+//! use swe_edge_ingress_message_broker_transport::{MessageBrokerSvc, MessageConsumer};
 //! use futures::StreamExt;
 //!
-//! let consumer = default_consumer();
+//! let consumer = MessageBrokerSvc::default_consumer();
 //! let mut stream = consumer.subscribe("orders.created").await?;
 //! while let Some(msg) = stream.next().await {
 //!     // process msg

@@ -1,8 +1,10 @@
 //! Integration tests — Validator trait via SAF.
 
-use swe_edge_ingress_message_broker_transport::{validate, MessageConsumerConfig, Validator};
+use swe_edge_ingress_message_broker_transport::{
+    MessageBrokerSvc, MessageConsumerConfig, Validator,
+};
 
-/// @covers: validate — delegates to the Validator impl; non-zero default capacity passes.
+/// @covers: MessageBrokerSvc::validate — delegates to the Validator impl; non-zero default capacity passes.
 #[test]
 fn test_validate_default_consumer_config_capacity_nonzero_returns_ok() {
     struct CfgValidator(MessageConsumerConfig);
@@ -16,17 +18,17 @@ fn test_validate_default_consumer_config_capacity_nonzero_returns_ok() {
         }
     }
 
-    assert!(validate(&CfgValidator(MessageConsumerConfig::default())).is_ok());
+    assert!(MessageBrokerSvc::validate(&CfgValidator(MessageConsumerConfig::default())).is_ok());
 }
 
-/// @covers: validate — propagates Err from the Validator impl.
+/// @covers: MessageBrokerSvc::validate — propagates Err from the Validator impl.
 #[test]
 fn test_validate_returns_err_for_zero_capacity() {
-    struct Zero;
-    impl Validator for Zero {
+    struct ZeroCapacity;
+    impl Validator for ZeroCapacity {
         fn validate(&self) -> Result<(), String> {
-            Err("zero".into())
+            Err("capacity must be > 0".into())
         }
     }
-    assert!(validate(&Zero).is_err());
+    assert!(MessageBrokerSvc::validate(&ZeroCapacity).is_err());
 }

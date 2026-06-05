@@ -2149,7 +2149,7 @@ dependencies = [
 [[package]]
 name = "swe-edge-runtime-message-broker"
 version = "0.1.0"
-source = "git+https://github.com/sweengineeringlabs/edge-runtime.git?branch=dev#20dab54b486ca75781af09e736764bffdf0d9def"
+source = "git+https://github.com/sweengineeringlabs/edge-runtime.git?branch=dev#4c6b2bc7dd96baa2ff4a311f376afcf6214398ec"
 dependencies = [
  "async-nats",
  "bytes",

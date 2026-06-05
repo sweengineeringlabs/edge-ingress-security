@@ -40,8 +40,18 @@ serde                           = { version = "1.0", features = ["derive"] }
 swe-edge-configbuilder          = { workspace = true }
 
 [dev-dependencies]
-tokio   = { version = "1.0", features = ["rt-multi-thread", "macros", "time"] }
-futures = "0.3"
+tokio                   = { version = "1.0", features = ["rt-multi-thread", "macros", "time"] }
+futures                 = "0.3"
+swe-edge-configbuilder  = { workspace = true }
+swe-edge-message-broker = { workspace = true }
+
+[[test]]
+name = "broker_svc_int_test"
+path = "tests/broker_svc_int_test.rs"
+
+[[test]]
+name = "validator_trait_int_test"
+path = "tests/validator_trait_int_test.rs"
 
 [[test]]
 name = "consumer_int_test"
@@ -58,6 +68,59 @@ path = "tests/message_broker_dep_int_test.rs"
 [[test]]
 name = "saf_consumer_int_test"
 path = "tests/saf_consumer_int_test.rs"
+
+[[test]]
+name = "consumer_error_int_test"
+path = "tests/consumer_error_int_test.rs"
+
+[[test]]
+name = "message_consumer_int_test"
+path = "tests/message_consumer_int_test.rs"
+
+[[test]]
+name = "application_config_builder_int_test"
+path = "tests/application_config_builder_int_test.rs"
+
+[[test]]
+name = "consumer_config_int_test"
+path = "tests/consumer_config_int_test.rs"
+
+[[test]]
+name = "consumer_handle_int_test"
+path = "tests/consumer_handle_int_test.rs"
+
+[[test]]
+name = "message_broker_svc_int_test"
+path = "tests/message_broker_svc_int_test.rs"
+
+[[test]]
+name = "message_consumer_config_int_test"
+path = "tests/message_consumer_config_int_test.rs"
+
+[[test]]
+name = "message_consumer_handle_int_test"
+path = "tests/message_consumer_handle_int_test.rs"
+
+[[test]]
+name = "default_message_consumer_int_test"
+path = "tests/default_message_consumer_int_test.rs"
+
+[[test]]
+name = "nats_message_consumer_int_test"
+path = "tests/nats_message_consumer_int_test.rs"
+
+[[test]]
+name = "consumer_result_int_test"
+path = "tests/consumer_result_int_test.rs"
+
+[[test]]
+name = "in_memory_message_consumer_int_test"
+path = "tests/in_memory_message_consumer_int_test.rs"
+
+[[example]]
+name = "subscribe"
+path = "examples/subscribe.rs"
+required-features = ["in-memory"]
 
 [lints]
 workspace = true

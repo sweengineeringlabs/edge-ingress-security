@@ -3,7 +3,7 @@
 use futures::future::BoxFuture;
 use swe_edge_message_broker::MessageStream;
 
-use crate::api::port::consumer::consumer_result::ConsumerResult;
+use crate::api::port::consumer_result::ConsumerResult;
 
 /// Subscribes to topics on an external message broker and receives messages.
 ///
@@ -11,7 +11,7 @@ use crate::api::port::consumer::consumer_result::ConsumerResult;
 /// to obtain a concrete implementation:
 ///
 /// ```rust,ignore
-/// let consumer = swe_edge_ingress_message_broker_transport::default_consumer();
+/// let consumer = MessageBrokerSvc::default_consumer();
 /// let mut stream = consumer.subscribe("orders.created").await?;
 /// while let Some(msg) = stream.next().await {
 ///     // handle msg
@@ -20,10 +20,10 @@ use crate::api::port::consumer::consumer_result::ConsumerResult;
 ///
 /// # Feature flags
 ///
-/// | Feature    | Backend                                  |
-/// |------------|------------------------------------------|
+/// | Feature    | Backend                                   |
+/// |------------|-------------------------------------------|
 /// | `in-memory`| `InMemoryMessageBroker` (tokio broadcast) |
-/// | `nats`     | `NatsMessageBroker` (async-nats)         |
+/// | `nats`     | `NatsMessageBroker` (async-nats)          |
 pub trait MessageConsumer: Send + Sync {
     /// Subscribe to `topic` and return a lazy stream of incoming messages.
     ///
@@ -33,14 +33,4 @@ pub trait MessageConsumer: Send + Sync {
 
     /// Verify the consumer is connected and the broker is reachable.
     fn health_check(&self) -> BoxFuture<'_, ConsumerResult<()>>;
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_message_consumer_is_object_safe() {
-        fn _assert(_: &dyn MessageConsumer) {}
-    }
 }
