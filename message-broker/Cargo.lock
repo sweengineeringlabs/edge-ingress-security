@@ -1203,9 +1203,10 @@ dependencies = [
 [[package]]
 name = "swe-edge-configbuilder"
 version = "0.1.0"
-source = "git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=v0.4.2#e928583725cc091fd46d3be42d8b3365b38dc6ea"
+source = "git+https://github.com/sweengineeringlabs/edge-configbuilder.git?branch=dev#ca37509d4f0b7f4494d5fce6c39b507146aaa402"
 dependencies = [
  "dirs",
+ "regex",
  "serde",
  "thiserror 2.0.18",
  "toml",
@@ -1227,6 +1228,7 @@ dependencies = [
 [[package]]
 name = "swe-edge-runtime-message-broker"
 version = "0.1.0"
+source = "git+https://github.com/sweengineeringlabs/edge-runtime.git?branch=dev#e60f41d8a8082f056a5b33886c696b5d2813e95a"
 dependencies = [
  "async-nats",
  "bytes",

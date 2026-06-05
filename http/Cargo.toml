@@ -19,7 +19,7 @@ missing_docs = "warn"
 unwrap_used = "deny"
 expect_used = "deny"
 [workspace.dependencies]
-edge-domain               = { path = "../../domain/main/domain" }
-swe-edge-configbuilder    = { path = "../../configbuilder/main/configbuilder" }
+edge-domain               = { git = "https://github.com/sweengineeringlabs/edge-domain.git", branch = "dev" }
+swe-edge-configbuilder    = { git = "https://github.com/sweengineeringlabs/edge-configbuilder.git", branch = "dev" }
 swe-edge-ingress-tls      = { path = "../tls" }
 swe-edge-ingress-verifier = { path = "../verifier" }
