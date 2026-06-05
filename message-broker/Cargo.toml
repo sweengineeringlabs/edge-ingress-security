@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members  = ["main/features/*"]
+members  = ["main/transport"]
 
 [workspace.package]
 version      = "0.1.0"
@@ -13,4 +13,5 @@ repository   = "https://github.com/sweengineeringlabs/edge"
 [workspace.lints.rust]
 unsafe_code  = "deny"
 missing_docs = "warn"
+
 

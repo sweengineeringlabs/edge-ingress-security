@@ -32,7 +32,7 @@ tokio                           = { version = "1.0", features = ["rt-multi-threa
 tracing                         = { version = "0.1", default-features = false }
 swe-edge-runtime-message-broker = { git = "https://github.com/sweengineeringlabs/edge-runtime.git", branch = "dev" }
 serde                           = { version = "1.0", features = ["derive"] }
-swe-edge-configbuilder          = { git = "https://github.com/sweengineeringlabs/edge-configbuilder.git", branch = "dev" }
+swe-edge-configbuilder = { git = "https://github.com/sweengineeringlabs/edge-configbuilder.git", branch = "dev" }
 
 [dev-dependencies]
 tokio   = { version = "1.0", features = ["rt-multi-thread", "macros", "time"] }
