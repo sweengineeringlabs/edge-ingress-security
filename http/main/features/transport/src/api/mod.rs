@@ -2,7 +2,9 @@
 pub(crate) mod error;
 pub(crate) mod handler;
 pub(crate) mod server;
-pub(crate) mod traits;
+pub mod traits;
 pub(crate) mod types;
 pub(crate) mod validator;
 pub(crate) mod value;
+
+pub use traits::{HttpIngress, HttpStream};

@@ -5,8 +5,8 @@ use std::sync::Arc;
 use swe_edge_ingress_tls::IngressTlsConfig;
 use swe_edge_ingress_verifier::TokenVerifier;
 
-use crate::api::traits::http_stream::HttpStream;
-use crate::api::traits::http_ingress::HttpIngress;
+use crate::api::traits::HttpIngress;
+use crate::api::traits::HttpStream;
 
 /// Default maximum inbound request body size (4 MiB).
 pub const MAX_BODY_BYTES: usize = 4 * 1_024 * 1_024; // 4 MiB

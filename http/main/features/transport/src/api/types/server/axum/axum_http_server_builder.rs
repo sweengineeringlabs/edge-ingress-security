@@ -6,7 +6,7 @@ use swe_edge_ingress_tls::IngressTlsConfig;
 use swe_edge_ingress_verifier::TokenVerifier;
 
 use super::axum_http_server::{AxumHttpServer, MAX_BODY_BYTES};
-use crate::api::traits::http_ingress::HttpIngress;
+use crate::api::traits::HttpIngress;
 
 /// Fluent builder that constructs an [`AxumHttpServer`].
 ///

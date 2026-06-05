@@ -1,7 +1,7 @@
 //! Helper functions for Axum HTTP server implementation.
 
-use crate::api::traits::http_ingress::HttpIngress;
 use crate::api::error::HttpIngressError;
+use crate::api::traits::HttpIngress;
 use crate::api::value::ws::{WsChannel, WsMessage};
 use crate::api::value::{HttpBody, HttpMethod, HttpRequest, HttpResponse};
 use axum::http::StatusCode;
@@ -293,7 +293,7 @@ impl AxumHttpServerHelper {
     pub async fn dispatch_sse(
         req: axum::extract::Request,
         body_limit: usize,
-        handler: Arc<dyn crate::api::traits::http_stream::HttpStream>,
+        handler: Arc<dyn crate::api::traits::HttpStream>,
     ) -> axum::response::Response {
         let (http_req, ctx) = match Self::extract_request(req, body_limit).await {
             Ok(r) => r,
@@ -326,7 +326,7 @@ impl AxumHttpServerHelper {
     /// Dispatch WebSocket upgrade request.
     pub async fn dispatch_websocket(
         req: axum::extract::Request,
-        handler: Arc<dyn crate::api::traits::http_stream::HttpStream>,
+        handler: Arc<dyn crate::api::traits::HttpStream>,
     ) -> axum::response::Response {
         use axum::extract::ws::{Message, WebSocketUpgrade};
         use axum::extract::FromRequestParts;
@@ -372,11 +372,9 @@ impl AxumHttpServerHelper {
                         Ok(Message::Binary(b)) => Some(Ok(WsMessage::binary(b))),
                         Ok(Message::Close(_)) => None,
                         Ok(_) => None,
-                        Err(e) => Some(Err(
-                            crate::api::error::HttpIngressError::Internal(
-                                e.to_string(),
-                            ),
-                        )),
+                        Err(e) => Some(Err(crate::api::error::HttpIngressError::Internal(
+                            e.to_string(),
+                        ))),
                     }
                 }));
 
@@ -419,7 +417,7 @@ impl AxumHttpServerHelper {
         handler: Arc<dyn HttpIngress>,
         body_limit: usize,
         verifier: Option<Arc<dyn TokenVerifier>>,
-        stream_handler: Option<Arc<dyn crate::api::traits::http_stream::HttpStream>>,
+        stream_handler: Option<Arc<dyn crate::api::traits::HttpStream>>,
         tls_cfg: &IngressTlsConfig,
         shutdown: F,
     ) -> Result<(), crate::api::server::axum::axum_server_error::AxumServerError>
