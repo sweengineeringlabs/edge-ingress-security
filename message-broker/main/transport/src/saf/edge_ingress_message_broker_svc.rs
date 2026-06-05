@@ -1,7 +1,7 @@
 //! SAF factory functions for the ingress message consumer.
 
 use futures::future::BoxFuture;
-use swe_edge_runtime_message_broker::MessageStream;
+use swe_edge_message_broker::MessageStream;
 
 use crate::api::port::consumer::consumer_error::ConsumerError;
 use crate::api::port::consumer::consumer_result::ConsumerResult;
@@ -49,8 +49,10 @@ pub fn default_consumer() -> impl MessageConsumer + Clone {
 /// Requires the `nats` feature.
 #[cfg(feature = "nats")]
 pub async fn nats_consumer(url: &str) -> Result<impl MessageConsumer + Clone, ConsumerError> {
-    use swe_edge_runtime_message_broker::nats_broker;
-    let broker = nats_broker(url).await.map_err(ConsumerError::from)?;
+    use swe_edge_runtime_message_broker::MessageBrokerFactory;
+    let broker = MessageBrokerFactory::nats(url)
+        .await
+        .map_err(ConsumerError::from)?;
     Ok(crate::core::NatsMessageConsumer::new(broker))
 }
 
@@ -59,7 +61,7 @@ mod tests {
     use super::*;
     use crate::core::DefaultValidator;
     use futures::future::BoxFuture;
-    use swe_edge_runtime_message_broker::MessageStream;
+    use swe_edge_message_broker::MessageStream;
 
     struct NeverConsumer;
     impl MessageConsumer for NeverConsumer {

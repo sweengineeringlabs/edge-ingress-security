@@ -1,6 +1,6 @@
 //! Error type for inbound message consumption operations.
 
-use swe_edge_runtime_message_broker::BrokerError;
+use swe_edge_message_broker::BrokerError;
 
 /// Errors returned by [`MessageConsumer`](super::super::message_consumer::MessageConsumer) operations.
 #[derive(Debug, thiserror::Error)]

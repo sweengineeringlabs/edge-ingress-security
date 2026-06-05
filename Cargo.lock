@@ -857,7 +857,7 @@ dependencies = [
  "libc",
  "percent-encoding",
  "pin-project-lite",
- "socket2 0.6.4",
+ "socket2 0.5.10",
  "tokio",
  "tower-service",
  "tracing",
@@ -1922,17 +1922,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
-name = "swe-edge-config"
-version = "0.1.0"
-source = "git+ssh://git@github.com/sweengineeringlabs/edge.git?tag=swe_edge_config_v0.1.0#91e37a1e4d68e3fee151b806811fd537f7cb0e00"
-dependencies = [
- "dirs",
- "serde",
- "thiserror 2.0.18",
- "toml",
-]
-
-[[package]]
 name = "swe-edge-configbuilder"
 version = "0.1.0"
 source = "git+https://github.com/sweengineeringlabs/edge-configbuilder.git?branch=dev#ca37509d4f0b7f4494d5fce6c39b507146aaa402"
@@ -2108,6 +2097,7 @@ dependencies = [
  "futures",
  "serde",
  "swe-edge-configbuilder",
+ "swe-edge-message-broker",
  "swe-edge-runtime-message-broker",
  "thiserror 2.0.18",
  "tokio",
@@ -2144,16 +2134,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "swe-edge-message-broker"
+version = "0.1.0"
+source = "git+https://github.com/sweengineeringlabs/edge-message-broker.git?branch=dev#4454fa8743934fe50a95ad33e368891a08c4b669"
+dependencies = [
+ "bytes",
+ "futures",
+ "serde",
+ "swe-edge-configbuilder",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
 name = "swe-edge-runtime-message-broker"
 version = "0.1.0"
-source = "git+https://github.com/sweengineeringlabs/edge-runtime.git?branch=dev#e60f41d8a8082f056a5b33886c696b5d2813e95a"
+source = "git+https://github.com/sweengineeringlabs/edge-runtime.git?branch=dev#20dab54b486ca75781af09e736764bffdf0d9def"
 dependencies = [
  "async-nats",
  "bytes",
  "futures",
  "serde",
- "swe-edge-config",
  "swe-edge-configbuilder",
+ "swe-edge-message-broker",
  "thiserror 1.0.69",
  "tokio",
  "tracing",

@@ -21,16 +21,21 @@ path = "src/lib.rs"
 [features]
 default   = []
 # In-memory broadcast consumer — for testing and single-process deployments.
-in-memory = ["swe-edge-runtime-message-broker/tokio-rt"]
+# Pulls the runtime broker backend in addition to the always-present contract.
+in-memory = ["dep:swe-edge-runtime-message-broker", "swe-edge-runtime-message-broker/tokio-rt"]
 # NATS-backed consumer.
-nats      = ["swe-edge-runtime-message-broker/nats"]
+nats      = ["dep:swe-edge-runtime-message-broker", "swe-edge-runtime-message-broker/nats"]
 
 [dependencies]
 thiserror                       = "2"
 futures                         = "0.3"
 tokio                           = { version = "1.0", features = ["rt-multi-thread", "rt", "sync", "macros", "time"] }
 tracing                         = { version = "0.1", default-features = false }
-swe-edge-runtime-message-broker = { workspace = true }
+# Contract: the MessageConsumer port speaks the broker vocabulary (Message,
+# MessageStream, BrokerError) owned by edge-message-broker — always present.
+swe-edge-message-broker         = { workspace = true }
+# Backends: concrete in-memory / NATS brokers, pulled only when a feature is on.
+swe-edge-runtime-message-broker = { workspace = true, optional = true }
 serde                           = { version = "1.0", features = ["derive"] }
 swe-edge-configbuilder          = { workspace = true }
 
