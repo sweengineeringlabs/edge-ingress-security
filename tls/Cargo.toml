@@ -1,11 +1,11 @@
 [package]
-name         = "swe-edge-ingress-tls"
-version      = "0.1.0"
-edition      = "2021"
-license      = "MIT OR Apache-2.0"
-rust-version = "1.95"
-authors      = ["SWE Engineering Labs"]
-repository   = "https://github.com/sweengineeringlabs/edge"
+name                   = "swe-edge-ingress-tls"
+version.workspace      = true
+edition.workspace      = true
+license.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+repository.workspace   = true
 description  = "swe-edge ingress — server-side TLS and mTLS configuration for inbound servers"
 keywords     = ["tls", "mtls", "ingress", "edge", "swe"]
 categories   = ["network-programming"]
@@ -49,13 +49,8 @@ path = "tests/tls_acceptor_builder_int_test.rs"
 name = "tls_setup"
 path = "examples/tls_setup.rs"
 
-[lints.rust]
-unsafe_code  = "deny"
-missing_docs = "warn"
-
-[lints.clippy]
-unwrap_used = "deny"
-expect_used = "deny"
+[lints]
+workspace = true
 
 [[test]]
 name = "ingress_tls_config_int_test"
