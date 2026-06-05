@@ -5,7 +5,7 @@ use futures::future::BoxFuture;
 
 use crate::api::types::http_health_check::HttpHealthCheck;
 use crate::api::types::http_ingress_result::HttpIngressResult;
-use crate::api::value::{HttpRequest, HttpResponse};
+use crate::api::vo::{HttpRequest, HttpResponse};
 
 /// Receives and handles inbound HTTP requests.
 pub trait HttpIngress: Send + Sync {

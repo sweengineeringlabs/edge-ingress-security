@@ -8,7 +8,7 @@ use swe_observ_metrics::MetricsProvider;
 
 use crate::api::handler::http::http_dispatcher_error::HttpDispatcherError;
 use crate::api::handler::http::http_handler_adapter::HttpHandlerAdapter;
-use crate::api::value::{HttpRequest, HttpResponse};
+use crate::api::vo::{HttpRequest, HttpResponse};
 
 /// Dispatcher that routes inbound HTTP requests through a
 /// [`HandlerRegistry`] keyed by handler id, using `matchit` path-pattern

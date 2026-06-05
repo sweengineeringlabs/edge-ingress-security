@@ -7,7 +7,7 @@ use edge_domain::{Handler, HandlerError, RequestContext};
 
 use crate::api::handler::http::http_decode_fn::HttpDecodeFn;
 use crate::api::handler::http::http_encode_fn::HttpEncodeFn;
-use crate::api::value::{HttpRequest, HttpResponse};
+use crate::api::vo::{HttpRequest, HttpResponse};
 
 /// Adapter that exposes a typed [`Handler<Req, Resp>`] as a
 /// [`Handler<HttpRequest, HttpResponse>`] for registration in a

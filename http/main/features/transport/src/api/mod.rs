@@ -5,6 +5,6 @@ pub(crate) mod server;
 pub mod traits;
 pub(crate) mod types;
 pub(crate) mod validator;
-pub(crate) mod value;
+pub(crate) mod vo;
 
 pub use traits::{HttpIngress, HttpStream};

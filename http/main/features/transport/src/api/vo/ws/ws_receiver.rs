@@ -5,7 +5,7 @@ use std::pin::Pin;
 use futures::Stream;
 
 use crate::api::error::HttpIngressError;
-use crate::api::value::ws::ws_message::WsMessage;
+use crate::api::vo::ws::ws_message::WsMessage;
 
 /// The receive half of a [`WsChannel`](super::ws_channel::WsChannel).
 ///

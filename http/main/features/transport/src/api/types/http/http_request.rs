@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::api::value::http::http_body::HttpBody;
-use crate::api::value::http::http_method::HttpMethod;
+use crate::api::vo::http::http_body::HttpBody;
+use crate::api::vo::http::http_method::HttpMethod;
 
 /// An HTTP request.
 #[derive(Debug, Clone, Serialize, Deserialize)]

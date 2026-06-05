@@ -10,7 +10,7 @@ use crate::api::handler::http::http_handler_registry_dispatcher::HttpHandlerRegi
 use crate::api::traits::HttpIngress;
 use crate::api::types::http_health_check::HttpHealthCheck;
 use crate::api::types::http_ingress_result::HttpIngressResult;
-use crate::api::value::{HttpRequest, HttpResponse};
+use crate::api::vo::{HttpRequest, HttpResponse};
 
 impl HttpHandlerRegistryDispatcher {
     fn path_from_url(url: &str) -> String {
@@ -122,7 +122,7 @@ mod tests {
     use crate::api::error::HttpIngressError;
     use crate::api::handler::http::http_handler_adapter::HttpHandlerAdapter;
     use crate::api::traits::HttpIngress;
-    use crate::api::value::HttpRequest;
+    use crate::api::vo::HttpRequest;
 
     fn fresh() -> HttpHandlerRegistryDispatcher {
         HttpHandlerRegistryDispatcher::new(Arc::new(HandlerRegistry::new()))

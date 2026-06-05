@@ -10,7 +10,7 @@ pub use crate::api::types::HttpHealthCheck;
 pub use crate::api::types::HttpIngressResult;
 pub use crate::api::types::TransportSvc;
 pub use crate::api::validator::HttpConfigValidator;
-pub use crate::api::value::{
+pub use crate::api::vo::{
     FormPart, HttpAuth, HttpBody, HttpConfig, HttpConfigBuilder, HttpMethod, HttpRequest,
     HttpRequestBuilder, HttpResponse, SseEvent, SseStream, WsChannel, WsMessage, WsReceiver,
     WsSender,
