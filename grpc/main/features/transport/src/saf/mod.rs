@@ -2,28 +2,30 @@
 
 mod transport_svc;
 
-pub use crate::api::application::ApplicationConfig;
-pub use crate::api::audit::{AuditEvent, AuditEventBuilder, AuditSink, NoopAuditSink};
-pub use crate::api::handler::{
+pub use crate::api::types::application::ApplicationConfig;
+pub use crate::api::types::audit::{AuditEvent, AuditEventBuilder, NoopAuditSink};
+pub use crate::api::traits::{
+    AuditSink, AuthorizationInterceptor, GrpcIngress, GrpcIngressInterceptor, GrpcServer,
+};
+pub use crate::api::types::grpc::{
     DecodeFn as GrpcDecodeFn, EncodeFn as GrpcEncodeFn, GrpcHandlerAdapter,
     GrpcHandlerRegistryDispatcher,
 };
-pub use crate::api::health::{
-    HealthAggregate, HealthService, ServingStatus, HEALTH_CHECK_METHOD, HEALTH_WATCH_METHOD,
-    WATCH_CHANNEL_CAPACITY,
+pub use crate::api::types::health::{
+    HealthAggregate, HealthService, HEALTH_CHECK_METHOD, HEALTH_WATCH_METHOD, WATCH_CHANNEL_CAPACITY,
 };
-pub use crate::api::interceptor::{
-    AuthorizationInterceptor, GrpcIngressInterceptor, GrpcIngressInterceptorChain,
+pub use crate::api::types::ServingStatus;
+pub use crate::api::types::interceptor::{
+    GrpcIngressInterceptorChain, TraceContextInterceptor, EXTRACTED_TRACEPARENT,
+    EXTRACTED_TRACESTATE, TRACEPARENT, TRACESTATE,
 };
-pub use crate::api::interceptor::{
-    TraceContextInterceptor, EXTRACTED_TRACEPARENT, EXTRACTED_TRACESTATE, TRACEPARENT, TRACESTATE,
+pub use crate::api::error::{
+    GrpcIngressError, GrpcServerConfigError, TonicServerError,
 };
-pub use crate::api::error::GrpcIngressError;
-pub use crate::api::traits::GrpcIngress;
 pub use crate::api::types::{GrpcHealthCheck, GrpcIngressResult, GrpcMessageStream};
-pub use crate::api::server::{
-    GrpcServer, GrpcServerConfigError, TonicGrpcServer, TonicGrpcServerBuilder, TonicServerError,
-    MAX_MESSAGE_BYTES, MISSING_AUTHORIZATION_INTERCEPTOR_MSG, REFLECTION_ENABLED_WARN_MSG,
+pub use crate::api::types::server::{
+    TonicGrpcServer, TonicGrpcServerBuilder, MAX_MESSAGE_BYTES,
+    MISSING_AUTHORIZATION_INTERCEPTOR_MSG, REFLECTION_ENABLED_WARN_MSG,
 };
 pub use crate::api::types::internal::grpc_timeout_parser::{GrpcTimeoutParser, DEFAULT_DEADLINE};
 pub use crate::api::types::internal::peer_identity_extractor::PeerIdentityExtractor;

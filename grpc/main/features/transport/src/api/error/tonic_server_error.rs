@@ -1,6 +1,6 @@
 //! Error returned by TonicGrpcServer::serve.
 
-use crate::api::server::grpc::grpc_server_config_error::GrpcServerConfigError;
+use crate::api::error::GrpcServerConfigError;
 
 /// Error returned by [`super::tonic_grpc_server::TonicGrpcServer::serve`].
 #[derive(Debug, thiserror::Error)]

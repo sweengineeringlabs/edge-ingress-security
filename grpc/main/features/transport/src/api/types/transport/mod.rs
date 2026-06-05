@@ -8,7 +8,8 @@ pub mod interceptor;
 pub mod server;
 pub mod value;
 
-pub(crate) mod serving_status;
+pub mod serving_status;
+pub use serving_status::ServingStatus;
 
 pub mod grpc_timeout_parser;
 pub mod status_code_converter;

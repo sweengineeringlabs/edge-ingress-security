@@ -7,8 +7,8 @@ use edge_domain::{Handler, HandlerError, RequestContext};
 
 use crate::api::error::GrpcIngressError;
 
-use crate::api::handler::decode_fn::DecodeFn;
-use crate::api::handler::encode_fn::EncodeFn;
+use super::decode_fn::DecodeFn;
+use super::encode_fn::EncodeFn;
 
 /// Adapter that exposes a typed [`Handler<Req, Resp>`] as a
 /// [`Handler<Vec<u8>, Vec<u8>>`] for registration in a single

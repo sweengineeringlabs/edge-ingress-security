@@ -7,8 +7,8 @@
 /// a primary type matching the filename.
 pub(crate) struct DefaultTraceContextInterceptor;
 
-use crate::api::interceptor::GrpcIngressInterceptor;
-use crate::api::interceptor::{
+use crate::api::traits::GrpcIngressInterceptor;
+use crate::api::types::interceptor::{
     TraceContextInterceptor, EXTRACTED_TRACEPARENT, EXTRACTED_TRACESTATE, TRACEPARENT, TRACESTATE,
 };
 use crate::api::error::GrpcIngressError;

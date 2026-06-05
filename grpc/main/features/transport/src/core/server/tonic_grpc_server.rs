@@ -18,14 +18,13 @@ use tokio_util::sync::CancellationToken;
 
 use edge_domain::RequestContext;
 
-use crate::api::audit::{AuditEvent, AuditSink};
-use crate::api::interceptor::GrpcIngressInterceptorChain;
-use crate::api::error::GrpcIngressError;
-use crate::api::traits::GrpcIngress;
+use crate::api::traits::{AuditSink, GrpcIngress};
+use crate::api::types::audit::AuditEvent;
+use crate::api::types::interceptor::GrpcIngressInterceptorChain;
+use crate::api::error::{GrpcIngressError, TonicServerError};
 use crate::api::types::{GrpcIngressResult, GrpcMessageStream};
-use crate::api::server::{
-    TonicGrpcServer, TonicServerError, MISSING_AUTHORIZATION_INTERCEPTOR_MSG,
-    REFLECTION_ENABLED_WARN_MSG,
+use crate::api::types::server::{
+    TonicGrpcServer, MISSING_AUTHORIZATION_INTERCEPTOR_MSG, REFLECTION_ENABLED_WARN_MSG,
 };
 use crate::api::types::internal::grpc_timeout_parser::{GrpcTimeoutParser, DEFAULT_DEADLINE};
 use crate::api::types::internal::peer_identity_extractor::PeerIdentityExtractor;
@@ -861,9 +860,8 @@ mod tests {
 
     // ── enforce_authorization_invariant ──────────────────────────────────
 
-    use crate::api::interceptor::{
-        AuthorizationInterceptor, GrpcIngressInterceptor, GrpcIngressInterceptorChain,
-    };
+    use crate::api::traits::{AuthorizationInterceptor, GrpcIngressInterceptor};
+    use crate::api::types::interceptor::GrpcIngressInterceptorChain;
     use crate::api::traits::GrpcIngress;
     use crate::api::types::{GrpcHealthCheck, GrpcIngressResult};
     use futures::future::BoxFuture;
@@ -1046,7 +1044,7 @@ mod dedicated_coverage {
 
     #[test]
     fn test_with_interceptors_assigns_chain() {
-        use crate::api::interceptor::GrpcIngressInterceptorChain;
+        use crate::api::types::interceptor::GrpcIngressInterceptorChain;
         let chain = GrpcIngressInterceptorChain::new();
         let s = server().with_interceptors(chain);
         drop(s); // interceptors field is not Option — assignment verified by compilation

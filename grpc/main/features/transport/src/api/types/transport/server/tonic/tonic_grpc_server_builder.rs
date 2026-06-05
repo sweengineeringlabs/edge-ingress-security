@@ -5,9 +5,8 @@ use std::sync::Arc;
 use swe_edge_ingress_tls::IngressTlsConfig;
 
 use super::tonic_grpc_server::TonicGrpcServer;
-use crate::api::audit::AuditSink;
-use crate::api::interceptor::GrpcIngressInterceptorChain;
-use crate::api::traits::GrpcIngress;
+use crate::api::traits::{AuditSink, GrpcIngress};
+use crate::api::types::interceptor::GrpcIngressInterceptorChain;
 use crate::api::value::CompressionMode;
 
 /// Fluent builder for [`TonicGrpcServer`].

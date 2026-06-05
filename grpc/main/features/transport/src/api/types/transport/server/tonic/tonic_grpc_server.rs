@@ -4,12 +4,12 @@ use std::sync::Arc;
 
 use swe_edge_ingress_tls::IngressTlsConfig;
 
-use crate::api::audit::{AuditSink, NoopAuditSink};
-use crate::api::interceptor::GrpcIngressInterceptorChain;
-use crate::api::traits::GrpcIngress;
+use crate::api::traits::{AuditSink, GrpcIngress};
+use crate::api::types::audit::NoopAuditSink;
+use crate::api::types::interceptor::GrpcIngressInterceptorChain;
 use crate::api::value::{CompressionMode, GrpcServerConfig};
 
-use crate::api::server::grpc::grpc_server_config_error::GrpcServerConfigError;
+use crate::api::error::GrpcServerConfigError;
 
 /// Error message when no `AuthorizationInterceptor` is registered and `allow_unauthenticated` is false.
 pub const MISSING_AUTHORIZATION_INTERCEPTOR_MSG: &str =
