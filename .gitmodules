@@ -1,0 +1,4 @@
+[submodule "grpc"]
+	path = grpc
+	url = https://github.com/sweengineeringlabs/edge-ingress-grpc.git
+	branch = dev
