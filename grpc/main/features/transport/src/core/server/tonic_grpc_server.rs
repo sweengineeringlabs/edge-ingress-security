@@ -20,7 +20,8 @@ use edge_domain::RequestContext;
 
 use crate::api::traits::{AuditSink, GrpcIngress};
 use crate::api::types::audit::AuditEvent;
-use crate::api::types::interceptor::GrpcIngressInterceptorChain;
+use crate::api::types::health::{HealthService, HEALTH_CHECK_METHOD, HEALTH_WATCH_METHOD};
+use crate::api::types::interceptor::{GrpcIngressInterceptorChain, TraceContextInterceptor};
 use crate::api::error::{GrpcIngressError, TonicServerError};
 use crate::api::types::{GrpcIngressResult, GrpcMessageStream};
 use crate::api::types::server::{
@@ -122,7 +123,19 @@ impl TonicGrpcServer {
         let handler = self.handler.clone();
         let max_bytes = self.max_bytes;
         let max_concurrent_streams = self.max_concurrent_streams;
-        let interceptors = self.interceptors.clone();
+        // Prepend TraceContextInterceptor when auto_trace_context is set so
+        // trace propagation is always the outermost interceptor in the chain.
+        let interceptors = {
+            let base = self.interceptors.clone();
+            if self.auto_trace_context {
+                GrpcIngressInterceptorChain::new()
+                    .push(Arc::new(TraceContextInterceptor::default()))
+                    .merge(base)
+            } else {
+                base
+            }
+        };
+        let health_service = self.health_service.clone();
         let compression = self.compression;
         let audit_sink = self.audit_sink.clone();
         let mut shutdown = std::pin::pin!(shutdown);
@@ -134,10 +147,11 @@ impl TonicGrpcServer {
                         Ok(s)  => s,
                         Err(e) => { tracing::warn!("gRPC accept error: {e}"); continue; }
                     };
-                    let handler      = handler.clone();
-                    let tls_acceptor = tls_acceptor.clone();
-                    let interceptors = interceptors.clone();
-                    let audit_sink   = audit_sink.clone();
+                    let handler        = handler.clone();
+                    let tls_acceptor   = tls_acceptor.clone();
+                    let interceptors   = interceptors.clone();
+                    let health_service = health_service.clone();
+                    let audit_sink     = audit_sink.clone();
                     tokio::spawn(async move {
                         if let Some(acceptor) = tls_acceptor {
                             match acceptor.accept(stream).await {
@@ -155,15 +169,17 @@ impl TonicGrpcServer {
 
                                     let io = TokioIo::new(tls);
                                     let svc = hyper::service::service_fn({
-                                        let handler         = handler.clone();
-                                        let interceptors    = interceptors.clone();
-                                        let peer_metadata   = peer_metadata.clone();
-                                        let audit_sink      = audit_sink.clone();
+                                        let handler          = handler.clone();
+                                        let interceptors     = interceptors.clone();
+                                        let health_service   = health_service.clone();
+                                        let peer_metadata    = peer_metadata.clone();
+                                        let audit_sink       = audit_sink.clone();
                                         move |req| {
-                                            let handler       = handler.clone();
-                                            let interceptors  = interceptors.clone();
-                                            let peer_metadata = peer_metadata.clone();
-                                            let audit_sink    = audit_sink.clone();
+                                            let handler        = handler.clone();
+                                            let interceptors   = interceptors.clone();
+                                            let health_service = health_service.clone();
+                                            let peer_metadata  = peer_metadata.clone();
+                                            let audit_sink     = audit_sink.clone();
                                             async move {
                                                 Ok::<_, Infallible>(TonicServerDispatcher::dispatch(
                                                     req,
@@ -173,6 +189,7 @@ impl TonicGrpcServer {
                                                     compression,
                                                     peer_metadata,
                                                     audit_sink,
+                                                    health_service,
                                                 ).await)
                                             }
                                         }
@@ -191,13 +208,15 @@ impl TonicGrpcServer {
                             // Plaintext connection — no peer identity available.
                             let io = TokioIo::new(stream);
                             let svc = hyper::service::service_fn({
-                                let handler      = handler.clone();
-                                let interceptors = interceptors.clone();
-                                let audit_sink   = audit_sink.clone();
+                                let handler        = handler.clone();
+                                let interceptors   = interceptors.clone();
+                                let health_service = health_service.clone();
+                                let audit_sink     = audit_sink.clone();
                                 move |req| {
-                                    let handler      = handler.clone();
-                                    let interceptors = interceptors.clone();
-                                    let audit_sink   = audit_sink.clone();
+                                    let handler        = handler.clone();
+                                    let interceptors   = interceptors.clone();
+                                    let health_service = health_service.clone();
+                                    let audit_sink     = audit_sink.clone();
                                     async move {
                                         Ok::<_, Infallible>(TonicServerDispatcher::dispatch(
                                             req,
@@ -207,6 +226,7 @@ impl TonicGrpcServer {
                                             compression,
                                             HashMap::new(),
                                             audit_sink,
+                                            health_service,
                                         ).await)
                                     }
                                 }
@@ -244,6 +264,11 @@ impl TonicServerDispatcher {
             .unwrap_or(DEFAULT_DEADLINE)
     }
 
+    // Each argument is a distinct, non-groupable concern: the request,
+    // the handler, two server-level limits, the per-connection interceptor
+    // chain, compression hint, per-connection peer identity, audit sink, and
+    // the optional health router.  No smaller split is coherent.
+    #[allow(clippy::too_many_arguments)]
     async fn dispatch(
         req: Request<hyper::body::Incoming>,
         handler: Arc<dyn GrpcIngress>,
@@ -252,12 +277,61 @@ impl TonicServerDispatcher {
         compression: CompressionMode,
         peer_metadata: HashMap<String, String>,
         audit_sink: Arc<dyn AuditSink>,
+        health_service: Option<Arc<HealthService>>,
     ) -> Response<BoxBody> {
         let method = req.uri().path().to_string();
         let started = Instant::now();
         let timestamp = SystemTime::now();
-        let metadata = Self::collect_metadata(req.headers());
         let deadline = Self::read_deadline(req.headers());
+
+        // Route grpc.health.v1.Health paths to the auto-wired HealthService.
+        // These endpoints bypass the main interceptor chain and are always
+        // unauthenticated — health checks must remain reachable during auth
+        // outages.
+        if method == HEALTH_CHECK_METHOD || method == HEALTH_WATCH_METHOD {
+            if let Some(hs) = health_service.as_ref() {
+                if deadline.is_zero() {
+                    return Self::grpc_error(
+                        tonic::Code::DeadlineExceeded,
+                        "deadline already elapsed",
+                    );
+                }
+                let body_bytes = match Limited::new(req.into_body(), max_bytes).collect().await {
+                    Ok(c) => c.to_bytes(),
+                    Err(_) => {
+                        return Self::grpc_error(tonic::Code::ResourceExhausted, "message too large")
+                    }
+                };
+                let frames = Self::decode_grpc_frames(&body_bytes);
+                let messages: GrpcMessageStream = Box::pin(futures::stream::iter(
+                    frames
+                        .into_iter()
+                        .map(|f| Ok::<Vec<u8>, GrpcIngressError>(f.to_vec())),
+                ));
+                return match hs
+                    .handle_stream(
+                        method,
+                        GrpcMetadata::default(),
+                        messages,
+                        RequestContext::unauthenticated(),
+                    )
+                    .await
+                {
+                    Ok((resp_stream, resp_meta)) => {
+                        let collected = Self::collect_response_payload(resp_stream)
+                            .await
+                            .unwrap_or_default();
+                        Self::grpc_stream_response_from_payloads(collected, resp_meta).await
+                    }
+                    Err(e) => {
+                        let (code, msg) = StatusCodeConverter::map_inbound_error(e);
+                        Self::grpc_error(code, msg)
+                    }
+                };
+            }
+        }
+
+        let metadata = Self::collect_metadata(req.headers());
 
         // Identity for audit — drawn from the cryptographic peer
         // metadata snapshot taken at TLS-acceptance time.  Plaintext
@@ -977,6 +1051,53 @@ mod tests {
         let server = TonicGrpcServer::from_config(&cfg, Arc::new(TonicGrpcServerDummyHandler))
             .expect("config valid");
         assert!(server.is_reflection_enabled());
+    }
+
+    // ── auto-wired TraceContextInterceptor ────────────────────────────────
+
+    #[test]
+    fn test_new_autowires_trace_context_interceptor_by_default() {
+        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler))
+            .allow_unauthenticated(true);
+        // auto_trace_context flag must be true so serve_with_listener prepends
+        // TraceContextInterceptor when building the effective chain.
+        assert!(server.auto_trace_context);
+    }
+
+    #[test]
+    fn test_without_trace_context_clears_flag() {
+        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler))
+            .allow_unauthenticated(true)
+            .without_trace_context();
+        assert!(!server.auto_trace_context);
+    }
+
+    // ── auto-wired HealthService ──────────────────────────────────────────
+
+    #[test]
+    fn test_new_autowires_health_service_by_default() {
+        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler));
+        assert!(server.health_service().is_some());
+    }
+
+    #[test]
+    fn test_without_health_service_removes_auto_wired_instance() {
+        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler))
+            .without_health_service();
+        assert!(server.health_service().is_none());
+    }
+
+    #[test]
+    fn test_with_health_service_replaces_default() {
+        let custom = Arc::new(crate::api::types::health::HealthService::new());
+        let ptr = Arc::as_ptr(&custom);
+        let server = TonicGrpcServer::new("127.0.0.1:0", Arc::new(TonicGrpcServerDummyHandler))
+            .with_health_service(custom);
+        // pointer equality confirms our instance was stored, not a fresh default.
+        assert_eq!(
+            Arc::as_ptr(server.health_service().unwrap()),
+            ptr
+        );
     }
 }
 

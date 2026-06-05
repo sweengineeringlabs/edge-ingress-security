@@ -6,6 +6,7 @@ use swe_edge_ingress_tls::IngressTlsConfig;
 
 use crate::api::traits::{AuditSink, GrpcIngress};
 use crate::api::types::audit::NoopAuditSink;
+use crate::api::types::health::HealthService;
 use crate::api::types::interceptor::GrpcIngressInterceptorChain;
 use crate::api::value::{CompressionMode, GrpcServerConfig};
 
@@ -38,10 +39,18 @@ pub struct TonicGrpcServer {
     pub(crate) allow_unauthenticated: bool,
     pub(crate) audit_sink: Arc<dyn AuditSink>,
     pub(crate) enable_reflection: bool,
+    /// Auto-wired `grpc.health.v1.Health` service. `None` after `.without_health_service()`.
+    pub(crate) health_service: Option<Arc<HealthService>>,
+    /// When `true`, `TraceContextInterceptor` is prepended to the chain at serve time.
+    pub(crate) auto_trace_context: bool,
 }
 
 impl TonicGrpcServer {
     /// Create a server that will bind to `bind` and delegate to `handler`.
+    ///
+    /// [`TraceContextInterceptor`] and a default [`HealthService`] are wired
+    /// automatically. Opt out with [`.without_trace_context()`] /
+    /// [`.without_health_service()`] if needed.
     pub fn new(bind: impl Into<String>, handler: Arc<dyn GrpcIngress>) -> Self {
         Self {
             bind: bind.into(),
@@ -54,6 +63,8 @@ impl TonicGrpcServer {
             allow_unauthenticated: false,
             audit_sink: Arc::new(NoopAuditSink),
             enable_reflection: false,
+            health_service: Some(Arc::new(HealthService::new())),
+            auto_trace_context: true,
         }
     }
 
@@ -76,6 +87,8 @@ impl TonicGrpcServer {
             allow_unauthenticated: config.allow_unauthenticated,
             audit_sink: Arc::new(NoopAuditSink),
             enable_reflection: config.enable_reflection,
+            health_service: Some(Arc::new(HealthService::new())),
+            auto_trace_context: true,
         })
     }
 
@@ -129,6 +142,40 @@ impl TonicGrpcServer {
     /// Attach a TLS configuration (enables mTLS when a CA cert is provided).
     pub fn with_tls(mut self, config: IngressTlsConfig) -> Self {
         self.tls = Some(config);
+        self
+    }
+
+    /// Disable the auto-wired `TraceContextInterceptor`.
+    ///
+    /// Use this when your interceptor chain already includes trace context
+    /// extraction, or when you want to control ordering manually.
+    pub fn without_trace_context(mut self) -> Self {
+        self.auto_trace_context = false;
+        self
+    }
+
+    /// Disable the auto-wired `grpc.health.v1.Health` service.
+    ///
+    /// Use this when you implement health checking inside your own handler,
+    /// or when you do not want the standard health endpoint exposed.
+    pub fn without_health_service(mut self) -> Self {
+        self.health_service = None;
+        self
+    }
+
+    /// Access the auto-wired [`HealthService`] to set per-service statuses.
+    ///
+    /// Returns `None` if `.without_health_service()` was called.
+    pub fn health_service(&self) -> Option<&Arc<HealthService>> {
+        self.health_service.as_ref()
+    }
+
+    /// Replace the auto-wired [`HealthService`] with a caller-provided instance.
+    ///
+    /// Use this when you need to share a single `HealthService` across
+    /// multiple components (e.g. to update status from a background task).
+    pub fn with_health_service(mut self, hs: Arc<HealthService>) -> Self {
+        self.health_service = Some(hs);
         self
     }
 }

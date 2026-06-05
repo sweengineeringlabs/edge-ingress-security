@@ -79,4 +79,10 @@ impl GrpcIngressInterceptorChain {
         }
         Ok(())
     }
+
+    /// Append all interceptors from `other` to the end of this chain.
+    pub fn merge(mut self, other: GrpcIngressInterceptorChain) -> Self {
+        self.interceptors.extend(other.interceptors);
+        self
+    }
 }
