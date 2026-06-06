@@ -1,3 +1,4 @@
-pub mod axum_server_error;
+//! Server-theme error types.
+pub mod http_server_error;
 
-pub use axum_server_error::AxumServerError;
+pub use http_server_error::HttpServerError;

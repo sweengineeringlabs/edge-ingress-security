@@ -150,7 +150,7 @@ async fn test_server_returns_413_when_body_exceeds_configured_limit() {
     assert_eq!(resp.status(), 413);
 }
 
-/// @covers: serve — bind to unavailable address returns AxumServerError::Bind
+/// @covers: serve — bind to unavailable address returns HttpServerError::Bind
 #[tokio::test]
 async fn test_server_returns_bind_error_for_privileged_port() {
     // Hold a listener on an ephemeral port so the second bind must fail cross-platform.

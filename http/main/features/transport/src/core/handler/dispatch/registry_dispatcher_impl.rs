@@ -132,10 +132,8 @@ mod tests {
         RequestContext::unauthenticated()
     }
 
-    fn make_ping_adapter() -> crate::api::handler::types::HttpHandlerAdapter<
-        HttpRequest,
-        HttpResponse,
-    > {
+    fn make_ping_adapter(
+    ) -> crate::api::handler::types::HttpHandlerAdapter<HttpRequest, HttpResponse> {
         struct RegistryDispatcherImplH;
         #[async_trait::async_trait]
         impl Handler<HttpRequest, HttpResponse> for RegistryDispatcherImplH {

@@ -1,8 +1,8 @@
-//! Error type returned by [`AxumHttpServer::serve`].
+//! Error returned when serving an HTTP endpoint fails.
 
-/// Error returned by [`AxumHttpServer::serve`].
+/// Error returned by an HTTP server implementation while binding or serving.
 #[derive(Debug, thiserror::Error)]
-pub enum AxumServerError {
+pub enum HttpServerError {
     /// Failed to bind the server socket.
     #[error("failed to bind to {0}: {1}")]
     Bind(String, #[source] std::io::Error),

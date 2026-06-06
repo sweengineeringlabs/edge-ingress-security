@@ -3,22 +3,22 @@
 use axum::Router;
 use tokio::net::TcpListener;
 
-use crate::api::server::types::AxumHttpServer;
-use crate::api::server::error::AxumServerError;
-use crate::api::server::types::axum::axum_http_server_helper::AxumHttpServerHelper;
+use super::axum_http_server::AxumHttpServer;
+use super::axum_http_server_helper::AxumHttpServerHelper;
+use crate::api::server::error::HttpServerError;
 
 impl AxumHttpServer {
     /// Bind and serve until `shutdown` resolves.
     ///
     /// Axum performs a graceful drain on shutdown: in-flight requests
     /// complete before the listener closes.
-    pub async fn serve<F>(&self, shutdown: F) -> Result<(), AxumServerError>
+    pub async fn serve<F>(&self, shutdown: F) -> Result<(), HttpServerError>
     where
         F: std::future::Future<Output = ()> + Send + 'static,
     {
         let listener = TcpListener::bind(&self.bind)
             .await
-            .map_err(|e| AxumServerError::Bind(self.bind.clone(), e))?;
+            .map_err(|e| HttpServerError::Bind(self.bind.clone(), e))?;
         self.serve_with_listener(listener, shutdown).await
     }
 
@@ -31,7 +31,7 @@ impl AxumHttpServer {
         &self,
         listener: TcpListener,
         shutdown: F,
-    ) -> Result<(), AxumServerError>
+    ) -> Result<(), HttpServerError>
     where
         F: std::future::Future<Output = ()> + Send + 'static,
     {
@@ -98,7 +98,7 @@ impl AxumHttpServer {
             axum::serve(listener, app)
                 .with_graceful_shutdown(shutdown)
                 .await
-                .map_err(AxumServerError::Serve)
+                .map_err(HttpServerError::Serve)
         }
     }
 }
@@ -109,8 +109,8 @@ mod dedicated_coverage {
     use crate::api::traits::HttpIngress;
     use crate::api::types::http_health_check::HttpHealthCheck;
     use crate::api::types::http_ingress_result::HttpIngressResult;
-    use crate::api::server::types::axum::MAX_BODY_BYTES;
     use crate::api::vo::{HttpRequest, HttpResponse};
+    use crate::spi::server::axum::MAX_BODY_BYTES;
     use edge_domain::RequestContext;
     use futures::future::BoxFuture;
     use std::sync::Arc;

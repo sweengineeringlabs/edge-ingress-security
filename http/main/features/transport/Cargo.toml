@@ -107,8 +107,8 @@ name    = "axum_http_server_builder_test"
 path    = "tests/axum_http_server_builder_int_test.rs"
 
 [[test]]
-name    = "axum_server_error_test"
-path    = "tests/axum_server_error_int_test.rs"
+name    = "http_server_error_test"
+path    = "tests/http_server_error_int_test.rs"
 
 [[test]]
 name    = "http_config_validator_test"

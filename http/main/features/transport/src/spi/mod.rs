@@ -1,3 +1,2 @@
-//! Service-provider extension hooks for HTTP transport consumers.
-
-pub(crate) mod extension;
+//! SPI layer — implementations of `api/` contracts backed by external libraries.
+pub(crate) mod server;
