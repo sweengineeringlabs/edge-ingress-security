@@ -1,13 +1,10 @@
-//! HTTP transport value types.
+//! Cross-theme HTTP transport types.
 
-pub mod handler;
+pub mod http;
+pub mod sse;
+pub mod ws;
 pub mod transport_svc;
 pub use transport_svc::TransportSvc;
-pub mod http;
-pub mod server;
-pub mod sse;
-pub mod validator;
-pub mod ws;
 
 pub mod http_health_check;
 pub mod http_ingress_result;

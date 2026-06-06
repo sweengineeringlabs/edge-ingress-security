@@ -5,8 +5,8 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use edge_domain::{Handler, HandlerError, RequestContext};
 
-use crate::api::traits::http::HttpDecodeFn;
-use crate::api::traits::http::HttpEncodeFn;
+use crate::api::handler::traits::HttpDecodeFn;
+use crate::api::handler::traits::HttpEncodeFn;
 use crate::api::vo::{HttpRequest, HttpResponse};
 
 /// Adapter that exposes a typed [`Handler<Req, Resp>`] as a

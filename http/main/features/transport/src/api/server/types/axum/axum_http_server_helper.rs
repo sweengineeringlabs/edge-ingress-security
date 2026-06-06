@@ -420,14 +420,14 @@ impl AxumHttpServerHelper {
         stream_handler: Option<Arc<dyn crate::api::traits::HttpStream>>,
         tls_cfg: &IngressTlsConfig,
         shutdown: F,
-    ) -> Result<(), crate::api::error::AxumServerError>
+    ) -> Result<(), crate::api::server::error::AxumServerError>
     where
         F: std::future::Future<Output = ()> + Send + 'static,
     {
         use hyper_util::rt::{TokioExecutor, TokioIo};
 
         let acceptor = swe_edge_ingress_tls::TlsSvc::build_tls_acceptor(tls_cfg)
-            .map_err(crate::api::error::AxumServerError::Tls)?;
+            .map_err(crate::api::server::error::AxumServerError::Tls)?;
 
         let mut shutdown = std::pin::pin!(shutdown);
 

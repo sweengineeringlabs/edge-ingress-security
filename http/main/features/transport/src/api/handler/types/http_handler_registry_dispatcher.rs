@@ -6,8 +6,8 @@ use edge_domain::{Handler as _, HandlerRegistry};
 use parking_lot::RwLock;
 use swe_observ_metrics::MetricsProvider;
 
-use crate::api::error::HttpDispatcherError;
-use crate::api::types::handler::http::http_handler_adapter::HttpHandlerAdapter;
+use crate::api::handler::error::HttpDispatcherError;
+use crate::api::handler::types::http_handler_adapter::HttpHandlerAdapter;
 use crate::api::vo::{HttpRequest, HttpResponse};
 
 /// Dispatcher that routes inbound HTTP requests through a
