@@ -1,0 +1,32 @@
+[workspace]
+resolver = "2"
+members  = [
+  "tls",
+  "verifier",
+  "transport",
+  "http-verifier",
+  "message-consumer",
+]
+
+[workspace.package]
+version      = "0.1.0"
+edition      = "2021"
+license      = "MIT OR Apache-2.0"
+rust-version = "1.95"
+authors      = ["SWE Engineering Labs"]
+repository   = "https://github.com/sweengineeringlabs/edge-ingress-security"
+
+[workspace.lints.rust]
+unsafe_code  = "deny"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+
+[workspace.dependencies]
+edge-domain            = { git = "https://github.com/sweengineeringlabs/edge-domain.git",             tag = "v0.2.0" }
+swe-edge-configbuilder = { git = "https://github.com/sweengineeringlabs/edge-configbuilder.git",  tag = "v0.2.0" }
+swe-edge-message-broker = { git = "https://github.com/sweengineeringlabs/edge-message-broker.git", tag = "v0.2.0" }
+swe-edge-ingress-tls   = { path = "tls" }
+swe-edge-ingress-verifier = { path = "verifier" }
