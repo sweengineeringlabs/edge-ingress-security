@@ -1,8 +1,6 @@
 //! Integration tests — Validator trait via SAF.
 
-use swe_edge_ingress_message_consumer::{
-    MessageConsumerSvc, MessageConsumerConfig, Validator,
-};
+use swe_edge_ingress_message_consumer::{MessageConsumerConfig, MessageConsumerSvc, Validator};
 
 /// @covers: MessageConsumerSvc::validate — delegates to the Validator impl; non-zero default capacity passes.
 #[test]

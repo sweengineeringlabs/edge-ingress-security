@@ -1424,6 +1424,18 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 [[package]]
 name = "swe-edge-configbuilder"
 version = "0.1.0"
+source = "git+https://github.com/sweengineeringlabs/edge-configbuilder.git?tag=v0.1.0#aa3c23c6b9373b75a859522640eaaada43f7c85d"
+dependencies = [
+ "dirs",
+ "regex",
+ "serde",
+ "thiserror 2.0.18",
+ "toml",
+]
+
+[[package]]
+name = "swe-edge-configbuilder"
+version = "0.1.0"
 source = "git+https://github.com/sweengineeringlabs/edge-configbuilder.git?tag=v0.2.0#9e46c0eea28e219a990e75fcd6493836d646e68d"
 dependencies = [
  "dirs",
@@ -1452,7 +1464,7 @@ dependencies = [
  "rustls",
  "serde",
  "serde_json",
- "swe-edge-configbuilder",
+ "swe-edge-configbuilder 0.1.0 (git+https://github.com/sweengineeringlabs/edge-configbuilder.git?tag=v0.2.0)",
  "swe-edge-ingress-tls",
  "swe-edge-ingress-verifier",
  "swe_justobserv_context",
@@ -1465,6 +1477,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "swe-edge-ingress-http-verifier"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "edge-domain",
+ "http",
+ "serde_json",
+ "swe-edge-configbuilder 0.1.0 (git+https://github.com/sweengineeringlabs/edge-configbuilder.git?tag=v0.2.0)",
+ "swe-edge-ingress-verifier",
+ "thiserror 2.0.18",
+ "tokio",
+ "tower",
+ "tracing",
+]
+
+[[package]]
+name = "swe-edge-ingress-message-consumer"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "serde",
+ "swe-edge-configbuilder 0.1.0 (git+https://github.com/sweengineeringlabs/edge-configbuilder.git?tag=v0.2.0)",
+ "swe-edge-message-broker",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "swe-edge-ingress-tls"
 version = "0.1.0"
 dependencies = [
@@ -1472,7 +1513,7 @@ dependencies = [
  "rustls",
  "rustls-pemfile",
  "serde",
- "swe-edge-configbuilder",
+ "swe-edge-configbuilder 0.1.0 (git+https://github.com/sweengineeringlabs/edge-configbuilder.git?tag=v0.2.0)",
  "tempfile",
  "thiserror 2.0.18",
  "tokio-rustls",
@@ -1487,9 +1528,22 @@ dependencies = [
  "serde",
  "serde_json",
  "subtle",
- "swe-edge-configbuilder",
+ "swe-edge-configbuilder 0.1.0 (git+https://github.com/sweengineeringlabs/edge-configbuilder.git?tag=v0.2.0)",
  "thiserror 2.0.18",
  "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "swe-edge-message-broker"
+version = "0.1.0"
+source = "git+https://github.com/sweengineeringlabs/edge-message-broker.git?tag=v0.2.0#9adbcb130c54b2cd2e28aef733c857c8d04b9614"
+dependencies = [
+ "bytes",
+ "futures",
+ "serde",
+ "swe-edge-configbuilder 0.1.0 (git+https://github.com/sweengineeringlabs/edge-configbuilder.git?tag=v0.1.0)",
+ "thiserror 1.0.69",
  "tracing",
 ]
 

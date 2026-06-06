@@ -4,6 +4,8 @@ members  = [
   "tls",
   "verifier",
   "http/main/features/transport",
+  "http/main/features/verifier",
+  "message-broker/main/transport",
 ]
 
 [workspace.package]
@@ -25,5 +27,6 @@ expect_used = "deny"
 [workspace.dependencies]
 edge-domain            = { git = "https://github.com/sweengineeringlabs/edge-domain.git",             tag = "v0.2.0" }
 swe-edge-configbuilder = { git = "https://github.com/sweengineeringlabs/edge-configbuilder.git",  tag = "v0.2.0" }
+swe-edge-message-broker = { git = "https://github.com/sweengineeringlabs/edge-message-broker.git", tag = "v0.2.0" }
 swe-edge-ingress-tls   = { path = "tls" }
 swe-edge-ingress-verifier = { path = "verifier" }
