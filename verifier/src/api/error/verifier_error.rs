@@ -1,7 +1,7 @@
 //! `VerifierError` — error type for all verifier operations.
 
-/// Errors returned by [`TokenVerifier`](super::token_verifier::TokenVerifier)
-/// and [`ApiKeyVerifier`](super::api_key_verifier::ApiKeyVerifier).
+/// Errors returned by [`TokenVerifier`](crate::api::traits::token_verifier::TokenVerifier)
+/// and [`ApiKeyVerifier`](crate::api::types::api_key_verifier::ApiKeyVerifier).
 ///
 /// All variants except [`Config`](VerifierError::Config) indicate a caller
 /// error (bad token, expired token, wrong key) — return HTTP 401 to the client.

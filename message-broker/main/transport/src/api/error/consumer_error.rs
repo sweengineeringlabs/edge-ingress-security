@@ -2,7 +2,7 @@
 
 use swe_edge_message_broker::BrokerError;
 
-/// Errors returned by [`MessageConsumer`](crate::api::port::MessageConsumer) operations.
+/// Errors returned by [`MessageConsumer`](crate::api::traits::MessageConsumer) operations.
 #[derive(Debug, thiserror::Error)]
 pub enum ConsumerError {
     /// Failed to subscribe to the given topic.

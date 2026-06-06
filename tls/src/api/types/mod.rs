@@ -1,8 +1,5 @@
-//! TLS value objects.
+//! TLS API types.
 
-pub mod ingress_tls_config;
-
-pub use ingress_tls_config::IngressTlsConfig;
 pub mod tls_svc;
 pub use tls_svc::TlsSvc;
 pub mod noop_tls_extension;

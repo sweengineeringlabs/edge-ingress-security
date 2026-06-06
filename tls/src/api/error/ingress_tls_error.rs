@@ -40,8 +40,8 @@ pub enum IngressTlsError {
     #[error("failed to parse private key: {0}")]
     KeyParse(String),
 
-    /// rustls [`ServerConfig`](rustls::ServerConfig) could not be built from
-    /// the provided materials.
+    /// The TLS server configuration could not be built from the provided
+    /// certificate and key materials.
     #[error("TLS configuration error: {0}")]
     Config(String),
 }

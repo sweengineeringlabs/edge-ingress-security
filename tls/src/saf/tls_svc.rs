@@ -3,9 +3,9 @@
 use swe_edge_configbuilder::ConfigLoaderFactory;
 
 use crate::api::error::ingress_tls_error::IngressTlsError;
-use crate::api::types::ingress_tls_config::IngressTlsConfig;
 use crate::api::types::TlsSvc;
-use crate::core::DefaultAcceptorBuilder;
+use crate::api::vo::ingress_tls_config::IngressTlsConfig;
+use crate::spi::acceptor::rustls::RustlsAcceptorBuilder;
 
 impl TlsSvc {
     /// Return a config builder pre-seeded with this crate's package name and version.
@@ -46,7 +46,7 @@ impl TlsSvc {
     pub fn build_tls_acceptor(
         config: &IngressTlsConfig,
     ) -> Result<tokio_rustls::TlsAcceptor, IngressTlsError> {
-        let acceptor = DefaultAcceptorBuilder::build(config)?;
+        let acceptor = RustlsAcceptorBuilder::build(config)?;
         Ok(acceptor)
     }
 

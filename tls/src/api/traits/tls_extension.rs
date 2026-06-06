@@ -1,6 +1,6 @@
 //! `TlsExtension` — extension hook for downstream TLS customisation.
 
-use crate::api::types::IngressTlsConfig;
+use crate::api::vo::IngressTlsConfig;
 
 /// Downstream extension point for TLS configuration.
 ///

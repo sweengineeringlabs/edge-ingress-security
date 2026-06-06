@@ -1,7 +1,7 @@
 //! `TokenVerifier` — protocol-agnostic JWT verification trait.
 
 use crate::api::error::VerifierError;
-use crate::api::types::Claims;
+use crate::api::vo::Claims;
 
 /// Verifies an inbound bearer token string and returns its claims.
 ///
