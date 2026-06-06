@@ -1,9 +1,6 @@
 //! Cross-theme HTTP transport types.
 
-pub mod http;
-pub mod sse;
 pub mod transport_svc;
-pub mod ws;
 pub use transport_svc::TransportSvc;
 
 pub mod http_health_check;

@@ -5,7 +5,7 @@ use std::pin::Pin;
 use futures::Stream;
 
 use crate::api::error::HttpIngressError;
-use crate::api::vo::sse::sse_event::SseEvent;
+use crate::api::vo::sse_event::SseEvent;
 
 /// A lazy stream of [`SseEvent`] items pushed to a connected HTTP client.
 ///

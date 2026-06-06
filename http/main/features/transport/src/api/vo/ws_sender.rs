@@ -2,7 +2,7 @@
 
 use tokio::sync::mpsc;
 
-use crate::api::vo::ws::ws_message::WsMessage;
+use crate::api::vo::ws_message::WsMessage;
 
 /// The send half of a [`WsChannel`](super::ws_channel::WsChannel).
 ///
