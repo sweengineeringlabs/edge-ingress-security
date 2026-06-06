@@ -3,8 +3,8 @@
 use axum::Router;
 use tokio::net::TcpListener;
 
-use crate::api::server::axum::axum_http_server::AxumHttpServer;
-use crate::api::server::axum::axum_server_error::AxumServerError;
+use crate::api::types::server::AxumHttpServer;
+use crate::api::error::AxumServerError;
 use crate::api::types::server::axum::axum_http_server_helper::AxumHttpServerHelper;
 
 impl AxumHttpServer {

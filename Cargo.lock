@@ -291,7 +291,7 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 [[package]]
 name = "edge-domain"
 version = "0.1.0"
-source = "git+https://github.com/sweengineeringlabs/edge-domain.git?branch=dev#e4b593ca66da5e5fc1a3b9d18bbbc86a20cf8798"
+source = "git+https://github.com/sweengineeringlabs/edge-domain.git?tag=v0.1.0#1af0d4daa829190ed18c207ddae46ea8d7247188"
 dependencies = [
  "async-trait",
  "futures",
@@ -1424,7 +1424,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 [[package]]
 name = "swe-edge-configbuilder"
 version = "0.1.0"
-source = "git+https://github.com/sweengineeringlabs/edge-configbuilder.git?branch=dev#ca37509d4f0b7f4494d5fce6c39b507146aaa402"
+source = "git+https://github.com/sweengineeringlabs/edge-configbuilder.git?tag=v0.1.0#aa3c23c6b9373b75a859522640eaaada43f7c85d"
 dependencies = [
  "dirs",
  "regex",

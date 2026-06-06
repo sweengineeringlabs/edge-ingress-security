@@ -6,7 +6,7 @@ use edge_domain::{HandlerError, RequestContext};
 use futures::future::BoxFuture;
 
 use crate::api::error::HttpIngressError;
-use crate::api::handler::http::http_handler_registry_dispatcher::HttpHandlerRegistryDispatcher;
+use crate::api::types::handler::HttpHandlerRegistryDispatcher;
 use crate::api::traits::HttpIngress;
 use crate::api::types::http_health_check::HttpHealthCheck;
 use crate::api::types::http_ingress_result::HttpIngressResult;
@@ -120,7 +120,7 @@ mod tests {
 
     use super::*;
     use crate::api::error::HttpIngressError;
-    use crate::api::handler::http::http_handler_adapter::HttpHandlerAdapter;
+    use crate::api::types::handler::HttpHandlerAdapter;
     use crate::api::traits::HttpIngress;
     use crate::api::vo::HttpRequest;
 
@@ -132,7 +132,7 @@ mod tests {
         RequestContext::unauthenticated()
     }
 
-    fn make_ping_adapter() -> crate::api::handler::http::http_handler_adapter::HttpHandlerAdapter<
+    fn make_ping_adapter() -> crate::api::types::handler::http::HttpHandlerAdapter<
         HttpRequest,
         HttpResponse,
     > {
