@@ -1,5 +1,7 @@
 # swe-edge-ingress-verifier
 
+> **TLDR:** Pluggable inbound token verification for swe-edge — JWT (HMAC-SHA256 / RS256), API key, and noop stub behind one `TokenVerifier` trait. See [Overview](../docs/README.md) for details.
+
 Token verification for `swe-edge` inbound transports.
 
 Provides the `TokenVerifier` port trait and two implementations: `JwtVerifier`
