@@ -7,7 +7,7 @@ members  = [
 ]
 
 [workspace.package]
-version      = "0.4.1"
+version      = "0.5.0"
 edition      = "2021"
 license      = "MIT OR Apache-2.0"
 rust-version = "1.95"
@@ -23,7 +23,7 @@ unwrap_used = "deny"
 expect_used = "deny"
 
 [workspace.dependencies]
-edge-domain            = { git = "https://github.com/sweengineeringlabs/edge-domain.git",             tag = "v0.8.0" }
+edge-domain            = { git = "https://github.com/sweengineeringlabs/edge-domain.git",             tag = "v0.8.1" }
 swe-edge-configbuilder = { git = "https://github.com/sweengineeringlabs/edge-configbuilder.git",  tag = "v0.3.0" }
 swe-edge-message-broker = { git = "https://github.com/sweengineeringlabs/edge-message-broker.git", tag = "v0.3.0" }
 swe-edge-ingress-tls   = { path = "tls" }
