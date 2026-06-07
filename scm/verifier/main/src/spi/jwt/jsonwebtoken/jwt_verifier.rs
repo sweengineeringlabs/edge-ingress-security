@@ -11,9 +11,8 @@ use crate::spi::jwt::jsonwebtoken::token_verifier_impl::DefaultJwtVerifier;
 /// Validates signature, `exp`, `nbf`, and optionally `iss` and `aud`.
 /// Construct via [`JwtVerifier::from_config`]. The verifier implements
 /// [`TokenVerifier`](crate::TokenVerifier) so it can be boxed and stored
-/// as `Arc<dyn TokenVerifier>` for use with [`BearerTokenInterceptor`].
-///
-/// [`BearerTokenInterceptor`]: swe_edge_ingress_grpc_verifier::BearerTokenInterceptor
+/// as `Arc<dyn TokenVerifier>` for use with `BearerTokenInterceptor`
+/// from `swe-edge-ingress-grpc-verifier`.
 ///
 /// # Examples
 ///
