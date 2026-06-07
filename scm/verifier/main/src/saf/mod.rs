@@ -7,5 +7,5 @@ pub use crate::api::traits::TokenVerifier;
 pub use crate::api::types::{
     ApiKeyVerifier, ApplicationConfigBuilder, NoopVerifierExtension, VerifierSvc,
 };
-pub use crate::api::vo::{Claims, ClaimsBuilder, JwtConfig, JwtKey};
+pub use crate::api::types::{Claims, ClaimsBuilder, JwtConfig, JwtKey};
 pub use crate::spi::jwt::jsonwebtoken::JwtVerifier;

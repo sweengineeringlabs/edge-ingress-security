@@ -5,7 +5,7 @@
 //! (ADR-008 §1).
 
 use crate::api::error::IngressTlsError;
-use crate::api::vo::IngressTlsConfig;
+use crate::api::types::IngressTlsConfig;
 
 /// Contract for types that build a TLS acceptor from a config.
 pub trait AcceptorBuilder: Send + Sync {

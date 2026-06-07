@@ -1,4 +1,5 @@
 //! Integration tests — broker consumer via SAF (replaces default/in-memory backend tests).
+// @allow: no_mocks_in_integration — test doubles required to exercise port contracts without runtime deps
 
 use swe_edge_ingress_message_consumer::{MessageConsumer, MessageConsumerSvc};
 use swe_edge_message_broker::{BrokerError, Message, MessageBroker, MessageStream};

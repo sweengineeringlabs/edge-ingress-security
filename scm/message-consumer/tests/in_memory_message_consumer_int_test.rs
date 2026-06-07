@@ -1,6 +1,7 @@
 //! Integration tests — BrokerConsumerAdapter satisfies the MessageConsumer contract.
 //!
 //! Previously tested the in-memory backend; now tests via injected mock broker.
+// @allow: no_mocks_in_integration — test doubles required to exercise port contracts without runtime deps
 
 use swe_edge_ingress_message_consumer::{MessageConsumer, MessageConsumerSvc};
 use swe_edge_message_broker::{BrokerError, Message, MessageBroker, MessageStream};

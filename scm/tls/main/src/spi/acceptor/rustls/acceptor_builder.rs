@@ -7,7 +7,7 @@ use rustls::pki_types::{pem::PemObject, CertificateDer, PrivateKeyDer};
 use rustls::ServerConfig;
 
 use crate::api::error::IngressTlsError;
-use crate::api::vo::IngressTlsConfig;
+use crate::api::types::IngressTlsConfig;
 use crate::spi::acceptor::rustls::acceptor_builder_contract::AcceptorBuilder;
 
 /// Builds a [`tokio_rustls::TlsAcceptor`] from a validated [`IngressTlsConfig`],
@@ -65,8 +65,7 @@ impl RustlsAcceptorBuilder {
     }
 
     fn load_certs(path: &str) -> Result<Vec<CertificateDer<'static>>, IngressTlsError> {
-        let pem =
-            fs::read(path).map_err(|e| IngressTlsError::CertLoad(path.to_string(), e))?;
+        let pem = fs::read(path).map_err(|e| IngressTlsError::CertLoad(path.to_string(), e))?;
         let chain: Result<Vec<_>, _> = CertificateDer::pem_slice_iter(&pem).collect();
         let chain = chain.map_err(|e| IngressTlsError::CertParse(e.to_string()))?;
         if chain.is_empty() {
@@ -78,14 +77,12 @@ impl RustlsAcceptorBuilder {
     }
 
     fn load_key(path: &str) -> Result<PrivateKeyDer<'static>, IngressTlsError> {
-        let pem =
-            fs::read(path).map_err(|e| IngressTlsError::KeyLoad(path.to_string(), e))?;
+        let pem = fs::read(path).map_err(|e| IngressTlsError::KeyLoad(path.to_string(), e))?;
         PrivateKeyDer::from_pem_slice(&pem).map_err(|e| IngressTlsError::KeyParse(e.to_string()))
     }
 
     fn load_client_ca(path: &str) -> Result<rustls::RootCertStore, IngressTlsError> {
-        let pem =
-            fs::read(path).map_err(|e| IngressTlsError::CertLoad(path.to_string(), e))?;
+        let pem = fs::read(path).map_err(|e| IngressTlsError::CertLoad(path.to_string(), e))?;
         let mut store = rustls::RootCertStore::empty();
         for cert in CertificateDer::pem_slice_iter(&pem) {
             let cert = cert.map_err(|e| IngressTlsError::CertParse(e.to_string()))?;

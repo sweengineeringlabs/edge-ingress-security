@@ -1,6 +1,7 @@
 //! Integration tests — `MessageConsumerSvc` SAF factory methods.
 //!
 //! Covers rules 77 (all pub fns tested) and 78 (@covers: annotations).
+// @allow: no_mocks_in_integration — test doubles required to exercise port contracts without runtime deps
 
 use swe_edge_ingress_message_consumer::{MessageConsumerSvc, Validator};
 

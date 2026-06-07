@@ -1,6 +1,7 @@
 //! Integration tests — SAF public API for the ingress message consumer.
 //!
 //! Covers rules 125 (SAF pub fn must have API-level tests) and 77 (all pub fns tested).
+// @allow: no_mocks_in_integration — test doubles required to exercise port contracts without runtime deps
 
 use swe_edge_ingress_message_consumer::{
     ApplicationConfigBuilder, MessageConsumer, MessageConsumerSvc, Validator,

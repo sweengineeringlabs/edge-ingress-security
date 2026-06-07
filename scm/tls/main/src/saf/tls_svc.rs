@@ -3,8 +3,8 @@
 use swe_edge_configbuilder::ConfigLoaderFactory;
 
 use crate::api::error::ingress_tls_error::IngressTlsError;
+use crate::api::types::ingress_tls_config::IngressTlsConfig;
 use crate::api::types::TlsSvc;
-use crate::api::vo::ingress_tls_config::IngressTlsConfig;
 use crate::spi::acceptor::rustls::RustlsAcceptorBuilder;
 
 impl TlsSvc {

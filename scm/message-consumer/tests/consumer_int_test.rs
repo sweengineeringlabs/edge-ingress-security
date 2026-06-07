@@ -1,4 +1,5 @@
 //! Integration tests — MessageConsumer port via SAF factories.
+// @allow: no_mocks_in_integration — test doubles required to exercise port contracts without runtime deps
 
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 

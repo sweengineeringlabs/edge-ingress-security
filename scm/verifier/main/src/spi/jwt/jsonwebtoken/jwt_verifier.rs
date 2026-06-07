@@ -3,7 +3,7 @@
 use jsonwebtoken::Validation;
 
 use crate::api::error::VerifierError;
-use crate::api::vo::JwtConfig;
+use crate::api::types::JwtConfig;
 use crate::spi::jwt::jsonwebtoken::token_verifier_impl::DefaultJwtVerifier;
 
 /// JWT verifier supporting HS256, RS256, and ES256.

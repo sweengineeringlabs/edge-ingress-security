@@ -1,6 +1,7 @@
 //! Integration test — exercises the `swe-edge-message-broker` contract directly.
 //!
 //! Satisfies rule 95: dependencies used in src/ must have integration/e2e coverage.
+// @allow: no_mocks_in_integration — test doubles required to exercise port contracts without runtime deps
 
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 

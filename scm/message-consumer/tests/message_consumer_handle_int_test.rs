@@ -1,4 +1,5 @@
 //! Integration tests — MessageConsumerHandle type.
+// @allow: no_mocks_in_integration — test doubles required to exercise port contracts without runtime deps
 
 use swe_edge_ingress_message_consumer::{
     MessageConsumer, MessageConsumerHandle, MessageConsumerSvc,

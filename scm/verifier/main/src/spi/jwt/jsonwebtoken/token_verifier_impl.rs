@@ -4,7 +4,7 @@ use jsonwebtoken::{Algorithm, DecodingKey};
 
 use crate::api::error::VerifierError;
 use crate::api::traits::TokenVerifier;
-use crate::api::vo::{Claims, JwtKey};
+use crate::api::types::{Claims, JwtKey};
 use crate::spi::jwt::jsonwebtoken::jwt_verifier::JwtVerifier;
 
 /// Primary type for this module — satisfies Rule 89 filename match.
@@ -80,7 +80,7 @@ mod tests {
         let mut val = Validation::default();
         val.validate_exp = true;
         // Create a definitely-expired token signature mismatch → maps to Invalid
-        let raw_err = decode::<crate::api::vo::Claims>("not.a.jwt.at.all", &key, &val)
+        let raw_err = decode::<crate::api::types::Claims>("not.a.jwt.at.all", &key, &val)
             .expect_err("decode must fail with malformed JWT");
         let mapped = DefaultJwtVerifier::map_jwt_error(raw_err);
         assert!(matches!(mapped, VerifierError::Invalid(_)));

@@ -31,29 +31,14 @@ swe-edge-configbuilder = { workspace = true }
 subtle = "2"
 tokio = { version = "1.0", features = ["macros", "rt"] }
 
-[lints]
-workspace = true
-
 [[example]]
 name = "jwt_verify"
 path = "examples/jwt_verify.rs"
 
-[[test]]
-name = "token_verifier_int_test"
-path = "tests/token_verifier_int_test.rs"
+[lints.rust]
+unsafe_code  = "deny"
+missing_docs = "warn"
 
-[[test]]
-name = "validator_int_test"
-path = "tests/validator_int_test.rs"
-
-[[test]]
-name = "verifier_svc_int_test"
-path = "tests/verifier_svc_int_test.rs"
-
-[[test]]
-name = "api_key_subtle_int_test"
-path = "tests/api_key_subtle_int_test.rs"
-
-[[test]]
-name = "application_config_builder_int_test"
-path = "tests/application_config_builder_int_test.rs"
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"

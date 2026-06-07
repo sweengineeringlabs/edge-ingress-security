@@ -33,45 +33,14 @@ tokio-rustls     = "0.26"
 rustls           = { version = "0.23", features = ["ring"] }
 rustls-pki-types = "1"
 
-[[test]]
-name = "traits_int_test"
-path = "tests/traits_int_test.rs"
-
-[[test]]
-name = "ingress_tls_error_int_test"
-path = "tests/ingress_tls_error_int_test.rs"
-
-[[test]]
-name = "tls_acceptor_builder_int_test"
-path = "tests/tls_acceptor_builder_int_test.rs"
-
 [[example]]
 name = "tls_setup"
 path = "examples/tls_setup.rs"
 
-[lints]
-workspace = true
+[lints.rust]
+unsafe_code  = "deny"
+missing_docs = "warn"
 
-[[test]]
-name = "ingress_tls_config_int_test"
-path = "tests/ingress_tls_config_int_test.rs"
-
-[[test]]
-name = "tls_svc_int_test"
-path = "tests/tls_svc_int_test.rs"
-
-[[test]]
-name = "noop_tls_extension_int_test"
-path = "tests/noop_tls_extension_int_test.rs"
-
-[[test]]
-name = "tls_extension_int_test"
-path = "tests/tls_extension_int_test.rs"
-
-[[test]]
-name = "validator_int_test"
-path = "tests/validator_int_test.rs"
-
-[[test]]
-name = "application_config_builder_int_test"
-path = "tests/application_config_builder_int_test.rs"
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
