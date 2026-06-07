@@ -1,12 +1,10 @@
 //! `RustlsAcceptorBuilder` — builds a [`tokio_rustls::TlsAcceptor`] from [`IngressTlsConfig`].
 
 use std::fs;
-use std::io::BufReader;
 use std::sync::Arc;
 
-use rustls::pki_types::{CertificateDer, PrivateKeyDer};
+use rustls::pki_types::{pem::PemObject, CertificateDer, PrivateKeyDer};
 use rustls::ServerConfig;
-use rustls_pemfile::{certs, private_key};
 
 use crate::api::error::IngressTlsError;
 use crate::api::vo::IngressTlsConfig;
@@ -67,9 +65,9 @@ impl RustlsAcceptorBuilder {
     }
 
     fn load_certs(path: &str) -> Result<Vec<CertificateDer<'static>>, IngressTlsError> {
-        let file =
-            fs::File::open(path).map_err(|e| IngressTlsError::CertLoad(path.to_string(), e))?;
-        let chain: Result<Vec<_>, _> = certs(&mut BufReader::new(file)).collect();
+        let pem =
+            fs::read(path).map_err(|e| IngressTlsError::CertLoad(path.to_string(), e))?;
+        let chain: Result<Vec<_>, _> = CertificateDer::pem_slice_iter(&pem).collect();
         let chain = chain.map_err(|e| IngressTlsError::CertParse(e.to_string()))?;
         if chain.is_empty() {
             return Err(IngressTlsError::CertParse(format!(
@@ -80,18 +78,16 @@ impl RustlsAcceptorBuilder {
     }
 
     fn load_key(path: &str) -> Result<PrivateKeyDer<'static>, IngressTlsError> {
-        let file =
-            fs::File::open(path).map_err(|e| IngressTlsError::KeyLoad(path.to_string(), e))?;
-        private_key(&mut BufReader::new(file))
-            .map_err(|e| IngressTlsError::KeyParse(e.to_string()))?
-            .ok_or_else(|| IngressTlsError::KeyParse(format!("no private key found in {path}")))
+        let pem =
+            fs::read(path).map_err(|e| IngressTlsError::KeyLoad(path.to_string(), e))?;
+        PrivateKeyDer::from_pem_slice(&pem).map_err(|e| IngressTlsError::KeyParse(e.to_string()))
     }
 
     fn load_client_ca(path: &str) -> Result<rustls::RootCertStore, IngressTlsError> {
-        let file =
-            fs::File::open(path).map_err(|e| IngressTlsError::CertLoad(path.to_string(), e))?;
+        let pem =
+            fs::read(path).map_err(|e| IngressTlsError::CertLoad(path.to_string(), e))?;
         let mut store = rustls::RootCertStore::empty();
-        for cert in certs(&mut BufReader::new(file)) {
+        for cert in CertificateDer::pem_slice_iter(&pem) {
             let cert = cert.map_err(|e| IngressTlsError::CertParse(e.to_string()))?;
             store
                 .add(cert)

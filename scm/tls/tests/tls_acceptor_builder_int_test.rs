@@ -54,17 +54,17 @@ fn test_build_tls_acceptor_returns_tokio_rustls_tls_acceptor_type() {
     drop(acceptor);
 }
 
-/// @covers: TlsAcceptorBuilder — exercises rustls, rustls-pemfile, tokio-rustls directly
+/// @covers: TlsAcceptorBuilder — exercises rustls, rustls-pki-types pem, tokio-rustls directly
 #[test]
 fn test_tls_deps_accessible_in_integration_context() {
     use rustls::crypto::ring::default_provider;
-    use rustls_pemfile::certs;
+    use rustls::pki_types::{pem::PemObject, CertificateDer};
     use tokio_rustls::TlsAcceptor;
     // Verify the rustls crypto provider can be created (exercises rustls dep)
     let _provider = default_provider();
-    // Verify rustls-pemfile parses empty input gracefully
+    // Verify rustls-pki-types pem parsing handles empty input gracefully
     let empty: &[u8] = b"";
-    let result: Vec<_> = certs(&mut std::io::BufReader::new(empty)).collect();
+    let result: Vec<_> = CertificateDer::pem_slice_iter(empty).collect();
     assert!(result.is_empty());
     // Verify tokio-rustls TlsAcceptor type is accessible
     let (cert_pem, key_pem) = self_signed();
