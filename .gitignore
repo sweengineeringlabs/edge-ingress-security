@@ -2,3 +2,4 @@
 docs/7-operations/compliance/packages/
 docs/7-operations/compliance/structural_audit_aggregate_*.json
 scm/target/
+scm/tenant/docs/7-operations/compliance/structural_audit_report_*.json
