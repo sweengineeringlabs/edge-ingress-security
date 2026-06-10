@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["JwtKey","VerifierError"],"struct":["ApiKeyVerifier","Claims","ClaimsBuilder","JwtConfig","JwtVerifier","NoopVerifierExtension","VerifierSvc"],"trait":["TokenVerifier"],"type":["ApplicationConfigBuilder"]};

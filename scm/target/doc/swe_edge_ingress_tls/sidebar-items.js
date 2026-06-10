@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["IngressTlsError"],"struct":["IngressTlsConfig","NoopTlsExtension","TlsAcceptor","TlsSvc"],"trait":["AcceptorBuilder"],"type":["ApplicationConfigBuilder"]};
