@@ -7,12 +7,12 @@ use rustls::pki_types::{pem::PemObject, CertificateDer, PrivateKeyDer};
 use rustls::ServerConfig;
 
 use crate::api::error::IngressTlsError;
+use crate::api::traits::AcceptorBuilder;
 use crate::api::types::IngressTlsConfig;
-use crate::spi::acceptor::rustls::acceptor_builder_contract::AcceptorBuilder;
 
 /// Builds a [`tokio_rustls::TlsAcceptor`] from a validated [`IngressTlsConfig`],
 /// backed by the rustls `ring` CryptoProvider.
-pub struct RustlsAcceptorBuilder;
+pub(crate) struct RustlsAcceptorBuilder;
 
 impl AcceptorBuilder for RustlsAcceptorBuilder {
     fn build_acceptor(

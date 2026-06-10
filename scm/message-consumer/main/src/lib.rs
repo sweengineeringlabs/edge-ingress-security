@@ -30,4 +30,6 @@ mod core;
 mod gateway;
 mod saf;
 
+pub use api::traits::MessageConsumer;
+pub use api::traits::Validator;
 pub use gateway::*;

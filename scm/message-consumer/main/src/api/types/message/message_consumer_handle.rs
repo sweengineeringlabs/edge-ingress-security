@@ -10,8 +10,7 @@ use crate::api::types::consumer_result::ConsumerResult;
 
 /// An opaque, cloneable handle to a [`MessageConsumer`] instance.
 ///
-/// Returned by SAF factory functions such as
-/// [`MessageConsumerSvc::consumer`](crate::api::types::message_broker_svc::MessageConsumerSvc).
+/// Returned by SAF factory functions such as [`MessageConsumerSvc`](crate::MessageConsumerSvc).
 /// Callers use this handle as a `dyn`-compatible consumer without needing to
 /// name the underlying concrete type.
 #[derive(Clone)]

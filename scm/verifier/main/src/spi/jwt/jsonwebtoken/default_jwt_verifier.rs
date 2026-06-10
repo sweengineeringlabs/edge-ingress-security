@@ -4,8 +4,8 @@ use jsonwebtoken::{Algorithm, DecodingKey};
 
 use crate::api::error::VerifierError;
 use crate::api::traits::TokenVerifier;
+use crate::api::types::JwtVerifier;
 use crate::api::types::{Claims, JwtKey};
-use crate::spi::jwt::jsonwebtoken::jwt_verifier::JwtVerifier;
 
 /// Primary type for this module — satisfies Rule 89 filename match.
 pub(crate) struct DefaultJwtVerifier;

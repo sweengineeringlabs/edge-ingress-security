@@ -12,4 +12,5 @@ mod gateway;
 mod saf;
 mod spi;
 
+pub use api::traits::TokenVerifier;
 pub use gateway::*;

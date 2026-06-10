@@ -13,4 +13,5 @@ mod gateway;
 mod saf;
 mod spi;
 
+pub use api::traits::AcceptorBuilder;
 pub use gateway::*;

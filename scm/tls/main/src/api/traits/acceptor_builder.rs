@@ -1,8 +1,4 @@
-//! `AcceptorBuilder` — rustls-backed contract for building TLS acceptors.
-//!
-//! The acceptor product is a [`tokio_rustls::TlsAcceptor`], so this contract is
-//! technology-bound and lives in `spi/` rather than the neutral `api/` layer
-//! (ADR-008 §1).
+//! `AcceptorBuilder` — contract for building TLS acceptors.
 
 use crate::api::error::IngressTlsError;
 use crate::api::types::IngressTlsConfig;

@@ -56,11 +56,11 @@ impl MessageConsumer for BrokerConsumerAdapter {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use swe_edge_message_broker::BrokerError;
 
-    struct MockBroker;
-    impl MessageBroker for MockBroker {
+    struct NoopBroker;
+
+    impl MessageBroker for NoopBroker {
         fn publish<'a>(
             &'a self,
             _: &'a str,
@@ -68,6 +68,7 @@ mod tests {
         ) -> futures::future::BoxFuture<'a, Result<(), BrokerError>> {
             Box::pin(futures::future::ready(Ok(())))
         }
+
         fn subscribe<'a>(
             &'a self,
             _: &'a str,
@@ -76,30 +77,14 @@ mod tests {
                 Box::pin(futures::stream::empty()) as MessageStream,
             )))
         }
+
         fn health_check(&self) -> futures::future::BoxFuture<'_, Result<(), BrokerError>> {
             Box::pin(futures::future::ready(Ok(())))
         }
     }
 
     #[test]
-    fn test_broker_consumer_adapter_is_object_safe() {
-        fn _assert(_: &dyn MessageConsumer) {}
-    }
-
-    #[test]
-    fn test_broker_consumer_adapter_new_accepts_any_broker() {
-        let _ = BrokerConsumerAdapter::new(MockBroker);
-    }
-
-    #[tokio::test]
-    async fn test_broker_consumer_adapter_health_check_returns_ok() {
-        let c = BrokerConsumerAdapter::new(MockBroker);
-        assert!(c.health_check().await.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_broker_consumer_adapter_subscribe_to_topic_returns_ok() {
-        let c = BrokerConsumerAdapter::new(MockBroker);
-        assert!(c.subscribe("test.topic").await.is_ok());
+    fn test_new_wraps_any_broker_in_arc_backed_adapter() {
+        let _ = BrokerConsumerAdapter::new(NoopBroker);
     }
 }

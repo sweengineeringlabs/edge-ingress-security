@@ -2,9 +2,9 @@
 
 use crate::api::traits::message_consumer::MessageConsumer;
 use crate::api::traits::validator::Validator;
-use crate::api::types::consumer_result::ConsumerResult;
-use crate::api::types::message_broker_svc::MessageConsumerSvc;
-use crate::api::types::message_consumer_handle::MessageConsumerHandle;
+use crate::api::types::ConsumerResult;
+use crate::api::types::MessageConsumerHandle;
+use crate::api::types::MessageConsumerSvc;
 use swe_edge_message_broker::{MessageBroker, MessageStream};
 
 impl MessageConsumerSvc {
