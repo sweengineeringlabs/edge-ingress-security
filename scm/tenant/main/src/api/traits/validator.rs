@@ -1,9 +1,4 @@
-//! [`Validator`] — validation contract for tenant configuration types.
-
-/// Validates a tenant configuration value.
-pub trait Validator {
-    /// Validate this value.
-    ///
-    /// Returns `Ok(())` if valid, or `Err(String)` with a human-readable reason.
-    fn validate(&self) -> Result<(), String>;
-}
+//! [`Validator`] — re-exported from `swe-edge-security`.
+//!
+//! The canonical definition lives in the shared security primitives crate.
+pub use swe_edge_security::Validator;

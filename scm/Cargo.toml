@@ -24,6 +24,7 @@ unwrap_used = "deny"
 expect_used = "deny"
 
 [workspace.dependencies]
+swe-edge-security      = { path = "../../../security/scm/security" }
 edge-domain            = { git = "https://github.com/sweengineeringlabs/edge-domain.git",             tag = "v0.8.1" }
 swe-edge-configbuilder = { git = "https://github.com/sweengineeringlabs/edge-configbuilder.git",  tag = "v0.3.0" }
 swe-edge-message-broker = { git = "https://github.com/sweengineeringlabs/edge-message-broker.git", tag = "v0.3.0" }

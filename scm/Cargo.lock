@@ -871,6 +871,7 @@ dependencies = [
  "serde",
  "serde_json",
  "swe-edge-configbuilder 0.3.0",
+ "swe-edge-security",
  "thiserror 2.0.18",
 ]
 
@@ -883,6 +884,7 @@ dependencies = [
  "rustls-pki-types",
  "serde",
  "swe-edge-configbuilder 0.3.0",
+ "swe-edge-security",
  "tempfile",
  "thiserror 2.0.18",
  "tokio-rustls",
@@ -914,6 +916,13 @@ dependencies = [
  "swe-edge-configbuilder 0.1.0",
  "thiserror 1.0.69",
  "tracing",
+]
+
+[[package]]
+name = "swe-edge-security"
+version = "0.1.0"
+dependencies = [
+ "thiserror 2.0.18",
 ]
 
 [[package]]

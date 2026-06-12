@@ -1,8 +1,4 @@
-//! `Validator` — configuration validation contract.
-
-/// Validates a value, returning a human-readable error on failure.
-pub trait Validator: Send + Sync {
-    /// Return `Err` with a description of the first validation failure,
-    /// or `Ok(())` when the value is valid.
-    fn validate(&self) -> Result<(), String>;
-}
+//! [`Validator`] — re-exported from `swe-edge-security`.
+//!
+//! The canonical definition lives in the shared security primitives crate.
+pub use swe_edge_security::Validator;
