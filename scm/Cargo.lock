@@ -921,6 +921,7 @@ dependencies = [
 [[package]]
 name = "swe-edge-security"
 version = "0.1.0"
+source = "git+https://github.com/sweengineeringlabs/edge-security.git?tag=v0.1.0#1e841cb03f58f5b99a1332875c6560796b26b660"
 dependencies = [
  "thiserror 2.0.18",
 ]
