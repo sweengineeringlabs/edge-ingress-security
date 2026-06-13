@@ -157,6 +157,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "edge-domain-handler"
+version = "0.1.1"
+source = "git+https://github.com/sweengineeringlabs/edge-domain.git?tag=v0.8.23#7eaaad0dc419aa3860779b2c9e8bfa5f1598e834"
+dependencies = [
+ "async-trait",
+ "edge-domain-security",
+ "parking_lot",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "edge-domain-security"
+version = "0.1.0"
+source = "git+https://github.com/sweengineeringlabs/edge-domain.git?tag=v0.8.23#7eaaad0dc419aa3860779b2c9e8bfa5f1598e834"
+dependencies = [
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -921,10 +940,14 @@ dependencies = [
 [[package]]
 name = "swe-edge-security"
 version = "0.2.0"
-source = "git+https://github.com/sweengineeringlabs/edge-security.git?tag=v0.2.0#8abf1f4f6370c40e95ba742b15ad679685415ba6"
+source = "git+https://github.com/sweengineeringlabs/edge-security.git?tag=v0.3.0#ac066f18270d6cf71305cb5d65dded480506603d"
 dependencies = [
+ "async-trait",
+ "edge-domain-handler",
+ "edge-domain-security",
  "serde",
  "thiserror 2.0.18",
+ "tokio",
 ]
 
 [[package]]
