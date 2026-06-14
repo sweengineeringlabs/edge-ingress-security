@@ -24,10 +24,10 @@ unwrap_used = "deny"
 expect_used = "deny"
 
 [workspace.dependencies]
-swe-edge-security      = { git = "https://github.com/sweengineeringlabs/edge-security.git", tag = "v0.3.0" }
-edge-domain            = { git = "https://github.com/sweengineeringlabs/edge-domain.git",             tag = "v0.8.1" }
-swe-edge-configbuilder = { git = "https://github.com/sweengineeringlabs/edge-configbuilder.git",  tag = "v0.3.0" }
-swe-edge-message-broker = { git = "https://github.com/sweengineeringlabs/edge-message-broker.git", tag = "v0.3.0" }
+swe-edge-security      = { git = "https://github.com/sweengineeringlabs/edge-security.git", tag = "v0.3.1" }
+edge-domain            = { git = "https://github.com/sweengineeringlabs/edge-domain.git",             tag = "v0.8.27" }
+swe-edge-configbuilder = { git = "https://github.com/sweengineeringlabs/edge-configbuilder.git",  tag = "v0.4.1" }
+swe-edge-message-broker = { git = "https://github.com/sweengineeringlabs/edge-message-broker.git", tag = "v0.3.1" }
 swe-edge-ingress-tls      = { path = "tls" }
 swe-edge-ingress-verifier = { path = "verifier" }
 swe-edge-ingress-tenant   = { path = "tenant" }
