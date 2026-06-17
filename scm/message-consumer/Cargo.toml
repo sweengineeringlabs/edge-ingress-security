@@ -21,7 +21,7 @@ path = "main/src/lib.rs"
 [dependencies]
 thiserror                       = "2"
 futures                         = "0.3"
-tokio                           = { version = "1.0", features = ["rt-multi-thread", "rt", "sync", "macros", "time"] }
+tokio                           = { version = "1.52", features = ["rt-multi-thread", "rt", "sync", "macros", "time"] }
 tracing                         = { version = "0.1", default-features = false }
 # Contract: the MessageConsumer port speaks the broker vocabulary (Message,
 # MessageStream, BrokerError) owned by edge-message-broker — always present.
@@ -30,7 +30,7 @@ serde                           = { version = "1.0", features = ["derive"] }
 swe-edge-configbuilder          = { workspace = true }
 
 [dev-dependencies]
-tokio                   = { version = "1.0", features = ["rt-multi-thread", "macros", "time"] }
+tokio                   = { version = "1.52", features = ["rt-multi-thread", "macros", "time"] }
 futures                 = "0.3"
 swe-edge-configbuilder  = { workspace = true }
 swe-edge-message-broker = { workspace = true }

@@ -1,4 +1,4 @@
 //! Core implementations — pub(crate) only.
-pub(crate) mod broker_consumer_adapter;
+pub(crate) mod broker;
 
-pub(crate) use broker_consumer_adapter::BrokerConsumerAdapter;
+pub(crate) use broker::BrokerConsumerAdapter;

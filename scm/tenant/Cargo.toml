@@ -1,0 +1,40 @@
+[package]
+name                   = "swe-edge-ingress-tenant"
+version.workspace      = true
+edition.workspace      = true
+license.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+repository.workspace   = true
+description  = "swe-edge ingress — tenant identity resolution from inbound HTTP requests"
+keywords     = ["tenant", "resolver", "identity", "ingress", "edge"]
+categories   = ["network-programming", "authentication"]
+
+[package.metadata.struct-engine]
+application_type = "lib"
+service_type     = "tenant"
+
+[lib]
+name = "swe_edge_ingress_tenant"
+path = "main/src/lib.rs"
+
+[dependencies]
+thiserror              = "2"
+serde                  = { version = "1.0", features = ["derive"] }
+serde_json             = "1.0"
+base64                 = "0.22"
+http                   = "1"
+swe-edge-configbuilder = { workspace = true }
+swe-edge-security      = { workspace = true }
+
+[dev-dependencies]
+serde_json             = "1.0"
+http                   = "1"
+
+[lints.rust]
+unsafe_code  = "deny"
+missing_docs = "warn"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
